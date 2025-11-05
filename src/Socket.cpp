@@ -13,17 +13,17 @@ Socket::Socket(const std::string& addr)
 Socket::~Socket()
 {
     if (close(m_sfd) != 0) {
-        std::sstream ss;
+        std::stringstream ss;
         ss << "[Error] closing sfd " << m_sfd;
-        cerr << ss.str() << ": " << std::strerr(errno) << std::endl;
+        std::cerr << ss.str() << ": " << std::strerror(errno) << std::endl;
     }
-#if DEGBUG
-    std::cout << [Debug] success close sfd " << m_sfd << std::endl;
+#if DEBUG
+    else 
+        std::cout << "[Debug] success close sfd " << m_sfd << std::endl;
 #endif
 }
 
-// TODO: raise exceptions instead of exit
-Socket::create_bind_listen_(const std::string& addr) {
+void Socket::create_bind_listen_(const std::string& addr) {
 
     struct addrinfo	hints, *result, *rp;
 
@@ -32,31 +32,28 @@ Socket::create_bind_listen_(const std::string& addr) {
 	hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-	if (getaddrinfo(add.c_str(), "5555", &hints, &result) != 0)
-	{
-		perror("getaddrinfo");
-		exit(EXIT_FAILURE);
-	}
+	if (getaddrinfo(addr.c_str(), "5555", &hints, &result) != 0)
+        throw std::runtime_error(std::strerror(errno));
 
 	for (rp = result; rp != NULL; rp = rp->ai_next)
 	{
-		sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-		if (sfd == -1)
+		m_sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+		if (m_sfd == -1)
 			continue;
-		if (bind(sfd, rp->ai_addr, rp->ai_addrlen) == 0)
-			break;
-		close(sfd);
+		if (bind(m_sfd, rp->ai_addr, rp->ai_addrlen) == 0)
+		    break;
+		close(m_sfd);
+        throw std::runtime_error(std::strerror(errno));
 	}
 	if (rp == NULL)
+        throw std::runtime_error(std::strerror(errno));
+	if (listen(m_sfd, 0) == -1)
 	{
-		perror("Could not bind");
-		exit(EXIT_FAILURE);
-	}
-	if (listen(sfd, 0) == -1)
-	{
-		perror("listen");
-		close(sfd);
+		close(m_sfd);
         freeaddrinfo(result);
-		exit(EXIT_FAILURE);
+        throw std::runtime_error(std::strerror(errno));
 	}
+#if DEBUG
+    std::cout << "[Debug] success listen on sfd " << m_sfd << std::endl;
+#endif
 }

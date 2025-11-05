@@ -4,12 +4,14 @@
 #define SOCKET_HPP
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <netdb.h>
 #include <unistd.h>
-#include <errno.h>
+#include <cerrno>
 #include <string>
 #include <sstream>
-#include <cerrno>
 #include <cstring>
+#include <iostream>
+#include <stdexcept>
 
 class Socket {
     int m_sfd;

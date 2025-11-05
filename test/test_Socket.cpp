@@ -2,7 +2,11 @@
 #include "../include/Socket.hpp"
 
 TEST(SocketTest, SocketInitializes) {
-    Socket s("localhost");
+    try {
+        Socket s("localhost");
+    } catch (std::exception& e) {
+        FAIL() << e.what();
+    }
     SUCCEED() << "Socket is initialized";
 }
     
