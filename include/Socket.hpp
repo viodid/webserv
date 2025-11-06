@@ -25,7 +25,7 @@
  * @see https://man7.org/linux/man-pages/man2/socket.2.html
  */
 class Socket {
-    int m_sfd;
+    int m_sfd, m_cfd = -1;
     struct addrinfo* m_addrinfo, m_curraddr;
     void create_bind_listen_(const std::string&);
 
@@ -42,7 +42,7 @@ public:
      */
     Socket(const std::string& addr);
     /**
-     * @brief Destroys the Socket object, and frees resources.
+     * @brief Destroys the Socket object, and frees its resources.
      *
      * Deallocates the dynamic memory assigned to m_addrinfo and closes
      * the socket file descriptor in a safe manner.

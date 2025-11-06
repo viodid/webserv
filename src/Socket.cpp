@@ -12,6 +12,7 @@ Socket::Socket(const std::string& addr)
 
 Socket::~Socket()
 {
+    // TODO: handle m_cfd
     freeaddrinfo(m_addrinfo);
     if (close(m_sfd) != 0) {
         std::stringstream ss;
@@ -57,4 +58,18 @@ void Socket::create_bind_listen_(const std::string& addr) {
 #if DEBUG
     std::cout << "[Debug] success listen on sfd " << m_sfd << std::endl;
 #endif
+}
+
+void Socket::connect() const {
+    m_cfd = accept(m_sfd, m_curraddr->ai_addr, &m_curraddr->ai_addrlen);
+    // TODO: from here
+	if (m_cfd == -1)
+	{
+		perror("accept");
+		close(sfd);
+        freeaddrinfo(result);
+		exit(EXIT_FAILURE);
+	}
+	write(cfd, "hey there!\n", 12);
+
 }
