@@ -40,3 +40,7 @@ webserv
 
 # debug information files
 *.dwo
+
+# doxygen generated files
+html/
+latex/
