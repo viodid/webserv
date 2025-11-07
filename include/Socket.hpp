@@ -13,6 +13,10 @@
 #include <iostream>
 #include <stdexcept>
 
+// TODO: document
+#define SOCKET_PORT     "5555"
+#define SOCKET_BACKLOG  4096
+
 /**
  * @class Socket
  * @brief A simple RAII wrapper for a network socket.
@@ -25,7 +29,8 @@
  */
 class Socket {
     int m_sfd, m_cfd = -1;
-    struct addrinfo* m_addrinfo, m_curraddr;
+    struct addrinfo *m_addrinfo, *m_curraddr = nullptr;
+
     void create_bind_listen_(const std::string&);
 
 public:
@@ -50,6 +55,7 @@ public:
     Socket(const Socket&);
     Socket& operator=(const Socket&);
 
-    void connect() const;
+    // TODO: document
+    void client_accept();
 };
 #endif
