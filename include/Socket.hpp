@@ -20,7 +20,6 @@
  * This class encapsulates a low-level socket file descriptor and manages its
  * lifetime. When a Socket object is created, it opens a socket. When it is
  * destroyed (goes out of scope), it automatically closes the socket.
- * This prevents resource leaks.
  * 
  * @see https://man7.org/linux/man-pages/man2/socket.2.html
  */
@@ -45,7 +44,7 @@ public:
      * @brief Destroys the Socket object, and frees its resources.
      *
      * Deallocates the dynamic memory assigned to m_addrinfo and closes
-     * the socket file descriptor in a safe manner.
+     * the sockets file descriptors in a safe manner.
      */
     ~Socket();
     Socket(const Socket&);
