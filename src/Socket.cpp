@@ -13,7 +13,7 @@ Socket::Socket(const std::string& addr)
 Socket::~Socket()
 {
     freeaddrinfo(m_addrinfo);
-    if (c_sfd != -1 && close(m_sfd) != 0) {
+    if (m_sfd != -1 && close(m_sfd) != 0) {
         std::stringstream ss;
         ss << "[Error] closing sfd " << m_sfd;
         std::cerr << ss.str() << ": " << std::strerror(errno) << std::endl;
@@ -38,20 +38,20 @@ void Socket::create_bind_listen_(const std::string& addr) {
 	hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-	if (getaddrinfo(addr.c_str(), "5555", &hints, &m_adrrinfo) != 0)
+	if (getaddrinfo(addr.c_str(), SOCKET_PORT, &hints, &m_addrinfo) != 0)
         throw std::runtime_error(std::strerror(errno));
 
-	for (m_curraddr = m_addrinfo; curraddr != NULL; curraddr = curraddr->ai_next)
+	for (m_curraddr = m_addrinfo; m_curraddr != nullptr; m_curraddr = m_curraddr->ai_next)
 	{
-		m_sfd = socket(curraddr->ai_family, curraddr->ai_socktype, curraddr->ai_protocol);
+		m_sfd = socket(m_curraddr->ai_family, m_curraddr->ai_socktype, m_curraddr->ai_protocol);
 		if (m_sfd == -1)
 			continue;
-		if (bind(m_sfd, curraddr->ai_addr, curraddr->ai_addrlen) == 0)
+		if (bind(m_sfd, m_curraddr->ai_addr, m_curraddr->ai_addrlen) == 0)
 		    break;
 		close(m_sfd);
         throw std::runtime_error(std::strerror(errno));
 	}
-	if (curraddr == NULL)
+	if (m_curraddr == nullptr)
         throw std::runtime_error(std::strerror(errno));
 	if (listen(m_sfd, 0) == -1)
 	{
@@ -64,11 +64,12 @@ void Socket::create_bind_listen_(const std::string& addr) {
 #endif
 }
 
-void Socket::accept() const {
-    m_cfd = accept(m_sfd, m_curraddr->ai_addr, &m_curraddr->ai_addrlen);
+void Socket::client_accept() {
+    m_cfd = accept(m_sfd, m_curraddr->ai_addr, &m_curraddr->ai_addrlen); // blocks
 	if (m_cfd == -1)
         throw std::runtime_error(std::strerror(errno));
 #if DEBUG
     std::cout << "[Debug] success accept on sfd " << m_sfd << std::endl;
 #endif
 }
+
