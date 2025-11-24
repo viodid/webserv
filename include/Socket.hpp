@@ -56,6 +56,6 @@ public:
     Socket& operator=(const Socket&);
 
     // TODO: document
-    void client_accept();
+    void start();
 };
 #endif
