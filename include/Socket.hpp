@@ -13,6 +13,7 @@
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
+#include <vector>
 
 // TODO: document
 #define SOCKET_PORT     "5555"

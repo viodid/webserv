@@ -4,6 +4,7 @@
 TEST(SocketTest, SocketInitializes) {
     try {
         Socket s("localhost");
+        s.start();
     } catch (std::exception& e) {
         FAIL() << e.what();
     }

@@ -67,6 +67,7 @@ void Socket::create_bind_listen_(const std::string& addr) {
     std::cout << "[Debug] success listen on sfd " << m_sfd << std::endl;
 #endif
 /*
+ * (not needed with poll)
  * # man 7 socket
  * It is possible to do nonblocking I/O on sockets by setting the
  * O_NONBLOCK flag on a socket file descriptor using fcntl(2).  Then
@@ -78,11 +79,14 @@ void Socket::create_bind_listen_(const std::string& addr) {
 }
 
 void Socket::start() {
-    
-
-    m_cfd = accept(m_sfd, m_curraddr->ai_addr, &m_curraddr->ai_addrlen); // blocks
-	if (m_cfd == -1)
-        throw std::runtime_error(std::strerror(errno));
+    // m_cfd = accept(m_sfd, m_curraddr->ai_addr, &m_curraddr->ai_addrlen); // blocks
+    pollfd pfd {m_sfd, POLLIN, 0};
+    // stack allocate a vector of `pollfd`
+    std::vector<pollfd*> vectorpollfd {&pfd};
+    // initialize with just the socket fd
+    std::cout << poll(*vectorpollfd.data(), 1, -1) << std::endl;
+	// if (m_cfd == -1)
+    //     throw std::runtime_error(std::strerror(errno));
 #if DEBUG
     std::cout << "[Debug] success accept on sfd " << m_sfd << std::endl;
 #endif
