@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netdb.h>
+#include <poll.h>
 #include <unistd.h>
 #include <cerrno>
 #include <string>

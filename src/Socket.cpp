@@ -66,9 +66,20 @@ void Socket::create_bind_listen_(const std::string& addr) {
 #if DEBUG
     std::cout << "[Debug] success listen on sfd " << m_sfd << std::endl;
 #endif
+/*
+ * # man 7 socket
+ * It is possible to do nonblocking I/O on sockets by setting the
+ * O_NONBLOCK flag on a socket file descriptor using fcntl(2).  Then
+ * all operations that would block will (usually) return with EAGAIN
+ * (operation should be retried later); connect(2) will return
+ * EINPROGRESS error.  The user can then wait for various events via
+ * poll(2) or select(2).
+ */
 }
 
 void Socket::start() {
+    
+
     m_cfd = accept(m_sfd, m_curraddr->ai_addr, &m_curraddr->ai_addrlen); // blocks
 	if (m_cfd == -1)
         throw std::runtime_error(std::strerror(errno));
