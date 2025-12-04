@@ -66,29 +66,31 @@ void Socket::create_bind_listen_(const std::string& addr) {
 #if DEBUG
     std::cout << "[Debug] success listen on sfd " << m_sfd << std::endl;
 #endif
-/*
- * (not needed with poll)
- * # man 7 socket
- * It is possible to do nonblocking I/O on sockets by setting the
- * O_NONBLOCK flag on a socket file descriptor using fcntl(2).  Then
- * all operations that would block will (usually) return with EAGAIN
- * (operation should be retried later); connect(2) will return
- * EINPROGRESS error.  The user can then wait for various events via
- * poll(2) or select(2).
- */
-}
 
 void Socket::start() {
-    // m_cfd = accept(m_sfd, m_curraddr->ai_addr, &m_curraddr->ai_addrlen); // blocks
     pollfd pfd {m_sfd, POLLIN, 0};
     // stack allocate a vector of `pollfd`
-    std::vector<pollfd*> vectorpollfd {&pfd};
+    std::vector<pollfd> pfds {pfd};
     // initialize with just the socket fd
-    std::cout << poll(*vectorpollfd.data(), 1, -1) << std::endl;
+
+    for (;;;) {
+        int poll_count = poll(pfds.data(), 1, -1) << std::endl;
+        if (poll_count == -1) throw std::runtime_error(std::strerror(errno));
+        // check if event/s are from a new connection (main socket fd is hit)
+        // or is an already opened one
+        //
+        // handle new connections
+        // connect (returns new socket)
+        // create another slot for new connection
+        //
+        // handle existing connection
+        // receive data
+    }
+
+
+
+    // m_cfd = accept(m_sfd, m_curraddr->ai_addr, &m_curraddr->ai_addrlen); // blocks
 	// if (m_cfd == -1)
     //     throw std::runtime_error(std::strerror(errno));
-#if DEBUG
-    std::cout << "[Debug] success accept on sfd " << m_sfd << std::endl;
-#endif
 }
 
