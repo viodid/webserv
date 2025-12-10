@@ -29,6 +29,55 @@ Socket::~Socket()
 #endif
 }
 
+void Socket::start() {
+    pollfd pfd {m_sfd, POLLIN, 0};
+    // initialize with just the socket fd
+    std::vector<pollfd> pfds {pfd};
+    nfds_t nfds = 1; // total number of file descriptor being monitored
+    
+    for (;;) {
+        int poll_count = poll(pfds.data(), nfds, -1);
+        if (poll_count == -1) throw std::runtime_error(std::strerror(errno));
+        // check if event/s are from a new connection (main socket fd is hit)
+        // or is an already opened one
+        for (int i = 0; i < static_cast<int>(nfds); i++) {
+            pollfd tmp_pfd = pfds[i];
+            if ((tmp_pfd.revents & (POLLIN | POLLHUP)) ==  (POLLIN | POLLHUP)) {
+                if (tmp_pfd.fd == m_sfd)
+                    handle_new_conn_(pfds, nfds);
+                else
+                    handle_existing_conn_(tmp_pfd.fd);
+            } else if ((tmp_pfd.revents & POLLHUP) == POLLHUP)
+                handle_closed_conn_(tmp_pfd.fd);
+        }
+        
+        //
+        //
+        // handle existing connection
+        // receive data
+    }
+
+}
+
+// handle new connections
+// connect (returns new socket)
+// create another slot for new connection
+void Socket::handle_new_conn_(std::vector<pollfd>& pfds, nfds_t& nfds) {
+    int cfd = accept(m_sfd, m_curraddr->ai_addr, &m_curraddr->ai_addrlen); // blocks
+	if (m_cfd == -1)
+        throw std::runtime_error(std::strerror(errno));
+    pfds.push_back(pollfd{cfd, POLLIN, 0});
+    ++nfds;
+}
+
+void Socket::handle_existing_conn_(int fd) {
+}
+
+void Socket::handle_closed_conn_(int fd) {
+}
+
+// creates a socket and assigns it to member variable m_sfd
+// TODO: hardcode loopback addr?
 void Socket::create_bind_listen_(const std::string& addr) {
 
     struct addrinfo	hints;
@@ -66,44 +115,5 @@ void Socket::create_bind_listen_(const std::string& addr) {
 #if DEBUG
     std::cout << "[Debug] success listen on sfd " << m_sfd << std::endl;
 #endif
-
-void Socket::start() {
-    pollfd pfd {m_sfd, POLLIN, 0};
-    // initialize with just the socket fd
-    std::vector<pollfd> pfds {pfd};
-    nfds_t nfds = 1; // total number of file descriptor being monitored
-    
-
-    for (;;;) {
-        int poll_count = poll(pfds.data(), nfds, -1) << std::endl;
-        if (poll_count == -1) throw std::runtime_error(std::strerror(errno));
-        // check if event/s are from a new connection (main socket fd is hit)
-        // or is an already opened one
-        for (int i = 0; i < static_cast<int>(nfds); i++) {
-            pollfd tmp_pfd = pfds[i];
-            if (tmp_pfd.revents & (POLLIN | POLLHUP) ==  POLLIN | POLLHUP) {
-                if (tmp_pfd.fd == m_sfd)
-                    handle_new_conn(tmp_pfd.fd, pfds, nfds);
-                else
-                    handle_existing_conn(tmp_pfd.fd);
-                ++count;
-            } else if (tmp_pfd.revents & POLLUP == POLLHUP)
-                handle_close_conn(tmp_pfd.fd);
-        }
-        
-        //
-        // handle new connections
-        // connect (returns new socket)
-        // create another slot for new connection
-        //
-        // handle existing connection
-        // receive data
-    }
-
-
-
-    // m_cfd = accept(m_sfd, m_curraddr->ai_addr, &m_curraddr->ai_addrlen); // blocks
-	// if (m_cfd == -1)
-    //     throw std::runtime_error(std::strerror(errno));
 }
 

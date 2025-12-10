@@ -1,6 +1,6 @@
 BINARY 		= webserv
 CXX 		= g++
-CXXFLAGS	= -std=c++17 -Wall -Wextra -g3 -O0 -DDEBUG=1
+CXXFLAGS	= -std=c++17 -Wall -Wextra -Wpedantic -g3 -O0 -DDEBUG=1
 LDFLAGS		= -lgtest -lgtest_main -lpthread
 
 SRCS		= $(shell find . -type f -name '*.cpp')

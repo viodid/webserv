@@ -34,6 +34,9 @@ class Socket {
     struct addrinfo *m_addrinfo, *m_curraddr = nullptr;
 
     void create_bind_listen_(const std::string&);
+    void handle_new_conn_(std::vector<pollfd>& pfds, nfds_t& nfds);
+    void handle_existing_conn_(int fd);
+    void handle_closed_conn_(int fd);
 
 public:
     /**
