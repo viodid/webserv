@@ -69,15 +69,28 @@ void Socket::create_bind_listen_(const std::string& addr) {
 
 void Socket::start() {
     pollfd pfd {m_sfd, POLLIN, 0};
-    // stack allocate a vector of `pollfd`
-    std::vector<pollfd> pfds {pfd};
     // initialize with just the socket fd
+    std::vector<pollfd> pfds {pfd};
+    nfds_t nfds = 1; // total number of file descriptor being monitored
+    
 
     for (;;;) {
-        int poll_count = poll(pfds.data(), 1, -1) << std::endl;
+        int poll_count = poll(pfds.data(), nfds, -1) << std::endl;
         if (poll_count == -1) throw std::runtime_error(std::strerror(errno));
         // check if event/s are from a new connection (main socket fd is hit)
         // or is an already opened one
+        for (int i = 0; i < static_cast<int>(nfds); i++) {
+            pollfd tmp_pfd = pfds[i];
+            if (tmp_pfd.revents & (POLLIN | POLLHUP) ==  POLLIN | POLLHUP) {
+                if (tmp_pfd.fd == m_sfd)
+                    handle_new_conn(tmp_pfd.fd, pfds, nfds);
+                else
+                    handle_existing_conn(tmp_pfd.fd);
+                ++count;
+            } else if (tmp_pfd.revents & POLLUP == POLLHUP)
+                handle_close_conn(tmp_pfd.fd);
+        }
+        
         //
         // handle new connections
         // connect (returns new socket)
