@@ -18,6 +18,7 @@
 // TODO: document
 #define SOCKET_PORT     "5555"
 #define SOCKET_BACKLOG  4096
+#define SOCKET_MSG_BUFFER 100000 // 100 KB
 
 /**
  * @class Socket

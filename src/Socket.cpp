@@ -13,16 +13,10 @@ Socket::Socket(const std::string& addr)
 Socket::~Socket()
 {
     freeaddrinfo(m_addrinfo);
-    if (m_sfd != -1 && close(m_sfd) != 0) {
-        std::stringstream ss;
-        ss << "[Error] closing sfd " << m_sfd;
-        std::cerr << ss.str() << ": " << std::strerror(errno) << std::endl;
-    }
-    if (m_cfd != -1 && close(m_cfd) != 0) {
-        std::stringstream ss;
-        ss << "[Error] closing cfd " << m_cfd;
-        std::cerr << ss.str() << ": " << std::strerror(errno) << std::endl;
-    }
+    if (m_sfd != -1 && close(m_sfd) != 0)
+        std::cerr << "[Error] closing sfd " << m_sfd << ": " << std::strerror(errno) << std::endl;
+    if (m_cfd != -1 && close(m_cfd) != 0)
+        std::cerr << "[Error] closing cfd " << m_cfd << ": " << std::strerror(errno) << std::endl;
 #if DEBUG
     else 
         std::cout << "[Debug] success close sfd " << m_sfd << std::endl;
@@ -42,14 +36,17 @@ void Socket::start() {
         // or is an already opened one
         for (int i = 0; i < static_cast<int>(nfds); i++) {
             pollfd tmp_pfd = pfds[i];
-            if ((tmp_pfd.revents & (POLLIN | POLLHUP)) ==  (POLLIN | POLLHUP)) {
+            if (tmp_pfd.revents & POLLIN) {
                 if (tmp_pfd.fd == m_sfd)
                     handle_new_conn_(pfds, nfds);
                 else
                     handle_existing_conn_(tmp_pfd.fd);
-            } else if ((tmp_pfd.revents & POLLHUP) == POLLHUP)
+            } else if (tmp_pfd.revents & POLLHUP)
                 handle_closed_conn_(tmp_pfd.fd);
         }
+        std::cout << "poll_count: " << poll_count << std::endl
+            << "pfds.size(): " << pfds.size() << std::endl
+            << "nfds: " << nfds << std::endl;
         
         //
         //
@@ -64,16 +61,22 @@ void Socket::start() {
 // create another slot for new connection
 void Socket::handle_new_conn_(std::vector<pollfd>& pfds, nfds_t& nfds) {
     int cfd = accept(m_sfd, m_curraddr->ai_addr, &m_curraddr->ai_addrlen); // blocks
-	if (m_cfd == -1)
+	if (cfd == -1)
         throw std::runtime_error(std::strerror(errno));
     pfds.push_back(pollfd{cfd, POLLIN, 0});
     ++nfds;
 }
 
 void Socket::handle_existing_conn_(int fd) {
+    char buf[SOCKET_MSG_BUFFER];
+    if (recv(fd, static_cast<void*>(&buf), SOCKET_MSG_BUFFER, 0) == -1)
+        throw std::runtime_error(std::strerror(errno));
+    std::cout << buf << std::endl;
+
 }
 
 void Socket::handle_closed_conn_(int fd) {
+    std::cout << "closed conn" << std::endl;
 }
 
 // creates a socket and assigns it to member variable m_sfd
