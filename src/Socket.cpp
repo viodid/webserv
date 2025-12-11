@@ -15,8 +15,6 @@ Socket::~Socket()
     freeaddrinfo(m_addrinfo);
     if (m_sfd != -1 && close(m_sfd) != 0)
         std::cerr << "[Error] closing sfd " << m_sfd << ": " << std::strerror(errno) << std::endl;
-    if (m_cfd != -1 && close(m_cfd) != 0)
-        std::cerr << "[Error] closing cfd " << m_cfd << ": " << std::strerror(errno) << std::endl;
 #if DEBUG
     else 
         std::cout << "[Debug] success close sfd " << m_sfd << std::endl;
@@ -42,7 +40,7 @@ void Socket::start() {
                 else
                     handle_existing_conn_(tmp_pfd.fd);
             } else if (tmp_pfd.revents & POLLHUP)
-                handle_closed_conn_(tmp_pfd.fd);
+                handle_closed_conn_(tmp_pfd.fd, pfds, nfds);
         }
         std::cout << "poll_count: " << poll_count << std::endl
             << "pfds.size(): " << pfds.size() << std::endl
@@ -69,14 +67,20 @@ void Socket::handle_new_conn_(std::vector<pollfd>& pfds, nfds_t& nfds) {
 
 void Socket::handle_existing_conn_(int fd) {
     char buf[SOCKET_MSG_BUFFER];
-    if (recv(fd, static_cast<void*>(&buf), SOCKET_MSG_BUFFER, 0) == -1)
+    int count = recv(fd, static_cast<void*>(&buf), SOCKET_MSG_BUFFER, 0);
+    if (count == -1)
         throw std::runtime_error(std::strerror(errno));
+    buf[count] = '\0';
     std::cout << buf << std::endl;
 
 }
 
-void Socket::handle_closed_conn_(int fd) {
-    std::cout << "closed conn" << std::endl;
+// TODO: remove socket from pfds and reduce nfds
+void Socket::handle_closed_conn_(int cfd, std::vector<pollfd>& pfds, nfds_t& nfds) {
+    if (close(cfd) != 0)
+        std::cerr << "[Error] closing client fd " << fd << ": "
+           << std::strerror(errno) << std::endl;
+    std::cout << "closed conn fd: " << fd << std::endl;
 }
 
 // creates a socket and assigns it to member variable m_sfd
