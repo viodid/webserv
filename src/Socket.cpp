@@ -25,9 +25,9 @@ void Socket::start() {
     pollfd pfd {m_sfd, POLLIN, 0};
     // initialize with just the socket fd
     std::vector<pollfd> pfds {pfd};
-    nfds_t nfds = 1; // total number of file descriptor being monitored
     
     for (;;) {
+        nfds_t nfds = pfds.size();
         int poll_count = poll(pfds.data(), nfds, -1);
         if (poll_count == -1) throw std::runtime_error(std::strerror(errno));
         // check if event/s are from a new connection (main socket fd is hit)
@@ -36,51 +36,53 @@ void Socket::start() {
             pollfd tmp_pfd = pfds[i];
             if (tmp_pfd.revents & POLLIN) {
                 if (tmp_pfd.fd == m_sfd)
-                    handle_new_conn_(pfds, nfds);
+                    handle_new_conn_(pfds);
                 else
-                    handle_existing_conn_(tmp_pfd.fd);
+                    handle_existing_conn_(tmp_pfd.fd, pfds);
             } else if (tmp_pfd.revents & POLLHUP)
-                handle_closed_conn_(tmp_pfd.fd, pfds, nfds);
+                handle_closed_conn_(tmp_pfd.fd, pfds);
         }
-        std::cout << "poll_count: " << poll_count << std::endl
-            << "pfds.size(): " << pfds.size() << std::endl
-            << "nfds: " << nfds << std::endl;
-        
-        //
-        //
-        // handle existing connection
-        // receive data
-    }
 
+        std::cout << "poll_count: " << poll_count << std::endl
+            << "pfds.size(): " << pfds.size() << std::endl;
+    }
 }
 
 // handle new connections
 // connect (returns new socket)
 // create another slot for new connection
-void Socket::handle_new_conn_(std::vector<pollfd>& pfds, nfds_t& nfds) {
+void Socket::handle_new_conn_(std::vector<pollfd>& pfds) {
     int cfd = accept(m_sfd, m_curraddr->ai_addr, &m_curraddr->ai_addrlen); // blocks
 	if (cfd == -1)
         throw std::runtime_error(std::strerror(errno));
     pfds.push_back(pollfd{cfd, POLLIN, 0});
-    ++nfds;
 }
 
-void Socket::handle_existing_conn_(int fd) {
+void Socket::handle_existing_conn_(int fd, std::vector<pollfd>& pfds) {
     char buf[SOCKET_MSG_BUFFER];
     int count = recv(fd, static_cast<void*>(&buf), SOCKET_MSG_BUFFER, 0);
     if (count == -1)
         throw std::runtime_error(std::strerror(errno));
+    if (!count) // conn closed by client
+        return handle_closed_conn_(fd, pfds);
     buf[count] = '\0';
     std::cout << buf << std::endl;
 
 }
 
-// TODO: remove socket from pfds and reduce nfds
-void Socket::handle_closed_conn_(int cfd, std::vector<pollfd>& pfds, nfds_t& nfds) {
-    if (close(cfd) != 0)
-        std::cerr << "[Error] closing client fd " << fd << ": "
-           << std::strerror(errno) << std::endl;
-    std::cout << "closed conn fd: " << fd << std::endl;
+void Socket::handle_closed_conn_(int cfd, std::vector<pollfd>& pfds) {
+    if (close(cfd) != 0) {
+        std::cerr << "[Error] closing client fd " << cfd << ": "
+            << std::strerror(errno) << std::endl;
+        throw std::runtime_error(std::strerror(errno));
+    }
+
+    for (std::vector<pollfd>::iterator it = pfds.begin(); it != pfds.end(); ++it)
+        if ((*it).fd == cfd) {
+            pfds.erase(it);
+            break;
+        }
+    std::cout << "closed conn fd: " << cfd << std::endl;
 }
 
 // creates a socket and assigns it to member variable m_sfd
