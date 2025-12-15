@@ -3,12 +3,11 @@
 
 TEST(SocketTest, SocketInitializes) {
     try {
-        Socket s("localhost");
+        Socket s;
         s.start();
     } catch (std::exception& e) {
         FAIL() << e.what();
     }
-    std::cout << "hey" << std::endl;
     SUCCEED() << "Socket is initialized";
 }
     

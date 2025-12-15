@@ -31,7 +31,7 @@
  * @see https://man7.org/linux/man-pages/man2/socket.2.html
  */
 class Socket {
-    int m_sfd, m_cfd = -1;
+    int m_sfd = -1;
     struct addrinfo *m_addrinfo, *m_curraddr = nullptr;
 
     void create_bind_listen_(const std::string&);
@@ -50,7 +50,7 @@ public:
      *
      * @param addr The addres to listen to.
      */
-    Socket(const std::string& addr);
+    // Socket(const std::string& addr);
     /**
      * @brief Destroys the Socket object, and frees its resources.
      *

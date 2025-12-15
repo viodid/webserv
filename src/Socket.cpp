@@ -5,11 +5,6 @@ Socket::Socket()
     create_bind_listen_("127.0.0.1");
 }
 
-Socket::Socket(const std::string& addr)
-{
-    create_bind_listen_(addr);
-}
-
 Socket::~Socket()
 {
     freeaddrinfo(m_addrinfo);
@@ -21,15 +16,32 @@ Socket::~Socket()
 #endif
 }
 
+Socket::Socket(const Socket& cp) {
+    m_sfd = cp.m_sfd;
+    m_addrinfo = cp.m_addrinfo;
+    m_curraddr = cp.m_curraddr;
+}
+
+Socket& Socket::operator=(const Socket& cp) {
+    if (this != &cp) {
+        m_sfd = cp.m_sfd;
+        m_addrinfo = cp.m_addrinfo;
+        m_curraddr = cp.m_curraddr;
+    }
+    return *this;
+}
+
 void Socket::start() {
     pollfd pfd {m_sfd, POLLIN, 0};
     // initialize with just the socket fd
     std::vector<pollfd> pfds {pfd};
     
     for (;;) {
+
         nfds_t nfds = pfds.size();
         int poll_count = poll(pfds.data(), nfds, -1);
         if (poll_count == -1) throw std::runtime_error(std::strerror(errno));
+
         // check if event/s are from a new connection (main socket fd is hit)
         // or is an already opened one
         for (int i = 0; i < static_cast<int>(nfds); i++) {
