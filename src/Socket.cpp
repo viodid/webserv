@@ -79,6 +79,9 @@ void Socket::handle_existing_conn_(int fd, std::vector<pollfd>& pfds) {
         return handle_closed_conn_(fd, pfds);
     buf[count] = '\0';
     std::cout << buf << std::endl;
+    // TODO: implement complete send (not all the bytes may be send through the wire)
+    if (send(fd, "hi! i'm a web server :)\n", 24, 0) == -1)
+        throw std::runtime_error(std::strerror(errno));
 
 }
 
