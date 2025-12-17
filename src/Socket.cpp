@@ -71,8 +71,8 @@ void Socket::handle_new_conn_(std::vector<pollfd>& pfds) {
 }
 
 void Socket::handle_existing_conn_(int fd, std::vector<pollfd>& pfds) {
-    char buf[SOCKET_MSG_BUFFER];
-    int count = recv(fd, static_cast<void*>(&buf), SOCKET_MSG_BUFFER, 0);
+    char buf[SOCKET_MSG_BUFFER+1]; // +1 for null terminator if buffer is full
+    int count = recv(fd, buf, SOCKET_MSG_BUFFER, 0);
     if (count == -1)
         throw std::runtime_error(std::strerror(errno));
     if (!count) // conn closed by client
