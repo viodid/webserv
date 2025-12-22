@@ -2,32 +2,33 @@
 //
 #ifndef SOCKET_HPP
 #define SOCKET_HPP
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netdb.h>
-#include <poll.h>
-#include <unistd.h>
+#include <arpa/inet.h>
 #include <cerrno>
-#include <string>
-#include <sstream>
 #include <cstring>
 #include <iostream>
+#include <netdb.h>
+#include <poll.h>
+#include <sstream>
 #include <stdexcept>
+#include <string>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <vector>
 
 // TODO: document
-#define SOCKET_PORT         "5555"
-#define SOCKET_BACKLOG      4096
-#define SOCKET_MSG_BUFFER   100000 // 100 KB
+#define SOCKET_PORT "5555"
+#define SOCKET_BACKLOG 4096
+#define SOCKET_MSG_BUFFER 100000 // 100 KB
 
 /**
  * @class Socket
  * @brief A simple RAII wrapper for a network socket.
- * 
+ *
  * This class encapsulates a low-level socket file descriptor and manages its
  * lifetime. When a Socket object is created, it opens a socket. When it is
  * destroyed (goes out of scope), it automatically closes the socket.
- * 
+ *
  * @see https://man7.org/linux/man-pages/man2/socket.2.html
  */
 class Socket {

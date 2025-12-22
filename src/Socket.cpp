@@ -2,7 +2,7 @@
 
 Socket::Socket()
 {
-    create_bind_listen_("127.0.0.1");
+    create_bind_listen_("0.0.0.0");
 }
 
 Socket::~Socket()
@@ -11,18 +11,20 @@ Socket::~Socket()
     if (m_sfd != -1 && close(m_sfd) != 0)
         std::cerr << "[Error] closing sfd " << m_sfd << ": " << std::strerror(errno) << std::endl;
 #if DEBUG
-    else 
+    else
         std::cout << "[Debug] success close sfd " << m_sfd << std::endl;
 #endif
 }
 
-Socket::Socket(const Socket& cp) {
+Socket::Socket(const Socket& cp)
+{
     m_sfd = cp.m_sfd;
     m_addrinfo = cp.m_addrinfo;
     m_curraddr = cp.m_curraddr;
 }
 
-Socket& Socket::operator=(const Socket& cp) {
+Socket& Socket::operator=(const Socket& cp)
+{
     if (this != &cp) {
         m_sfd = cp.m_sfd;
         m_addrinfo = cp.m_addrinfo;
@@ -31,16 +33,17 @@ Socket& Socket::operator=(const Socket& cp) {
     return *this;
 }
 
-void Socket::start() {
-    pollfd pfd {m_sfd, POLLIN, 0};
+void Socket::start()
+{
+    pollfd pfd { m_sfd, POLLIN, 0 };
     // initialize with just the socket fd
-    std::vector<pollfd> pfds {pfd};
-    
-    for (;;) {
+    std::vector<pollfd> pfds { pfd };
 
+    for (;;) {
         nfds_t nfds = pfds.size();
         int poll_count = poll(pfds.data(), nfds, -1);
-        if (poll_count == -1) throw std::runtime_error(std::strerror(errno));
+        if (poll_count == -1)
+            throw std::runtime_error(std::strerror(errno));
 
         // check if event/s are from a new connection (main socket fd is hit)
         // or is an already opened one
@@ -54,24 +57,23 @@ void Socket::start() {
             } else if (tmp_pfd.revents & POLLHUP)
                 handle_closed_conn_(tmp_pfd.fd, pfds);
         }
-
         std::cout << "poll_count: " << poll_count << std::endl
-            << "pfds.size(): " << pfds.size() << std::endl;
+                  << "pfds.size(): " << pfds.size() << std::endl;
     }
 }
 
-// handle new connections
-// connect (returns new socket)
-// create another slot for new connection
-void Socket::handle_new_conn_(std::vector<pollfd>& pfds) {
+/* creates another slot (socket) for a new connection */
+void Socket::handle_new_conn_(std::vector<pollfd>& pfds)
+{
     int cfd = accept(m_sfd, m_curraddr->ai_addr, &m_curraddr->ai_addrlen); // blocks
-	if (cfd == -1)
+    if (cfd == -1)
         throw std::runtime_error(std::strerror(errno));
-    pfds.push_back(pollfd{cfd, POLLIN, 0});
+    pfds.push_back(pollfd { cfd, POLLIN, 0 });
 }
 
-void Socket::handle_existing_conn_(int fd, std::vector<pollfd>& pfds) {
-    char buf[SOCKET_MSG_BUFFER+1]; // +1 for null terminator if buffer is full
+void Socket::handle_existing_conn_(int fd, std::vector<pollfd>& pfds)
+{
+    char buf[SOCKET_MSG_BUFFER + 1]; // +1 for null terminator if buffer is full
     int count = recv(fd, buf, SOCKET_MSG_BUFFER, 0);
     if (count == -1)
         throw std::runtime_error(std::strerror(errno));
@@ -82,13 +84,13 @@ void Socket::handle_existing_conn_(int fd, std::vector<pollfd>& pfds) {
     // TODO: implement complete send (not all the bytes may be send through the wire)
     if (send(fd, "hi! i'm a web server :)\n", 24, 0) == -1)
         throw std::runtime_error(std::strerror(errno));
-
 }
 
-void Socket::handle_closed_conn_(int cfd, std::vector<pollfd>& pfds) {
+void Socket::handle_closed_conn_(int cfd, std::vector<pollfd>& pfds)
+{
     if (close(cfd) != 0) {
         std::cerr << "[Error] closing client fd " << cfd << ": "
-            << std::strerror(errno) << std::endl;
+                  << std::strerror(errno) << std::endl;
         throw std::runtime_error(std::strerror(errno));
     }
 
@@ -100,44 +102,70 @@ void Socket::handle_closed_conn_(int cfd, std::vector<pollfd>& pfds) {
     std::cout << "closed conn fd: " << cfd << std::endl;
 }
 
-// creates a socket and assigns it to member variable m_sfd
-// TODO: hardcode loopback addr?
-void Socket::create_bind_listen_(const std::string& addr) {
+// TODO: C++ it
+const char* inet_ntop2(void* addr, char* buf, size_t size)
+{
+    struct sockaddr_storage* sas = (sockaddr_storage*)addr;
+    struct sockaddr_in* sa4;
+    struct sockaddr_in6* sa6;
+    void* src;
 
-    struct addrinfo	hints;
+    switch (sas->ss_family) {
+    case AF_INET:
+        sa4 = (sockaddr_in*)addr;
+        src = &(sa4->sin_addr);
+        break;
+    case AF_INET6:
+        sa6 = (sockaddr_in6*)addr;
+        src = &(sa6->sin6_addr);
+        break;
+    default:
+        return NULL;
+    }
+
+    return inet_ntop(sas->ss_family, src, buf, size);
+}
+
+// TODO: handle different virtual hosts (every VH should be a listening posix socket with an interface:port pair)
+// this setup comes from a configuration file
+// creates a socket and assigns it to member variable m_sfd
+void Socket::create_bind_listen_(const std::string& addr)
+{
+
+    struct addrinfo hints;
 
     memset(&hints, 0, sizeof(hints));
-	hints.ai_family =  AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-	if (getaddrinfo(addr.c_str(), SOCKET_PORT, &hints, &m_addrinfo) != 0)
+    if (getaddrinfo(addr.c_str(), "http", &hints, &m_addrinfo) != 0)
         throw std::runtime_error(std::strerror(errno));
+    for (m_curraddr = m_addrinfo; m_curraddr != nullptr; m_curraddr = m_curraddr->ai_next)
+        std::cout << inet_ntop2((void*)m_curraddr->ai_addr, std::string().data(), m_curraddr->ai_addrlen) << "\n";
 
-	for (m_curraddr = m_addrinfo; m_curraddr != nullptr; m_curraddr = m_curraddr->ai_next)
-	{
-		m_sfd = socket(m_curraddr->ai_family, m_curraddr->ai_socktype, m_curraddr->ai_protocol);
-		if (m_sfd == -1)
-			continue;
+    for (m_curraddr = m_addrinfo; m_curraddr != nullptr; m_curraddr = m_curraddr->ai_next) {
+        m_sfd = socket(m_curraddr->ai_family, m_curraddr->ai_socktype, m_curraddr->ai_protocol);
+        if (m_sfd == -1)
+            continue;
         int yes = 1;
         if (setsockopt(m_sfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1) {
             close(m_sfd);
             throw std::runtime_error(std::strerror(errno));
         }
-		if (bind(m_sfd, m_curraddr->ai_addr, m_curraddr->ai_addrlen) == 0)
-		    break;
-		close(m_sfd);
+        if (bind(m_sfd, m_curraddr->ai_addr, m_curraddr->ai_addrlen) == 0)
+            break;
+        close(m_sfd);
         throw std::runtime_error(std::strerror(errno));
-	}
-	if (m_curraddr == nullptr)
+    }
+    if (m_curraddr == nullptr)
         throw std::runtime_error(std::strerror(errno));
-	if (listen(m_sfd, 0) == -1) {
-		close(m_sfd);
+    if (listen(m_sfd, 0) == -1) {
+        close(m_sfd);
         freeaddrinfo(m_addrinfo);
         throw std::runtime_error(std::strerror(errno));
-	}
+    }
 #if DEBUG
     std::cout << "[Debug] success listen on sfd " << m_sfd << std::endl;
 #endif
 }
-
