@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 
-Config create_config()
+const Config create_config()
 {
     return Config {
         std::vector<VirtualHost> {
@@ -27,6 +27,6 @@ Config create_config()
 
 TEST(ConfigTest, ConfigWorks)
 {
-    Config conf = create_config();
+    const Config conf = create_config();
     SUCCEED() << "Config file created";
 }

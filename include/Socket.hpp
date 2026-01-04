@@ -2,6 +2,7 @@
 //
 #ifndef SOCKET_HPP
 #define SOCKET_HPP
+#include "Config.hpp"
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
@@ -32,20 +33,12 @@
  * @see https://man7.org/linux/man-pages/man2/socket.2.html
  */
 class Socket {
-    int m_sfd = -1;
-    struct addrinfo *m_addrinfo, *m_curraddr = nullptr;
-
-    void create_bind_listen_(const std::string&);
-    void handle_new_conn_(std::vector<pollfd>& pfds);
-    void handle_existing_conn_(int fd, std::vector<pollfd>& pfds);
-    void handle_closed_conn_(int cfd, std::vector<pollfd>& pfds);
-
 public:
     /**
      * @brief Default initializes a Socket object and creates a POSIX socket ready to connect
      * to the default value **127.0.0.1**.
      */
-    Socket();
+    Socket(const Config config);
     /**
      * @brief Constructs a Socket object and creates a POSIX socket ready to connect
      *
@@ -64,5 +57,15 @@ public:
 
     // TODO: document
     void start();
+
+private:
+    const Config config_;
+    int sfd_ = -1;
+    struct addrinfo *addrinfo_, *curraddr_ = nullptr;
+
+    void createBindListen();
+    void handleNewConn(std::vector<pollfd>& pfds) const;
+    void handleExistingConn(int fd, std::vector<pollfd>& pfds) const;
+    void handleClosedConn(int cfd, std::vector<pollfd>& pfds) const;
 };
 #endif
