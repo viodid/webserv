@@ -128,6 +128,7 @@ const char* inet_ntop2(void* addr, char* buf, size_t size)
 
 // TODO: handle different virtual hosts (every VH should be a listening posix socket with an interface:port pair)
 // this setup comes from a configuration file
+//
 // creates a socket and assigns it to member variable m_sfd
 void Socket::create_bind_listen_(const std::string& addr)
 {
