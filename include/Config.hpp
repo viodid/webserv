@@ -12,6 +12,13 @@ enum AllowedMethods {
     DELETE,
 };
 
+enum ErrorPages {
+    E_400,
+    E_403,
+    E_404,
+    E_500,
+};
+
 struct Location {
     std::vector<AllowedMethods> allowed_methods;
     std::string redirection;
@@ -24,7 +31,7 @@ struct VirtualHost {
     std::string hostname;
     std::string port;
     size_t socket_size;
-    std::vector<std::pair<int, std::string>> error_pages;
+    std::vector<std::pair<ErrorPages, std::string>> error_pages;
     std::vector<Location> locations;
 };
 
