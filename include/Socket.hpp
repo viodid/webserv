@@ -17,10 +17,13 @@
 #include <unistd.h>
 #include <vector>
 
-// TODO: document
-#define SOCKET_PORT "5555"
 #define SOCKET_BACKLOG 4096
-#define SOCKET_MSG_BUFFER 100000 // 100 KB
+
+struct VirtualHostConfig {
+    const VirtualHost& vh;
+    int socket;
+    struct addrinfo* addrinfo;
+};
 
 /**
  * @class Socket
@@ -59,11 +62,12 @@ public:
     void start();
 
 private:
-    const Config config_;
-    int sfd_ = -1;
-    struct addrinfo *addrinfo_, *curraddr_ = nullptr;
+    std::vector<VirtualHostConfig> vh_config_;
+    // std::vector<int> sfd_; // TODO: delete - state is in VirtualHostConfig
+    // struct addrinfo *addrinfo_, *curraddr_ = nullptr;
 
-    void createBindListen();
+    void bindToVirtualHosts(const Config&);
+    void createBindListen(const VirtualHost& vh);
     void handleNewConn(std::vector<pollfd>& pfds) const;
     void handleExistingConn(int fd, std::vector<pollfd>& pfds) const;
     void handleClosedConn(int cfd, std::vector<pollfd>& pfds) const;

@@ -1,9 +1,10 @@
 #include "../include/Socket.hpp"
+#include <netdb.h>
+#include <vector>
 
 Socket::Socket(const Config config)
-    : config_(config)
 {
-    createBindListen();
+    bindToVirtualHosts(config);
 }
 
 Socket::~Socket()
@@ -21,7 +22,7 @@ Socket::Socket(const Socket& cp)
 {
     sfd_ = cp.sfd_;
     addrinfo_ = cp.addrinfo_;
-    curraddr_ = cp.curraddr_;
+    curraddr = cp.curraddr;
 }
 
 Socket& Socket::operator=(const Socket& cp)
@@ -29,13 +30,14 @@ Socket& Socket::operator=(const Socket& cp)
     if (this != &cp) {
         sfd_ = cp.sfd_;
         addrinfo_ = cp.addrinfo_;
-        curraddr_ = cp.curraddr_;
+        curraddr = cp.curraddr;
     }
     return *this;
 }
 
 void Socket::start()
 {
+    // TODO: initialize with all the virutal hosts sockets
     pollfd pfd { sfd_, POLLIN, 0 };
     // initialize with just the socket fd
     std::vector<pollfd> pfds { pfd };
@@ -66,7 +68,7 @@ void Socket::start()
 /* creates another slot (socket) for a new connection */
 void Socket::handleNewConn(std::vector<pollfd>& pfds) const
 {
-    int cfd = accept(sfd_, curraddr_->ai_addr, &curraddr_->ai_addrlen); // blocks
+    int cfd = accept(sfd_, curraddr->ai_addr, &curraddr->ai_addrlen); // blocks
     if (cfd == -1)
         throw std::runtime_error(std::strerror(errno));
     pfds.push_back(pollfd { cfd, POLLIN, 0 });
@@ -132,42 +134,57 @@ const char* inet_ntop2(void* addr, char* buf, size_t size)
 // this setup comes from a configuration file
 //
 // creates a socket and assigns it to member variable m_sfd
-void Socket::createBindListen()
-{
 
+void Socket::bindToVirtualHosts(const Config& conf)
+{
+    for (std::vector<VirtualHost>::const_iterator vh = conf.virtual_hosts.begin();
+        vh != conf.virtual_hosts.end();
+        vh++) {
+        createBindListen(*vh);
+    }
+}
+
+// TODO: test refactor
+void Socket::createBindListen(const VirtualHost& vh)
+{
+    struct VirtualHostConfig vh_config { vh, -1, nullptr, nullptr };
     struct addrinfo hints;
+    struct addrinfo* curraddr = nullptr;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    if (getaddrinfo("127.0.0.1", "http", &hints, &addrinfo_) != 0)
+    if (getaddrinfo(vh.hostname.data(), vh.port.data(), &hints, &vh.addrinfo) != 0)
         throw std::runtime_error(std::strerror(errno));
-    for (curraddr_ = addrinfo_; curraddr_ != nullptr; curraddr_ = curraddr_->ai_next)
-        std::cout << inet_ntop2((void*)curraddr_->ai_addr, std::string().data(), curraddr_->ai_addrlen) << "\n";
 
-    for (curraddr_ = addrinfo_; curraddr_ != nullptr; curraddr_ = curraddr_->ai_next) {
-        sfd_ = socket(curraddr_->ai_family, curraddr_->ai_socktype, curraddr_->ai_protocol);
-        if (sfd_ == -1)
+    for (curraddr = vh.addrinfo; curraddr != nullptr; curraddr = curraddr->ai_next)
+        std::cout << inet_ntop2((void*)curraddr->ai_addr, std::string().data(), curraddr->ai_addrlen) << "\n";
+
+    for (curraddr = vh.addrinfo; curraddr != nullptr; curraddr = curraddr->ai_next) {
+        vh_config.socket = socket(curraddr->ai_family, curraddr->ai_socktype, curraddr->ai_protocol);
+        if (vh_config.socket == -1)
             continue;
         int yes = 1;
-        if (setsockopt(sfd_, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1) {
-            close(sfd_);
+        if (setsockopt(vh_config.socket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1) {
+            close(vh_config.socket);
             throw std::runtime_error(std::strerror(errno));
         }
-        if (bind(sfd_, curraddr_->ai_addr, curraddr_->ai_addrlen) == 0)
+        if (bind(vh_config.socket, curraddr->ai_addr, curraddr->ai_addrlen) == 0)
             break;
-        close(sfd_);
+        close(vh_config.socket);
         throw std::runtime_error(std::strerror(errno));
     }
-    if (curraddr_ == nullptr)
+    if (curraddr == nullptr)
         throw std::runtime_error(std::strerror(errno));
-    if (listen(sfd_, 0) == -1) {
-        close(sfd_);
-        freeaddrinfo(addrinfo_);
+    if (listen(vh_config.socket, 0) == -1) {
+        close(vh_config.socket);
+        freeaddrinfo(vh.addrinfo);
         throw std::runtime_error(std::strerror(errno));
     }
+
+    vh_config_.push_back(vh_config);
 #if DEBUG
     std::cout << "[Debug] success listen on sfd " << m_sfd << std::endl;
 #endif
