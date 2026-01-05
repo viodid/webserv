@@ -15,6 +15,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <utility>
 #include <vector>
 
 #define SOCKET_BACKLOG 4096
@@ -22,6 +23,7 @@
 struct VirtualHostConfig {
     const VirtualHost& vh;
     int socket;
+    bool is_vh_socket;
     struct addrinfo* addrinf;
     struct addrinfo* curraddr;
 };
@@ -69,7 +71,7 @@ private:
 
     void bindToVirtualHosts(const Config&);
     void createBindListen(const VirtualHost& vh);
-    void handleNewConn(std::vector<pollfd>& pfds, const VirtualHostConfig& vh_config) const;
+    int handleNewConn(const VirtualHostConfig& vh_config) const;
     void handleExistingConn(int fd, std::vector<pollfd>& pfds) const;
     void handleClosedConn(int cfd, std::vector<pollfd>& pfds) const;
 };

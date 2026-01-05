@@ -33,38 +33,43 @@ Socket& Socket::operator=(const Socket& cp)
 
 void Socket::start()
 {
-    std::vector<pollfd> pfds;
+    std::vector<std::pair<pollfd, VirtualHostConfig>> pfds;
     for (std::vector<VirtualHostConfig>::const_iterator it = vh_config_.begin();
         it != vh_config_.end();
         ++it) {
         if (it->socket != -1) {
-            pfds.push_back(pollfd { it->socket, POLLIN, 0 });
+            pfds.push_back({ pollfd { it->socket, POLLIN, 0 }, *it });
         }
     }
 
     for (;;) {
         nfds_t nfds = pfds.size();
-        int poll_count = poll(pfds.data(), nfds, -1);
+        std::vector<pollfd> arr_fds;
+        for (size_t i = 0; i < nfds; ++i)
+            arr_fds.push_back(pfds[i].first);
+        int poll_count = poll(arr_fds.data(), nfds, -1);
         if (poll_count == -1)
             throw std::runtime_error(std::strerror(errno));
 
         // check if event/s are from a new connection (main socket from VH is hit)
         // or is an already opened one
-        for (int i = 0; i < static_cast<int>(nfds); i++) {
-            pollfd tmp_pfd = pfds[i];
-            if (tmp_pfd.revents & POLLIN) {
-                bool is_new_conn = false;
-                for (std::vector<VirtualHostConfig>::const_iterator it = vh_config_.begin();
-                    it != vh_config_.end();
-                    ++it) {
-                    if (tmp_pfd.fd == it->socket) {
-                        handleNewConn(pfds, *it);
-                        is_new_conn = true;
-                        break;
-                    }
-                }
-                if (!is_new_conn)
-                    handleExistingConn(tmp_pfd.fd, pfds);
+        for (std::vector<std::pair<pollfd, VirtualHostConfig>>::const_iterator tmp_pair = pfds.begin();
+            tmp_pair != pfds.end();
+            ++tmp_pair) {
+            if (tmp_pair->first.revents & POLLIN) {
+                if (tmp_pair->second.is_vh_socket) {
+                    int cfd = handleNewConn(tmp_pair->second);
+                    pfds.push_back(
+                        { pollfd { cfd, POLLIN, 0 },
+                            VirtualHostConfig {
+                                tmp_pair->second.vh,
+                                cfd,
+                                false,
+                                nullptr,
+                                nullptr } });
+                } else
+                    // TODO: from here
+                    handleExistingConn(*tmp_pair, pfds);
             } else if (tmp_pfd.revents & POLLHUP)
                 handleClosedConn(tmp_pfd.fd, pfds);
         }
@@ -74,26 +79,26 @@ void Socket::start()
 }
 
 /* creates another slot (socket) for a new connection */
-void Socket::handleNewConn(std::vector<pollfd>& pfds, const VirtualHostConfig& vh_c) const
+int Socket::handleNewConn(const VirtualHostConfig& vh_c) const
 {
     int cfd = accept(vh_c.socket, vh_c.curraddr->ai_addr, &vh_c.curraddr->ai_addrlen); // blocks
     if (cfd == -1)
         throw std::runtime_error(std::strerror(errno));
-    pfds.push_back(pollfd { cfd, POLLIN, 0 });
+    return cfd;
 }
 
-void Socket::handleExistingConn(int fd, std::vector<pollfd>& pfds) const
+void Socket::handleExistingConn(std::pair<pollfd, VirtualHostConfig> tmp_pair, std::vector<pollfd>& pfds) const
 {
     char buf[SOCKET_MSG_BUFFER + 1]; // +1 for null terminator if buffer is full
-    int count = recv(fd, buf, SOCKET_MSG_BUFFER, 0);
+    int count = recv(cfd, buf, SOCKET_MSG_BUFFER, 0);
     if (count == -1)
         throw std::runtime_error(std::strerror(errno));
     if (!count) // conn closed by client
-        return handleClosedConn(fd, pfds);
+        return handleClosedConn(cfd, pfds);
     buf[count] = '\0';
     std::cout << buf << std::endl;
     // TODO: implement complete send (not all the bytes may be send through the wire)
-    if (send(fd, "hi! i'm a web server :)\n", 24, 0) == -1)
+    if (send(cfd, "hi! i'm a web server :)\n", 24, 0) == -1)
         throw std::runtime_error(std::strerror(errno));
 }
 
@@ -155,7 +160,7 @@ void Socket::bindToVirtualHosts(const Config& conf)
 // TODO: test refactor
 void Socket::createBindListen(const VirtualHost& vh)
 {
-    struct VirtualHostConfig vh_c { vh, -1, nullptr, nullptr };
+    struct VirtualHostConfig vh_c { vh, -1, true, nullptr, nullptr };
     struct addrinfo hints;
 
     memset(&hints, 0, sizeof(hints));
