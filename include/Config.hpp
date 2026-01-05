@@ -36,7 +36,7 @@ struct VirtualHost {
 };
 
 struct Config {
-    const std::vector<VirtualHost> virutal_hosts;
+    const std::vector<VirtualHost> virtual_hosts;
 };
 
 #endif

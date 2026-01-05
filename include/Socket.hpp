@@ -22,7 +22,8 @@
 struct VirtualHostConfig {
     const VirtualHost& vh;
     int socket;
-    struct addrinfo* addrinfo;
+    struct addrinfo* addrinf;
+    struct addrinfo* curraddr;
 };
 
 /**
@@ -68,7 +69,7 @@ private:
 
     void bindToVirtualHosts(const Config&);
     void createBindListen(const VirtualHost& vh);
-    void handleNewConn(std::vector<pollfd>& pfds) const;
+    void handleNewConn(std::vector<pollfd>& pfds, const VirtualHostConfig& vh_config) const;
     void handleExistingConn(int fd, std::vector<pollfd>& pfds) const;
     void handleClosedConn(int cfd, std::vector<pollfd>& pfds) const;
 };

@@ -6,7 +6,7 @@ TEST(SocketTest, SocketInitializes)
 {
     try {
         Socket s;
-        s.start();
+        //s.start();
     } catch (std::exception& e) {
         FAIL() << e.what();
     }

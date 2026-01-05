@@ -9,38 +9,38 @@ Socket::Socket(const Config config)
 
 Socket::~Socket()
 {
-    freeaddrinfo(addrinfo_);
-    if (sfd_ != -1 && close(sfd_) != 0)
-        std::cerr << "[Error] closing sfd " << sfd_ << ": " << std::strerror(errno) << std::endl;
+    for (std::vector<VirtualHostConfig>::iterator it = vh_config_.begin();
+        it != vh_config_.end();
+        ++it) {
+        freeaddrinfo(it->addrinf);
+        if (it->socket != -1 && close(it->socket) != 0)
+            std::cerr << "[Error] closing sfd " << it->socket << ": " << std::strerror(errno) << std::endl;
+    }
+
 #if DEBUG
-    else
-        std::cout << "[Debug] success close sfd " << m_sfd << std::endl;
+    else std::cout << "[Debug] success close sfd " << m_sfd << std::endl;
 #endif
 }
 
-Socket::Socket(const Socket& cp)
-{
-    sfd_ = cp.sfd_;
-    addrinfo_ = cp.addrinfo_;
-    curraddr = cp.curraddr;
-}
+Socket::Socket(const Socket& cp) { vh_config_ = cp.vh_config_; }
 
 Socket& Socket::operator=(const Socket& cp)
 {
-    if (this != &cp) {
-        sfd_ = cp.sfd_;
-        addrinfo_ = cp.addrinfo_;
-        curraddr = cp.curraddr;
-    }
+    if (this != &cp)
+        vh_config_ = cp.vh_config_;
     return *this;
 }
 
 void Socket::start()
 {
-    // TODO: initialize with all the virutal hosts sockets
-    pollfd pfd { sfd_, POLLIN, 0 };
-    // initialize with just the socket fd
-    std::vector<pollfd> pfds { pfd };
+    std::vector<pollfd> pfds;
+    for (std::vector<VirtualHostConfig>::const_iterator it = vh_config_.begin();
+        it != vh_config_.end();
+        ++it) {
+        if (it->socket != -1) {
+            pfds.push_back(pollfd { it->socket, POLLIN, 0 });
+        }
+    }
 
     for (;;) {
         nfds_t nfds = pfds.size();
@@ -48,14 +48,22 @@ void Socket::start()
         if (poll_count == -1)
             throw std::runtime_error(std::strerror(errno));
 
-        // check if event/s are from a new connection (main socket fd is hit)
+        // check if event/s are from a new connection (main socket from VH is hit)
         // or is an already opened one
         for (int i = 0; i < static_cast<int>(nfds); i++) {
             pollfd tmp_pfd = pfds[i];
             if (tmp_pfd.revents & POLLIN) {
-                if (tmp_pfd.fd == sfd_)
-                    handleNewConn(pfds);
-                else
+                bool is_new_conn = false;
+                for (std::vector<VirtualHostConfig>::const_iterator it = vh_config_.begin();
+                    it != vh_config_.end();
+                    ++it) {
+                    if (tmp_pfd.fd == it->socket) {
+                        handleNewConn(pfds, *it);
+                        is_new_conn = true;
+                        break;
+                    }
+                }
+                if (!is_new_conn)
                     handleExistingConn(tmp_pfd.fd, pfds);
             } else if (tmp_pfd.revents & POLLHUP)
                 handleClosedConn(tmp_pfd.fd, pfds);
@@ -66,9 +74,9 @@ void Socket::start()
 }
 
 /* creates another slot (socket) for a new connection */
-void Socket::handleNewConn(std::vector<pollfd>& pfds) const
+void Socket::handleNewConn(std::vector<pollfd>& pfds, const VirtualHostConfig& vh_c) const
 {
-    int cfd = accept(sfd_, curraddr->ai_addr, &curraddr->ai_addrlen); // blocks
+    int cfd = accept(vh_c.socket, vh_c.curraddr->ai_addr, &vh_c.curraddr->ai_addrlen); // blocks
     if (cfd == -1)
         throw std::runtime_error(std::strerror(errno));
     pfds.push_back(pollfd { cfd, POLLIN, 0 });
@@ -147,44 +155,43 @@ void Socket::bindToVirtualHosts(const Config& conf)
 // TODO: test refactor
 void Socket::createBindListen(const VirtualHost& vh)
 {
-    struct VirtualHostConfig vh_config { vh, -1, nullptr, nullptr };
+    struct VirtualHostConfig vh_c { vh, -1, nullptr, nullptr };
     struct addrinfo hints;
-    struct addrinfo* curraddr = nullptr;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    if (getaddrinfo(vh.hostname.data(), vh.port.data(), &hints, &vh.addrinfo) != 0)
+    if (getaddrinfo(vh.hostname.data(), vh.port.data(), &hints, &vh_c.addrinf) != 0)
         throw std::runtime_error(std::strerror(errno));
 
-    for (curraddr = vh.addrinfo; curraddr != nullptr; curraddr = curraddr->ai_next)
-        std::cout << inet_ntop2((void*)curraddr->ai_addr, std::string().data(), curraddr->ai_addrlen) << "\n";
+    for (vh_c.curraddr = vh_c.addrinf; vh_c.curraddr != nullptr; vh_c.curraddr = vh_c.curraddr->ai_next)
+        std::cout << inet_ntop2((void*)vh_c.curraddr->ai_addr, std::string().data(), vh_c.curraddr->ai_addrlen) << "\n";
 
-    for (curraddr = vh.addrinfo; curraddr != nullptr; curraddr = curraddr->ai_next) {
-        vh_config.socket = socket(curraddr->ai_family, curraddr->ai_socktype, curraddr->ai_protocol);
-        if (vh_config.socket == -1)
+    for (vh_c.curraddr = vh_c.addrinf; vh_c.curraddr != nullptr; vh_c.curraddr = vh_c.curraddr->ai_next) {
+        vh_c.socket = socket(vh_c.curraddr->ai_family, vh_c.curraddr->ai_socktype, vh_c.curraddr->ai_protocol);
+        if (vh_c.socket == -1)
             continue;
         int yes = 1;
-        if (setsockopt(vh_config.socket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1) {
-            close(vh_config.socket);
+        if (setsockopt(vh_c.socket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1) {
+            close(vh_c.socket);
             throw std::runtime_error(std::strerror(errno));
         }
-        if (bind(vh_config.socket, curraddr->ai_addr, curraddr->ai_addrlen) == 0)
+        if (bind(vh_c.socket, vh_c.curraddr->ai_addr, vh_c.curraddr->ai_addrlen) == 0)
             break;
-        close(vh_config.socket);
+        close(vh_c.socket);
         throw std::runtime_error(std::strerror(errno));
     }
-    if (curraddr == nullptr)
+    if (vh_c.curraddr == nullptr)
         throw std::runtime_error(std::strerror(errno));
-    if (listen(vh_config.socket, 0) == -1) {
-        close(vh_config.socket);
-        freeaddrinfo(vh.addrinfo);
+    if (listen(vh_c.socket, 0) == -1) {
+        close(vh_c.socket);
+        freeaddrinfo(vh_c.addrinf);
         throw std::runtime_error(std::strerror(errno));
     }
 
-    vh_config_.push_back(vh_config);
+    vh_config_.push_back(vh_c);
 #if DEBUG
     std::cout << "[Debug] success listen on sfd " << m_sfd << std::endl;
 #endif
