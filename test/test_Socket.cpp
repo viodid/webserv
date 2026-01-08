@@ -2,11 +2,13 @@
 #include "../include/Socket.hpp"
 #include <gtest/gtest.h>
 
+const Config create_config();
+
 TEST(SocketTest, SocketInitializes)
 {
     try {
-        Socket s;
-        //s.start();
+        Socket s(create_config());
+        s.start();
     } catch (std::exception& e) {
         FAIL() << e.what();
     }

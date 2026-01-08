@@ -59,20 +59,18 @@ public:
      */
     ~Socket();
     Socket(const Socket&);
-    Socket& operator=(const Socket&);
+    // assignment operator is implicitly deleted bc const member variables
 
     // TODO: document
     void start();
 
 private:
     std::vector<std::pair<VirtualHostConfig, pollfd>> vh_config_;
-    // std::vector<int> sfd_; // TODO: delete - state is in VirtualHostConfig
-    // struct addrinfo *addrinfo_, *curraddr_ = nullptr;
 
     void bindToVirtualHosts(const Config&);
     void createBindListen(const VirtualHost& vh);
     void handleNewConn(const VirtualHostConfig& vh);
-    void handleExistingConn(const std::pair<VirtualHostConfig, pollfd>& tmp_pair);
-    void handleClosedConn(int cfd);
+    void handleExistingConn(std::pair<VirtualHostConfig, pollfd>& tmp_pair);
+    void handleClosedConn(std::pair<VirtualHostConfig, pollfd>& tmp_pair);
 };
 #endif
