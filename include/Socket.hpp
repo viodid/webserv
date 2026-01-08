@@ -65,14 +65,14 @@ public:
     void start();
 
 private:
-    std::vector<VirtualHostConfig> vh_config_;
+    std::vector<std::pair<VirtualHostConfig, pollfd>> vh_config_;
     // std::vector<int> sfd_; // TODO: delete - state is in VirtualHostConfig
     // struct addrinfo *addrinfo_, *curraddr_ = nullptr;
 
     void bindToVirtualHosts(const Config&);
     void createBindListen(const VirtualHost& vh);
-    int handleNewConn(const VirtualHostConfig& vh_config) const;
-    void handleExistingConn(int fd, std::vector<pollfd>& pfds) const;
-    void handleClosedConn(int cfd, std::vector<pollfd>& pfds) const;
+    void handleNewConn(const VirtualHostConfig& vh);
+    void handleExistingConn(const std::pair<VirtualHostConfig, pollfd>& tmp_pair);
+    void handleClosedConn(int cfd);
 };
 #endif

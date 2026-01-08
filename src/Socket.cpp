@@ -9,12 +9,12 @@ Socket::Socket(const Config config)
 
 Socket::~Socket()
 {
-    for (std::vector<VirtualHostConfig>::iterator it = vh_config_.begin();
+    for (std::vector<std::pair<VirtualHostConfig, pollfd>>::iterator it = vh_config_.begin();
         it != vh_config_.end();
         ++it) {
-        freeaddrinfo(it->addrinf);
-        if (it->socket != -1 && close(it->socket) != 0)
-            std::cerr << "[Error] closing sfd " << it->socket << ": " << std::strerror(errno) << std::endl;
+        freeaddrinfo(it->first.addrinf);
+        if (it->first.socket != -1 && close(it->first.socket) != 0)
+            std::cerr << "[Error] closing sfd " << it->first.socket << ": " << std::strerror(errno) << std::endl;
     }
 
 #if DEBUG
@@ -33,86 +33,77 @@ Socket& Socket::operator=(const Socket& cp)
 
 void Socket::start()
 {
-    std::vector<std::pair<pollfd, VirtualHostConfig>> pfds;
-    for (std::vector<VirtualHostConfig>::const_iterator it = vh_config_.begin();
-        it != vh_config_.end();
-        ++it) {
-        if (it->socket != -1) {
-            pfds.push_back({ pollfd { it->socket, POLLIN, 0 }, *it });
-        }
-    }
-
     for (;;) {
-        nfds_t nfds = pfds.size();
+        nfds_t nfds = vh_config_.size();
         std::vector<pollfd> arr_fds;
         for (size_t i = 0; i < nfds; ++i)
-            arr_fds.push_back(pfds[i].first);
+            arr_fds.push_back(vh_config_[i].second);
         int poll_count = poll(arr_fds.data(), nfds, -1);
         if (poll_count == -1)
             throw std::runtime_error(std::strerror(errno));
 
         // check if event/s are from a new connection (main socket from VH is hit)
         // or is an already opened one
-        for (std::vector<std::pair<pollfd, VirtualHostConfig>>::const_iterator tmp_pair = pfds.begin();
-            tmp_pair != pfds.end();
+        for (std::vector<std::pair<VirtualHostConfig, pollfd>>::const_iterator tmp_pair = vh_config_.begin();
+            tmp_pair != vh_config_.end();
             ++tmp_pair) {
-            if (tmp_pair->first.revents & POLLIN) {
-                if (tmp_pair->second.is_vh_socket) {
-                    int cfd = handleNewConn(tmp_pair->second);
-                    pfds.push_back(
-                        { pollfd { cfd, POLLIN, 0 },
-                            VirtualHostConfig {
-                                tmp_pair->second.vh,
-                                cfd,
-                                false,
-                                nullptr,
-                                nullptr } });
-                } else
+            if (tmp_pair->second.revents & POLLIN) {
+                if (tmp_pair->first.is_vh_socket)
+                    handleNewConn(tmp_pair->first);
+                else
                     // TODO: from here
-                    handleExistingConn(*tmp_pair, pfds);
-            } else if (tmp_pfd.revents & POLLHUP)
-                handleClosedConn(tmp_pfd.fd, pfds);
+                    handleExistingConn(*tmp_pair);
+            } else if (tmp_pair->second.revents & POLLHUP)
+                handleClosedConn(tmp_pair->first.socket);
         }
         std::cout << "poll_count: " << poll_count << std::endl
-                  << "pfds.size(): " << pfds.size() << std::endl;
+                  << "pfds.size(): " << vh_config_.size() << std::endl;
     }
 }
 
 /* creates another slot (socket) for a new connection */
-int Socket::handleNewConn(const VirtualHostConfig& vh_c) const
+void Socket::handleNewConn(const VirtualHostConfig& vh)
 {
-    int cfd = accept(vh_c.socket, vh_c.curraddr->ai_addr, &vh_c.curraddr->ai_addrlen); // blocks
+    int cfd = accept(vh.socket, vh.curraddr->ai_addr, &vh.curraddr->ai_addrlen); // blocks
     if (cfd == -1)
         throw std::runtime_error(std::strerror(errno));
-    return cfd;
+    vh_config_.push_back(
+        { VirtualHostConfig {
+              vh.vh,
+              cfd,
+              false,
+              nullptr,
+              nullptr },
+            pollfd { cfd, POLLIN, 0 } });
 }
 
-void Socket::handleExistingConn(std::pair<pollfd, VirtualHostConfig> tmp_pair, std::vector<pollfd>& pfds) const
+void Socket::handleExistingConn(const std::pair<VirtualHostConfig, pollfd>& tmp_pair)
 {
-    char buf[SOCKET_MSG_BUFFER + 1]; // +1 for null terminator if buffer is full
-    int count = recv(cfd, buf, SOCKET_MSG_BUFFER, 0);
+    char buf[tmp_pair.first.vh.socket_size + 1]; // +1 for null terminator if buffer is full
+    int count = recv(tmp_pair.first.socket, buf, tmp_pair.first.vh.socket_size, 0);
     if (count == -1)
         throw std::runtime_error(std::strerror(errno));
     if (!count) // conn closed by client
-        return handleClosedConn(cfd, pfds);
+        return handleClosedConn(tmp_pair.first.socket);
     buf[count] = '\0';
     std::cout << buf << std::endl;
     // TODO: implement complete send (not all the bytes may be send through the wire)
-    if (send(cfd, "hi! i'm a web server :)\n", 24, 0) == -1)
+    if (send(tmp_pair.first.socket, "hi! i'm a web server :)\n", 24, 0) == -1)
         throw std::runtime_error(std::strerror(errno));
 }
 
-void Socket::handleClosedConn(int cfd, std::vector<pollfd>& pfds) const
+void Socket::handleClosedConn(int cfd)
 {
     if (close(cfd) != 0) {
         std::cerr << "[Error] closing client fd " << cfd << ": "
                   << std::strerror(errno) << std::endl;
         throw std::runtime_error(std::strerror(errno));
     }
-
-    for (std::vector<pollfd>::iterator it = pfds.begin(); it != pfds.end(); ++it) {
-        if ((*it).fd == cfd) {
-            pfds.erase(it);
+    for (std::vector<std::pair<VirtualHostConfig, pollfd>>::iterator it = vh_config_.begin();
+        it != vh_config_.end();
+        ++it) {
+        if ((*it).first.socket == cfd) {
+            vh_config_.erase(it);
             break;
         }
     }
@@ -196,7 +187,7 @@ void Socket::createBindListen(const VirtualHost& vh)
         throw std::runtime_error(std::strerror(errno));
     }
 
-    vh_config_.push_back(vh_c);
+    vh_config_.push_back({ vh_c, { vh_c.socket, POLLIN, 0 } });
 #if DEBUG
     std::cout << "[Debug] success listen on sfd " << m_sfd << std::endl;
 #endif
