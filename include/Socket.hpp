@@ -70,7 +70,7 @@ private:
     void bindToVirtualHosts(const Config&);
     void createBindListen(const VirtualHost& vh);
     void handleNewConn(const VirtualHostConfig& vh);
-    void handleExistingConn(std::pair<VirtualHostConfig, pollfd>& tmp_pair);
+    void handleClientData(std::pair<VirtualHostConfig, pollfd>& tmp_pair);
     void handleClosedConn(std::pair<VirtualHostConfig, pollfd>& tmp_pair);
 };
 #endif

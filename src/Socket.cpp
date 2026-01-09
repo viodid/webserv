@@ -31,27 +31,26 @@ void Socket::start()
 {
     for (;;) {
         nfds_t nfds = vh_config_.size();
-        std::vector<pollfd> arr_fds;
+        std::vector<pollfd> fds;
         for (size_t i = 0; i < nfds; ++i)
-            arr_fds.push_back(vh_config_[i].second);
-        int poll_count = poll(arr_fds.data(), nfds, -1);
+            fds.push_back(vh_config_[i].second);
+        int poll_count = poll(fds.data(), nfds, -1);
         if (poll_count == -1)
             throw std::runtime_error(std::strerror(errno));
 
         // check if event/s are from a new connection (main socket from VH is hit)
-        // or is an already opened one
-        for (std::vector<std::pair<VirtualHostConfig, pollfd>>::iterator tmp_pair = vh_config_.begin();
-            tmp_pair != vh_config_.end();
-            ++tmp_pair) {
-            if (tmp_pair->first.socket == -1)
+        // or is an alrea_cpy opened one
+        for (size_t i = 0; i < fds.size(); i++) {
+            if (fds[i].revents == 0 || fds[i].fd == -1)
                 continue;
-            if (tmp_pair->second.revents & POLLIN) {
-                if (tmp_pair->first.is_vh_socket)
-                    handleNewConn(tmp_pair->first);
+            std::pair<VirtualHostConfig, pollfd>& tmp_pair = vh_config_[i];
+            if (fds[i].revents & POLLIN) {
+                if (tmp_pair.first.is_vh_socket)
+                    handleNewConn(tmp_pair.first);
                 else
-                    handleExistingConn(*tmp_pair);
-            } else if (tmp_pair->second.revents & POLLHUP)
-                handleClosedConn(*tmp_pair);
+                    handleClientData(tmp_pair);
+            } else if (fds[i].revents & POLLHUP)
+                handleClosedConn(tmp_pair);
         }
         std::cout << "poll_count: " << poll_count << std::endl
                   << "pfds.size(): " << vh_config_.size() << std::endl;
@@ -74,7 +73,7 @@ void Socket::handleNewConn(const VirtualHostConfig& vh)
             pollfd { cfd, POLLIN, 0 } });
 }
 
-void Socket::handleExistingConn(std::pair<VirtualHostConfig, pollfd>& tmp_pair)
+void Socket::handleClientData(std::pair<VirtualHostConfig, pollfd>& tmp_pair)
 {
     std::vector<char> buf(tmp_pair.first.vh.socket_size + 1); // +1 for null terminator if buffer is full
     int count = recv(tmp_pair.first.socket, buf.data(), buf.size(), 0);
@@ -125,11 +124,6 @@ const char* inet_ntop2(void* addr, char* buf, size_t size)
 
     return inet_ntop(sas->ss_family, src, buf, size);
 }
-
-// TODO: handle different virtual hosts (every VH should be a listening posix socket with an interface:port pair)
-// this setup comes from a configuration file
-//
-// creates a socket and assigns it to member variable m_sfd
 
 void Socket::bindToVirtualHosts(const Config& conf)
 {
