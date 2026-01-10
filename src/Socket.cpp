@@ -1,5 +1,6 @@
 #include "../include/Socket.hpp"
 #include <netdb.h>
+#include <sys/socket.h>
 #include <vector>
 
 Socket::Socket(const Config config)
