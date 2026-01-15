@@ -1,6 +1,4 @@
-#include <sys/socket.h>
-#include <unistd.h>
-#include <vector>
+#include "../include/Utils.hpp"
 
 // Takes a file descriptor and a buffer (as a vector)
 // and returns the number of bytes read or -1 in case of error

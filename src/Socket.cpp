@@ -76,14 +76,15 @@ void Socket::handleNewConn(const VirtualHostConfig& vh)
 
 void Socket::handleClientData(std::pair<VirtualHostConfig, pollfd>& tmp_pair)
 {
-    std::vector<char> buf(tmp_pair.first.vh.socket_size + 1); // +1 for null terminator if buffer is full
-    int count = recv(tmp_pair.first.socket, buf.data(), buf.size(), 0);
+    std::vector<char> buf(1);
+    int count = recv(tmp_pair.first.socket, buf.data(), buf.size(), MSG_PEEK | MSG_DONTWAIT);
     if (count == -1)
         throw std::runtime_error(std::strerror(errno));
     if (!count) // conn closed by client
         return handleClosedConn(tmp_pair);
-    buf[count] = '\0';
-    std::cout << buf.data() << std::endl;
+    std::vector<char> content;
+    readFromFile(tmp_pair.first.socket, content);
+    std::cout << content.data() << std::endl;
     // TODO: implement complete send (not all the bytes may be send through the wire)
     if (send(tmp_pair.first.socket, "hi! i'm a web server :)\n", 24, 0) == -1)
         throw std::runtime_error(std::strerror(errno));

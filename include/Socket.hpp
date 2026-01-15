@@ -3,6 +3,7 @@
 #ifndef SOCKET_HPP
 #define SOCKET_HPP
 #include "Config.hpp"
+#include "Utils.hpp"
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
