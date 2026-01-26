@@ -74,15 +74,31 @@ void Socket::handleNewConn(const VirtualHostConfig& vh)
             pollfd { cfd, POLLIN, 0 } });
 }
 
+// TODO: primeagen 43:59
 void Socket::handleClientData(std::pair<VirtualHostConfig, pollfd>& tmp_pair)
 {
-    std::vector<char> buf(SOCKET_READ_SIZE);
-    int count = recv(tmp_pair.first.socket, buf.data(), SOCKET_READ_SIZE, 0);
-    if (count == -1)
-        throw std::runtime_error(std::strerror(errno));
-    if (!count) // conn closed by client
-        return handleClosedConn(tmp_pair);
-    std::cout << buf.data() << std::endl;
+    std::vector<char> buf(READ_SOCKET_SIZE);
+    std::vector<char> data;
+    data.reserve(READ_SOCKET_SIZE);
+    int count = 0;
+    while ((count = recv(tmp_pair.first.socket, buf.data(), READ_SOCKET_SIZE, MSG_DONTWAIT))) {
+        std::cout << "count = " << count << " - errno: " << errno << std::endl;
+        if (count == 0) // conn closed by client
+            return handleClosedConn(tmp_pair);
+        if (count == -1) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                break;
+            else
+                throw std::runtime_error(std::strerror(errno));
+        }
+        data.insert(data.end(), buf.begin(), buf.end());
+    }
+    std::cout << data.data();
+    std::cout << "here\n";
+    // parse header
+    // parse body (if any)
+    // stash rest of the message (if any)
+
     // TODO: implement complete send (not all the bytes may be send through the wire)
     if (send(tmp_pair.first.socket, "hi! i'm a web server :)\n", 24, 0) == -1)
         throw std::runtime_error(std::strerror(errno));

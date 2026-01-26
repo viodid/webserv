@@ -20,7 +20,7 @@
 #include <vector>
 
 #define SOCKET_BACKLOG 4096
-#define SOCKET_READ_SIZE 1 << 12 // 4 KiB
+#define READ_SOCKET_SIZE 1 << 24 // 16MiB
 
 struct VirtualHostConfig {
     const VirtualHost& vh;
