@@ -41,6 +41,7 @@ struct VirtualHostConfig {
  */
 class Socket { // TODO: rename - Webserver
 public:
+    std::vector<std::pair<VirtualHostConfig, pollfd>> vh_config;
     /**
      * @brief Default initializes a Socket object and creates a POSIX socket ready to connect
      * to the default value **127.0.0.1**.
@@ -62,15 +63,7 @@ public:
     Socket(const Socket&);
     // assignment operator is implicitly deleted bc const member variables
 
-    // TODO: document
-    void start();
-
 private:
-    std::vector<std::pair<VirtualHostConfig, pollfd>> vh_config_;
-
     void bindToVirtualHosts(const Config&);
     void createBindListen(const VirtualHost& vh);
-    void handleNewConn(const VirtualHostConfig& vh);
-    void handleClientData(std::pair<VirtualHostConfig, pollfd>& tmp_pair);
-    void handleClosedConn(std::pair<VirtualHostConfig, pollfd>& tmp_pair);
 };

@@ -2,5 +2,4 @@
 #include "Config.hpp"
 
 class HttpParserRequest {
-public:
 };
