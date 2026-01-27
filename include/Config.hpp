@@ -1,5 +1,4 @@
-#ifndef CONFIG_HPP
-#define CONFIG_HPP
+#pragma once
 #include <string>
 #include <utility>
 #include <vector>
@@ -38,5 +37,3 @@ struct VirtualHost {
 struct Config {
     const std::vector<VirtualHost> virtual_hosts;
 };
-
-#endif

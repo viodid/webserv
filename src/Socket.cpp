@@ -83,8 +83,6 @@ void Socket::handleClientData(std::pair<VirtualHostConfig, pollfd>& tmp_pair)
     int count = 0;
     while ((count = recv(tmp_pair.first.socket, buf.data(), READ_SOCKET_SIZE, MSG_DONTWAIT))) {
         std::cout << "count = " << count << " - errno: " << errno << std::endl;
-        if (count == 0) // conn closed by client
-            return handleClosedConn(tmp_pair);
         if (count == -1) {
             if (errno == EAGAIN || errno == EWOULDBLOCK)
                 break;
@@ -93,15 +91,29 @@ void Socket::handleClientData(std::pair<VirtualHostConfig, pollfd>& tmp_pair)
         }
         data.insert(data.end(), buf.begin(), buf.end());
     }
+    if (count == 0) // conn closed by client
+        return handleClosedConn(tmp_pair);
     std::cout << data.data();
     std::cout << "here\n";
+
+    // POST /potato HTTP/1.1
+    // Host: localhost:5555
+    // User-Agent: curl/8.5.0
+    // Accept: */
+    // Content-Type: application/patatas
+    // Keep-Alive: 1
+    // Content-Length: 10
+
+    // {"hey": 4}here
+
     // parse header
+
     // parse body (if any)
     // stash rest of the message (if any)
 
     // TODO: implement complete send (not all the bytes may be send through the wire)
-    if (send(tmp_pair.first.socket, "hi! i'm a web server :)\n", 24, 0) == -1)
-        throw std::runtime_error(std::strerror(errno));
+    // if (send(tmp_pair.first.socket, "hi! i'm a web server :)\n", 24, 0) == -1)
+    //    throw std::runtime_error(std::strerror(errno));
 }
 
 void Socket::handleClosedConn(std::pair<VirtualHostConfig, pollfd>& tmp_pair)

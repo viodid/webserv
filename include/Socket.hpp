@@ -1,7 +1,6 @@
 // socket -> bind -> listen -> accept
 //
-#ifndef SOCKET_HPP
-#define SOCKET_HPP
+#pragma once
 #include "Config.hpp"
 #include "Utils.hpp"
 #include <arpa/inet.h>
@@ -40,7 +39,7 @@ struct VirtualHostConfig {
  *
  * @see https://man7.org/linux/man-pages/man2/socket.2.html
  */
-class Socket {
+class Socket { // TODO: rename - Webserver
 public:
     /**
      * @brief Default initializes a Socket object and creates a POSIX socket ready to connect
@@ -75,4 +74,3 @@ private:
     void handleClientData(std::pair<VirtualHostConfig, pollfd>& tmp_pair);
     void handleClosedConn(std::pair<VirtualHostConfig, pollfd>& tmp_pair);
 };
-#endif
