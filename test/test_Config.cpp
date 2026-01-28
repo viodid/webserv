@@ -21,6 +21,21 @@ const Config create_config()
                     },
                 },
             },
+            VirtualHost {
+                "localhost",
+                "42069",
+                100000,
+                std::vector<std::pair<ErrorPages, std::string>> {},
+                std::vector<Location> {
+                    Location {
+                        std::vector { GET, POST },
+                        "",
+                        "/var/www/html",
+                        "/var/www/html/403.html",
+                        false,
+                    },
+                },
+            },
         },
     };
 }
