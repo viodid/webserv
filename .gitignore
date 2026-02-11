@@ -44,3 +44,6 @@ webserv
 # doxygen generated files
 html/
 latex/
+
+# miscellaneous
+en.subject.pdf
