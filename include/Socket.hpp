@@ -21,14 +21,6 @@
 #define SOCKET_BACKLOG 4096
 #define READ_SOCKET_SIZE 1 << 24 // 16MiB
 
-struct VirtualHostConfig {
-    const VirtualHost& vh;
-    int socket;
-    bool is_vh_socket;
-    struct addrinfo* addrinf;
-    struct addrinfo* curraddr;
-};
-
 /**
  * @class Socket
  * @brief A simple RAII wrapper for a network socket.
@@ -41,29 +33,31 @@ struct VirtualHostConfig {
  */
 class Socket { // TODO: rename - Webserver
 public:
-    std::vector<std::pair<VirtualHostConfig, pollfd>> vh_config;
     /**
      * @brief Default initializes a Socket object and creates a POSIX socket ready to connect
-     * to the default value **127.0.0.1**.
-     */
-    Socket(const Config config);
-    /**
-     * @brief Constructs a Socket object and creates a POSIX socket ready to connect
+     * to the given hostname and port.
      *
-     * @param addr The addres to listen to.
+     * @param hostname The hostname or address to bind the socket to
+     * @param port The port to listen to
      */
-    // Socket(const std::string& addr);
+    Socket(const std::string& hostname, const std::string& port);
     /**
      * @brief Destroys the Socket object, and frees its resources.
      *
-     * Deallocates the dynamic memory assigned to m_addrinfo and closes
-     * the sockets file descriptors in a safe manner.
+     * Deallocates the dynamic memory assigned to addrinfo and closes
+     * the socket file descriptor in a safe manner.
      */
     ~Socket();
-    Socket(const Socket&);
+    Socket(const Socket&) = delete;
     // assignment operator is implicitly deleted bc const member variables
+    int accept() const;
 
 private:
-    void bindToVirtualHosts(const Config&);
-    void createBindListen(const VirtualHost& vh);
+    int fd_;
+    const std::string hostname_;
+    const std::string port_;
+    struct addrinfo* addrinf_;
+    struct addrinfo* curraddr_;
+
+    void Socket::bindAndListen_();
 };
