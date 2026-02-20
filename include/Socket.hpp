@@ -1,5 +1,3 @@
-// socket -> bind -> listen -> accept
-//
 #pragma once
 #include "Config.hpp"
 #include "Utils.hpp"
@@ -63,5 +61,5 @@ private:
     struct addrinfo* addrinf_;
     struct addrinfo* curraddr_;
 
-    void Socket::bindAndListen_();
+    void bindAndListen_();
 };
