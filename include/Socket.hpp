@@ -31,7 +31,7 @@
  *
  * @see https://man7.org/linux/man-pages/man2/socket.2.html
  */
-class Socket { // TODO: rename - Webserver
+class Socket {
 public:
     /**
      * @brief Default initializes a Socket object and creates a POSIX socket ready to connect
@@ -50,6 +50,10 @@ public:
     ~Socket();
     Socket(const Socket&) = delete;
     // assignment operator is implicitly deleted bc const member variables
+    /**
+     * @brief Opens a new socket connection. This call will block if no connection
+     * is present in the listener socket.
+     */
     int accept() const;
 
 private:
