@@ -1,6 +1,4 @@
 #pragma once
-#include "Config.hpp"
-#include "Utils.hpp"
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
@@ -13,8 +11,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <utility>
-#include <vector>
 
 #define SOCKET_BACKLOG 4096
 #define READ_SOCKET_SIZE 1 << 24 // 16MiB
@@ -52,7 +48,7 @@ public:
      * @brief Opens a new socket connection. This call will block if no connection
      * is present in the listener socket.
      */
-    int accept() const;
+    int acceptConn() const;
 
 private:
     int fd_;

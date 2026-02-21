@@ -1,4 +1,5 @@
 #include "../include/Socket.hpp"
+#include <sys/socket.h>
 
 Socket::Socket(const std::string& hostname, const std::string& port)
     : hostname_(hostname)
@@ -11,35 +12,19 @@ Socket::~Socket()
 {
     freeaddrinfo(addrinf_);
     if (close(fd_) != 0)
-        std::cerr << "[Error] closing sfd " << fd_ << ": " << std::strerror(errno) << std::endl;
+        std::cerr << "[Error] closing lfd " << fd_ << ": " << std::strerror(errno) << std::endl;
 #if DEBUG
     else
-        std::cout << "[Debug] success close sfd " << fd_ << std::endl;
+        std::cout << "[Debug] success close lfd " << fd_ << std::endl;
 #endif
 }
 
-// TODO: C++ it
-const char* inet_ntop2(void* addr, char* buf, size_t size)
+int Socket::acceptConn() const
 {
-    struct sockaddr_storage* sas = (sockaddr_storage*)addr;
-    struct sockaddr_in* sa4;
-    struct sockaddr_in6* sa6;
-    void* src;
-
-    switch (sas->ss_family) {
-    case AF_INET:
-        sa4 = (sockaddr_in*)addr;
-        src = &(sa4->sin_addr);
-        break;
-    case AF_INET6:
-        sa6 = (sockaddr_in6*)addr;
-        src = &(sa6->sin6_addr);
-        break;
-    default:
-        return NULL;
-    }
-
-    return inet_ntop(sas->ss_family, src, buf, size);
+    int cfd = accept(fd_, curraddr_->ai_addr, &curraddr_->ai_addrlen); // blocks
+    if (cfd == -1)
+        throw std::runtime_error(std::strerror(errno));
+    return cfd;
 }
 
 void Socket::bindAndListen_()
@@ -53,9 +38,6 @@ void Socket::bindAndListen_()
 
     if (getaddrinfo(hostname_.data(), port_.data(), &hints, &addrinf_) != 0)
         throw std::runtime_error(std::strerror(errno));
-
-    for (curraddr_ = addrinf_; curraddr_ != nullptr; curraddr_ = curraddr_->ai_next)
-        std::cout << inet_ntop2((void*)curraddr_->ai_addr, std::string().data(), curraddr_->ai_addrlen) << "\n";
 
     for (curraddr_ = addrinf_; curraddr_ != nullptr; curraddr_ = curraddr_->ai_next) {
         fd_ = socket(curraddr_->ai_family, curraddr_->ai_socktype, curraddr_->ai_protocol);
@@ -82,6 +64,6 @@ void Socket::bindAndListen_()
     }
 
 #if DEBUG
-    std::cout << "[Debug] success listen on sfd " << fd_ << std::endl;
+    std::cout << "[Debug] success listen on lfd " << fd_ << std::endl;
 #endif
 }
