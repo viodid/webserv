@@ -64,11 +64,13 @@ void Socket::bindAndListen_()
         int yes = 1;
         if (setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1) {
             close(fd_);
+            freeaddrinfo(addrinf_);
             throw std::runtime_error(std::strerror(errno));
         }
         if (bind(fd_, curraddr_->ai_addr, curraddr_->ai_addrlen) == 0)
             break;
         close(fd_);
+        freeaddrinfo(addrinf_);
         throw std::runtime_error(std::strerror(errno));
     }
     if (curraddr_ == nullptr)
