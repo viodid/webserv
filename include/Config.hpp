@@ -27,13 +27,13 @@ struct Location {
 };
 
 struct VirtualHost {
-    std::string hostname;
-    std::string port;
-    size_t socket_size;
-    std::vector<std::pair<ErrorPages, std::string>> error_pages;
-    std::vector<Location> locations;
+    const std::string hostname;
+    const std::string port;
+    const size_t socket_size;
+    const std::vector<std::pair<ErrorPages, std::string>> error_pages;
+    const std::vector<Location> locations;
 };
 
 struct Config {
-    const std::vector<VirtualHost> virtual_hosts;
+    std::vector<VirtualHost> virtual_hosts;
 };
