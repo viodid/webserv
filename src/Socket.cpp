@@ -10,6 +10,7 @@ Socket::Socket(const std::string& hostname, const std::string& port)
 
 Socket::~Socket()
 {
+    // FIXME: check if addrinfo exists (fd_ may be pass in constructor)
     freeaddrinfo(addrinf_);
     if (close(fd_) != 0)
         std::cerr << "[Error] closing lfd " << fd_ << ": " << std::strerror(errno) << std::endl;

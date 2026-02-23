@@ -17,7 +17,7 @@ struct Connection {
     };
 
     const Type type;
-    const Socket& socket;
+    const Socket socket;
     const VirtualHost& config;
     std::string input_buffer;
     std::string output_buffer;

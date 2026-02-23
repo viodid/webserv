@@ -27,6 +27,7 @@
  */
 class Socket {
 public:
+    // TODO: new Socket constructor without bind and listen (for client sockets)
     /**
      * @brief Initializes a Socket object and creates a POSIX socket ready to connect
      * to the given hostname and port.
@@ -49,6 +50,7 @@ public:
      */
     int getFd() const;
     int acceptConn() const;
+    addrinfo* getCurrAddrinf() const;
 
 private:
     int fd_;
