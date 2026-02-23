@@ -19,6 +19,11 @@ Socket::~Socket()
 #endif
 }
 
+int Socket::getFd() const
+{
+    return fd_;
+}
+
 int Socket::acceptConn() const
 {
     int cfd = accept(fd_, curraddr_->ai_addr, &curraddr_->ai_addrlen); // blocks

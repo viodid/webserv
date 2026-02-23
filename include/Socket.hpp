@@ -17,7 +17,7 @@
 
 /**
  * @class Socket
- * @brief A simple RAII wrapper for a network socket.
+ * @brief A simple RAII wrapper for a TCP socket.
  *
  * This class encapsulates a low-level socket file descriptor and manages its
  * lifetime. When a Socket object is created, it opens a socket. When it is
@@ -28,7 +28,7 @@
 class Socket {
 public:
     /**
-     * @brief Default initializes a Socket object and creates a POSIX socket ready to connect
+     * @brief Initializes a Socket object and creates a POSIX socket ready to connect
      * to the given hostname and port.
      *
      * @param hostname The hostname or address to bind the socket to
@@ -42,12 +42,12 @@ public:
      * the socket file descriptor in a safe manner.
      */
     ~Socket();
-    Socket(const Socket&) = delete;
     // assignment operator is implicitly deleted bc const member variables
     /**
      * @brief Opens a new socket connection. This call will block if no connection
      * is present in the listener socket.
      */
+    int getFd() const;
     int acceptConn() const;
 
 private:
