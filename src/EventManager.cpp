@@ -1,4 +1,6 @@
 #include "../include/EventManager.hpp"
+#include <iterator>
+#include <stdexcept>
 
 EventManager::EventManager(const std::vector<Connection>& connections)
     : connections_(connections)
@@ -8,11 +10,9 @@ EventManager::EventManager(const std::vector<Connection>& connections)
 int EventManager::manage()
 {
     nfds_t nfds = connections_.size();
-    std::vector<pollfd> fds;
-    for (size_t i = 0; i < nfds; ++i) {
-        fds.push_back(pollfd { connections_[i].socket.getFd(), POLLIN, 0 });
-    }
-    int poll_count = poll(fds.data(), nfds, -1);
+    for (size_t i = 0; i < nfds; ++i)
+        addPollFds(connections_[i].socket.getFd());
+    int poll_count = poll(fds_.data(), nfds, -1);
     if (poll_count == -1)
         throw std::runtime_error(std::strerror(errno));
 
@@ -22,4 +22,32 @@ int EventManager::manage()
 #endif
 
     return poll_count;
+}
+
+const std::vector<pollfd>& EventManager::getPollFds() const
+{
+    return fds_;
+}
+
+void EventManager::addPollFds(int fd)
+{
+    fds_.push_back(pollfd { fd, POLLIN, 0 });
+}
+
+void EventManager::removePollFds(int fd)
+{
+    for (size_t i = 0; i < connections_.size(); ++i) {
+        if (connections_[i].socket.getFd() == fd) {
+            if (i >= fds_.size()) {
+                std::strstream s;
+                s << "Index '" << i << "' out of bounds of fds_\n";
+                throw std::runtime_error(s.str());
+            }
+            fds_.erase(std::next(fds_.begin(), i));
+            return;
+        }
+    }
+    std::strstream s;
+    s << "File descriptor '" << fd << "' not found within fds_ vector\n";
+    throw std::runtime_error(s.str());
 }

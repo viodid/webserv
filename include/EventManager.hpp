@@ -1,5 +1,6 @@
 #pragma once
 #include "Connection.hpp"
+#include <strstream>
 #include <sys/poll.h>
 #include <vector>
 
@@ -24,9 +25,26 @@ public:
     /**
      * @brief Calls `poll` system call and waits for one or more socket
      * connections to happen.
+     *
+     * @return the number of connections ready to be handled
      */
     int manage();
+    /**
+     * @brief Returns the pollfd vector member variable as read only
+     */
+    const std::vector<pollfd>& getPollFds() const;
+    /**
+     * @brief Mutate the state of pollfd vector member viariable.
+     * It adds one new pollfd struct to the vector initialized with POLLIN.
+     */
+    void addPollFds(int fd);
+    /**
+     * @brief Mutate the state of pollfd vector member viariable.
+     * It removes a pollfd struct instance from the vector given a FD.
+     */
+    void removePollFds(int fd);
 
 private:
     const std::vector<Connection>& connections_;
+    std::vector<pollfd> fds_;
 };
