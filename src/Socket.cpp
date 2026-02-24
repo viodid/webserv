@@ -1,6 +1,15 @@
 #include "../include/Socket.hpp"
 #include <sys/socket.h>
 
+Socket::Socket(int fd)
+    : fd_(fd)
+    , hostname_("")
+    , port_("")
+    , addrinf_(nullptr)
+    , curraddr_(nullptr)
+{
+}
+
 Socket::Socket(const std::string& hostname, const std::string& port)
     : hostname_(hostname)
     , port_(port)
@@ -11,7 +20,8 @@ Socket::Socket(const std::string& hostname, const std::string& port)
 Socket::~Socket()
 {
     // FIXME: check if addrinfo exists (fd_ may be pass in constructor)
-    freeaddrinfo(addrinf_);
+    if (addrinf_)
+        freeaddrinfo(addrinf_);
     if (close(fd_) != 0)
         std::cerr << "[Error] closing lfd " << fd_ << ": " << std::strerror(errno) << std::endl;
 #if DEBUG

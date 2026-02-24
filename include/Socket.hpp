@@ -27,7 +27,12 @@
  */
 class Socket {
 public:
-    // TODO: new Socket constructor without bind and listen (for client sockets)
+    /**
+     * @brief Initializes a Socket object with an already created socket FD (client)
+     *
+     * @param fd The socket FD.
+     */
+    Socket(int fd);
     /**
      * @brief Initializes a Socket object and creates a POSIX socket ready to connect
      * to the given hostname and port.
@@ -50,13 +55,12 @@ public:
      */
     int getFd() const;
     int acceptConn() const;
-    addrinfo* getCurrAddrinf() const;
 
 private:
     int fd_;
     const std::string hostname_;
     const std::string port_;
-    struct addrinfo* addrinf_;
+    struct addrinfo* addrinf_; // head of the linked list
     struct addrinfo* curraddr_;
 
     void bindAndListen_();
