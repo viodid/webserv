@@ -1,6 +1,7 @@
 BINARY 		= webserv
 CXX 		= g++
-CXXFLAGS	= -std=c++17 -Wall -Wextra -Wpedantic -g3 -O0 -DDEBUG=1
+STD			= 98
+CXXFLAGS	= -std=c++$(STD) -Wall -Wextra -Wpedantic -g3 -O0 -DDEBUG=1
 LDFLAGS		= -lgtest -lgtest_main -lpthread
 
 SRCS		= $(shell find . -type f -name '*.cpp')
@@ -15,7 +16,8 @@ $(BINARY): $(OBJS)
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-test: $(BINARY)
+test: STD=17
+test: re
 	./$(BINARY)
 
 clean:
