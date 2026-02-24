@@ -5,8 +5,8 @@ Socket::Socket(int fd)
     : fd_(fd)
     , hostname_("")
     , port_("")
-    , addrinf_(nullptr)
-    , curraddr_(nullptr)
+    , addrinf_(NULL)
+    , curraddr_(NULL)
 {
 }
 
@@ -19,7 +19,6 @@ Socket::Socket(const std::string& hostname, const std::string& port)
 
 Socket::~Socket()
 {
-    // FIXME: check if addrinfo exists (fd_ may be pass in constructor)
     if (addrinf_)
         freeaddrinfo(addrinf_);
     if (close(fd_) != 0)
@@ -55,7 +54,7 @@ void Socket::bindAndListen_()
     if (getaddrinfo(hostname_.data(), port_.data(), &hints, &addrinf_) != 0)
         throw std::runtime_error(std::strerror(errno));
 
-    for (curraddr_ = addrinf_; curraddr_ != nullptr; curraddr_ = curraddr_->ai_next) {
+    for (curraddr_ = addrinf_; curraddr_ != NULL; curraddr_ = curraddr_->ai_next) {
         fd_ = socket(curraddr_->ai_family, curraddr_->ai_socktype, curraddr_->ai_protocol);
         if (fd_ == -1)
             continue;
@@ -71,7 +70,7 @@ void Socket::bindAndListen_()
         freeaddrinfo(addrinf_);
         throw std::runtime_error(std::strerror(errno));
     }
-    if (curraddr_ == nullptr)
+    if (curraddr_ == NULL)
         throw std::runtime_error(std::strerror(errno));
     if (listen(fd_, 0) == -1) {
         close(fd_);

@@ -8,14 +8,14 @@ enum AllowedMethods {
     HEAD,
     POST,
     PUT,
-    DELETE,
+    DELETE
 };
 
 enum ErrorPages {
     E_400,
     E_403,
     E_404,
-    E_500,
+    E_500
 };
 
 struct Location {

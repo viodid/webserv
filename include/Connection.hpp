@@ -13,7 +13,7 @@
 struct Connection {
     enum Type {
         LISTENER,
-        CLIENT,
+        CLIENT
     };
 
     const Type type;
