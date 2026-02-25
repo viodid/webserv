@@ -1,19 +1,21 @@
 #pragma once
-#include "HttpParserRequest.hpp"
+#include "Config.hpp"
+#include "Connection.hpp"
+#include "EventManager.hpp"
 #include "Socket.hpp"
 
 class Webserver {
 public:
-    Webserver(Socket&); // TODO: remove
-    Webserver(Socket&, HttpParserRequest&);
+    Webserver(const std::vector<VirtualHost>& config);
+    ~Webserver();
 
-    void start();
+    void init();
+    void run();
 
 private:
-    Socket& socket_;
-    // const HttpParserRequest httpParser_;
+    const std::vector<VirtualHost>& config_;
+    std::vector<Connection> connections_;
 
-    void handleNewConn(const VirtualHostConfig& vh);
-    void handleClientData(std::pair<VirtualHostConfig, pollfd>& tmp_pair);
-    void handleClosedConn(std::pair<VirtualHostConfig, pollfd>& tmp_pair);
+    void handleNewConnection(EventManager& manager, const Connection& conn);
+    void handleClientData(EventManager& manager, Connection& conn);
 };
