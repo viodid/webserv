@@ -30,7 +30,7 @@ struct VirtualHost {
     const std::string hostname;
     const std::string port;
     const size_t socket_size;
-    const std::vector<std::pair<ErrorPages, std::string>> error_pages;
+    const std::vector<std::pair<ErrorPages, std::string> > error_pages;
     const std::vector<Location> locations;
 };
 

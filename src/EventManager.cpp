@@ -1,6 +1,5 @@
 #include "../include/EventManager.hpp"
 #include <iterator>
-#include <stdexcept>
 
 EventManager::EventManager(const std::vector<Connection>& connections)
     : connections_(connections)
@@ -39,15 +38,15 @@ void EventManager::removePollFds(int fd)
     for (size_t i = 0; i < connections_.size(); ++i) {
         if (connections_[i].socket.getFd() == fd) {
             if (i >= fds_.size()) {
-                std::strstream s;
+                std::stringstream s;
                 s << "Index '" << i << "' out of bounds of fds_\n";
                 throw std::runtime_error(s.str());
             }
-            fds_.erase(std::next(fds_.begin(), i));
+            fds_.erase(fds_.begin() + i);
             return;
         }
     }
-    std::strstream s;
+    std::stringstream s;
     s << "File descriptor '" << fd << "' not found within fds_ vector\n";
     throw std::runtime_error(s.str());
 }

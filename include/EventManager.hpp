@@ -1,5 +1,6 @@
 #pragma once
 #include "Connection.hpp"
+#include <iterator>
 #include <sstream>
 #include <sys/poll.h>
 #include <vector>
