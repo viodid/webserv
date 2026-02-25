@@ -16,6 +16,7 @@ private:
     const std::vector<VirtualHost>& config_;
     std::vector<Connection> connections_;
 
-    void handleNewConnection(EventManager& manager, const Connection& conn);
-    void handleClientData(EventManager& manager, Connection& conn);
+    void handleNewConnection_(EventManager& manager, const Connection& conn);
+    void handleClientData_(EventManager& manager, const Connection& conn);
+    void handleClosedConn_(EventManager& manager, const Connection& conn);
 };
