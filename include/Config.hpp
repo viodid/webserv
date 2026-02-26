@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <string>
 #include <utility>
 #include <vector>
@@ -18,20 +19,43 @@ enum ErrorPages {
     E_500
 };
 
-struct Location {
-    std::vector<AllowedMethods> allowed_methods;
-    std::string redirection;
-    std::string root;
-    std::string default_file;
-    bool directory_listing;
+class Location {
+public:
+    Location(const std::vector<AllowedMethods>&, std::string&,
+        std::string&, std::string&, bool);
+
+    const std::vector<AllowedMethods>& getAllowedMethods() const;
+    const std::string& getRedirection() const;
+    const std::string& getRoot() const;
+    const std::string& getDefaultFile() const;
+    bool isDirectoryListing() const;
+
+private:
+    std::vector<AllowedMethods> allowed_methods_;
+    std::string redirection_;
+    std::string root_;
+    std::string default_file_;
+    bool directory_listing_;
 };
 
 struct VirtualHost {
-    const std::string hostname;
-    const std::string port;
-    const size_t socket_size;
-    const std::vector<std::pair<ErrorPages, std::string> > error_pages;
-    const std::vector<Location> locations;
+public:
+    VirtualHost(const std::string&, const std::string&, size_t,
+        const std::vector<std::pair<ErrorPages, std::string>>&,
+        const std::vector<Location>&);
+
+    const std::string& getHostname() const;
+    const std::string& getPort() const;
+    const size_t getSocketSize() const;
+    const std::vector<std::pair<ErrorPages, std::string>>& getErrorPages() const;
+    const std::vector<Location>& getLocations() const;
+
+private:
+    std::string hostname_;
+    std::string port_;
+    size_t socket_size_;
+    std::vector<std::pair<ErrorPages, std::string>> error_pages_;
+    std::vector<Location> locations_;
 };
 
 struct Config {
