@@ -38,7 +38,7 @@ private:
     bool directory_listing_;
 };
 
-struct VirtualHost {
+class VirtualHost {
 public:
     VirtualHost(const std::string&, const std::string&, size_t,
         const std::vector<std::pair<ErrorPages, std::string>>&,
@@ -58,6 +58,12 @@ private:
     std::vector<Location> locations_;
 };
 
-struct Config {
-    std::vector<VirtualHost> virtual_hosts;
+class Config {
+public:
+    Config(const std::vector<VirtualHost>&);
+
+    const std::vector<VirtualHost>& getVirtualHosts() const;
+
+private:
+    std::vector<VirtualHost> virtual_hosts_;
 };

@@ -65,3 +65,13 @@ const std::vector<Location>& VirtualHost::getLocations() const
 {
     return locations_;
 }
+
+Config::Config(const std::vector<VirtualHost>& vh)
+    : virtual_hosts_(vh)
+{
+}
+
+const std::vector<VirtualHost>& Config::getVirtualHosts() const
+{
+    return virtual_hosts_;
+}
