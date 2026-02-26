@@ -1,7 +1,7 @@
 #include "../include/Config.hpp"
 
-Location::Location(const std::vector<AllowedMethods>& methods, std::string& redirection,
-    std::string& root, std::string& default_file, bool dir_listing)
+Location::Location(const std::vector<AllowedMethods>& methods, const std::string& redirection,
+    const std::string& root, const std::string& default_file, bool dir_listing)
     : allowed_methods_(methods)
     , redirection_(redirection)
     , root_(root)
@@ -35,7 +35,7 @@ VirtualHost::VirtualHost(
     const std::string& hostname,
     const std::string& port,
     size_t socket_size,
-    const std::vector<std::pair<ErrorPages, std::string>>& error_pages,
+    const std::vector<std::pair<ErrorPages, std::string> >& error_pages,
     const std::vector<Location>& locations)
     : hostname_(hostname)
     , port_(port)
@@ -53,11 +53,11 @@ const std::string& VirtualHost::getPort() const
 {
     return port_;
 }
-const size_t VirtualHost::getSocketSize() const
+size_t VirtualHost::getSocketSize() const
 {
     return socket_size_;
 }
-const std::vector<std::pair<ErrorPages, std::string>>& VirtualHost::getErrorPages() const
+const std::vector<std::pair<ErrorPages, std::string> >& VirtualHost::getErrorPages() const
 {
     return error_pages_;
 }

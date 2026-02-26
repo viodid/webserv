@@ -21,8 +21,8 @@ enum ErrorPages {
 
 class Location {
 public:
-    Location(const std::vector<AllowedMethods>&, std::string&,
-        std::string&, std::string&, bool);
+    Location(const std::vector<AllowedMethods>&, const std::string&,
+        const std::string&, const std::string&, bool);
 
     const std::vector<AllowedMethods>& getAllowedMethods() const;
     const std::string& getRedirection() const;
@@ -41,20 +41,20 @@ private:
 class VirtualHost {
 public:
     VirtualHost(const std::string&, const std::string&, size_t,
-        const std::vector<std::pair<ErrorPages, std::string>>&,
+        const std::vector<std::pair<ErrorPages, std::string> >&,
         const std::vector<Location>&);
 
     const std::string& getHostname() const;
     const std::string& getPort() const;
-    const size_t getSocketSize() const;
-    const std::vector<std::pair<ErrorPages, std::string>>& getErrorPages() const;
+    size_t getSocketSize() const;
+    const std::vector<std::pair<ErrorPages, std::string> >& getErrorPages() const;
     const std::vector<Location>& getLocations() const;
 
 private:
     std::string hostname_;
     std::string port_;
     size_t socket_size_;
-    std::vector<std::pair<ErrorPages, std::string>> error_pages_;
+    std::vector<std::pair<ErrorPages, std::string> > error_pages_;
     std::vector<Location> locations_;
 };
 
