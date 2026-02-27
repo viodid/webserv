@@ -7,7 +7,6 @@
 class Webserver {
 public:
     Webserver(const std::vector<VirtualHost>& config);
-    ~Webserver();
 
     void init();
     void run();

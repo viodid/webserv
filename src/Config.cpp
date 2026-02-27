@@ -10,7 +10,7 @@ Location::Location(const std::vector<AllowedMethods>& methods, const std::string
 {
 }
 
-const std::vector<AllowedMethods>& Location::getAllowedMethods() const
+const std::vector<Location::AllowedMethods>& Location::getAllowedMethods() const
 {
     return allowed_methods_;
 }
@@ -35,7 +35,7 @@ VirtualHost::VirtualHost(
     const std::string& hostname,
     const std::string& port,
     size_t socket_size,
-    const std::vector<std::pair<ErrorPages, std::string> >& error_pages,
+    const std::vector<std::pair<Location::ErrorPages, std::string> >& error_pages,
     const std::vector<Location>& locations)
     : hostname_(hostname)
     , port_(port)
@@ -57,7 +57,7 @@ size_t VirtualHost::getSocketSize() const
 {
     return socket_size_;
 }
-const std::vector<std::pair<ErrorPages, std::string> >& VirtualHost::getErrorPages() const
+const std::vector<std::pair<Location::ErrorPages, std::string> >& VirtualHost::getErrorPages() const
 {
     return error_pages_;
 }
@@ -75,3 +75,25 @@ const std::vector<VirtualHost>& Config::getVirtualHosts() const
 {
     return virtual_hosts_;
 }
+
+// FIXME: test purposes
+const Config create_mock_config()
+{
+    std::vector<VirtualHost> vh;
+    // vh1
+    std::vector<Location::AllowedMethods> methods1;
+    methods1.push_back(Location::GET);
+    std::vector<Location> l1;
+    l1.push_back(Location(methods1, "", "/var/www/html", "/var/www/html/403.html", false));
+    vh.push_back(VirtualHost("localhost", "55555", 100000, std::vector<std::pair<Location::ErrorPages, std::string> >(),l1));
+    // vh2
+    std::vector<Location::AllowedMethods> methods2;
+    methods2.push_back(Location::GET);
+    methods2.push_back(Location::POST);
+    std::vector<Location> l2;
+    l1.push_back(Location(methods2, "", "/var/www/html", "/var/www/html/403.html", false));
+    vh.push_back(VirtualHost("localhost", "42069", 100000, std::vector<std::pair<Location::ErrorPages, std::string> >(),l2));
+
+    return Config(vh);
+}
+

@@ -29,7 +29,8 @@ const std::vector<pollfd>& EventManager::getPollFds() const
 
 void EventManager::addPollFds(int fd)
 {
-    fds_.push_back(pollfd { fd, POLLIN, 0 });
+    pollfd pfd = { fd, POLLIN, 0 };
+    fds_.push_back(pfd);
 }
 
 void EventManager::removePollFds(int fd)

@@ -4,23 +4,23 @@
 #include <utility>
 #include <vector>
 
-enum AllowedMethods {
-    GET,
-    HEAD,
-    POST,
-    PUT,
-    DELETE
-};
-
-enum ErrorPages {
-    E_400,
-    E_403,
-    E_404,
-    E_500
-};
 
 class Location {
 public:
+    enum AllowedMethods {
+        GET,
+        HEAD,
+        POST,
+        PUT,
+        DELETE
+    };
+
+    enum ErrorPages {
+        E_400,
+        E_403,
+        E_404,
+        E_500
+    };
     Location(const std::vector<AllowedMethods>&, const std::string&,
         const std::string&, const std::string&, bool);
 
@@ -41,20 +41,20 @@ private:
 class VirtualHost {
 public:
     VirtualHost(const std::string&, const std::string&, size_t,
-        const std::vector<std::pair<ErrorPages, std::string> >&,
+        const std::vector<std::pair<Location::ErrorPages, std::string> >&,
         const std::vector<Location>&);
 
     const std::string& getHostname() const;
     const std::string& getPort() const;
     size_t getSocketSize() const;
-    const std::vector<std::pair<ErrorPages, std::string> >& getErrorPages() const;
+    const std::vector<std::pair<Location::ErrorPages, std::string> >& getErrorPages() const;
     const std::vector<Location>& getLocations() const;
 
 private:
     std::string hostname_;
     std::string port_;
     size_t socket_size_;
-    std::vector<std::pair<ErrorPages, std::string> > error_pages_;
+    std::vector<std::pair<Location::ErrorPages, std::string> > error_pages_;
     std::vector<Location> locations_;
 };
 
@@ -67,3 +67,5 @@ public:
 private:
     std::vector<VirtualHost> virtual_hosts_;
 };
+
+const Config create_mock_config();
