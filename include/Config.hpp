@@ -21,8 +21,8 @@ public:
         E_404,
         E_500
     };
-    Location(const std::vector<AllowedMethods>&, const std::string&,
-        const std::string&, const std::string&, bool);
+    Location(const std::vector<AllowedMethods>, const std::string,
+        const std::string, const std::string, bool);
 
     const std::vector<AllowedMethods>& getAllowedMethods() const;
     const std::string& getRedirection() const;
@@ -40,9 +40,9 @@ private:
 
 class VirtualHost {
 public:
-    VirtualHost(const std::string&, const std::string&, size_t,
-        const std::vector<std::pair<Location::ErrorPages, std::string> >&,
-        const std::vector<Location>&);
+    VirtualHost(const std::string, const std::string, size_t,
+        const std::vector<std::pair<Location::ErrorPages, std::string> >,
+        const std::vector<Location>);
 
     const std::string& getHostname() const;
     const std::string& getPort() const;
@@ -60,7 +60,7 @@ private:
 
 class Config {
 public:
-    Config(const std::vector<VirtualHost>&);
+    Config(const std::vector<VirtualHost>);
 
     const std::vector<VirtualHost>& getVirtualHosts() const;
 

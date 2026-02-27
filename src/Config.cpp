@@ -1,7 +1,10 @@
 #include "../include/Config.hpp"
 
-Location::Location(const std::vector<AllowedMethods>& methods, const std::string& redirection,
-    const std::string& root, const std::string& default_file, bool dir_listing)
+Location::Location(const std::vector<AllowedMethods> methods,
+    const std::string redirection,
+    const std::string root,
+    const std::string default_file,
+    bool dir_listing)
     : allowed_methods_(methods)
     , redirection_(redirection)
     , root_(root)
@@ -32,11 +35,11 @@ bool Location::isDirectoryListing() const
 }
 
 VirtualHost::VirtualHost(
-    const std::string& hostname,
-    const std::string& port,
+    const std::string hostname,
+    const std::string port,
     size_t socket_size,
-    const std::vector<std::pair<Location::ErrorPages, std::string> >& error_pages,
-    const std::vector<Location>& locations)
+    const std::vector<std::pair<Location::ErrorPages, std::string> > error_pages,
+    const std::vector<Location> locations)
     : hostname_(hostname)
     , port_(port)
     , socket_size_(socket_size)
@@ -66,7 +69,7 @@ const std::vector<Location>& VirtualHost::getLocations() const
     return locations_;
 }
 
-Config::Config(const std::vector<VirtualHost>& vh)
+Config::Config(const std::vector<VirtualHost> vh)
     : virtual_hosts_(vh)
 {
 }
@@ -85,15 +88,14 @@ const Config create_mock_config()
     methods1.push_back(Location::GET);
     std::vector<Location> l1;
     l1.push_back(Location(methods1, "", "/var/www/html", "/var/www/html/403.html", false));
-    vh.push_back(VirtualHost("localhost", "55555", 100000, std::vector<std::pair<Location::ErrorPages, std::string> >(),l1));
+    vh.push_back(VirtualHost("localhost", "55555", 100000, std::vector<std::pair<Location::ErrorPages, std::string> >(), l1));
     // vh2
     std::vector<Location::AllowedMethods> methods2;
     methods2.push_back(Location::GET);
     methods2.push_back(Location::POST);
     std::vector<Location> l2;
     l1.push_back(Location(methods2, "", "/var/www/html", "/var/www/html/403.html", false));
-    vh.push_back(VirtualHost("localhost", "42069", 100000, std::vector<std::pair<Location::ErrorPages, std::string> >(),l2));
+    vh.push_back(VirtualHost("localhost", "42069", 100000, std::vector<std::pair<Location::ErrorPages, std::string> >(), l2));
 
     return Config(vh);
 }
-

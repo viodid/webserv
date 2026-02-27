@@ -3,7 +3,8 @@
 
 int main()
 {
-    Webserver webserv(create_mock_config().getVirtualHosts());
+    Config config = create_mock_config();
+    Webserver webserv(config.getVirtualHosts());
     webserv.init();
     webserv.run();
     return EXIT_SUCCESS;
