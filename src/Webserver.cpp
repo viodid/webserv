@@ -1,6 +1,5 @@
 // TODO: primeagen 43:59
 #include "../include/Webserver.hpp"
-#include <sys/socket.h>
 
 Webserver::Webserver(const std::vector<VirtualHost>& config)
     : config_(config)
@@ -11,9 +10,8 @@ void Webserver::init()
 {
     for (std::vector<VirtualHost>::const_iterator it = config_.begin();
         it != config_.end(); it++) {
-        Socket socket(it->hostname, it->port);
-        Connection conn = { Connection::LISTENER, socket, *it, "", "" };
-        connections_.push_back(conn);
+        Socket socket(it->getHostname(), it->getPort());
+        connections_.push_back(Connection(Connection::LISTENER, socket, *it));
     }
 }
 
@@ -24,7 +22,7 @@ void Webserver::run()
     const std::vector<pollfd>& pollfds = notifier.getPollFds();
     for (size_t i = 0; i < connections_.size(); i++) {
         if (pollfds[i].revents & POLLIN) {
-            if (connections_[i].type == Connection::CLIENT)
+            if (connections_[i].getType() == Connection::CLIENT)
                 handleNewConnection_(notifier, connections_[i]);
             else
                 handleClientData_(notifier, connections_[i]);
@@ -34,16 +32,15 @@ void Webserver::run()
 
 void Webserver::handleNewConnection_(EventManager& notifier, const Connection& connection)
 {
-    int cfd = connection.socket.acceptConn();
+    int cfd = connection.getSocket().acceptConn();
     notifier.addPollFds(cfd);
-    Connection newConn = { Connection::CLIENT, Socket(cfd), connection.config, "", "" };
-    connections_.push_back(newConn);
+    connections_.push_back(Connection(Connection::CLIENT, Socket(cfd), connection.getConfig()));
 }
 
 void Webserver::handleClosedConn_(EventManager& manager, const Connection& connection)
 {
-    manager.removePollFds(connection.socket.getFd());
-    std::cout << "closed conn fd: " << connection.socket.getFd() << std::endl;
+    manager.removePollFds(connection.getSocket().getFd());
+    std::cout << "closed conn fd: " << connection.getSocket().getFd() << std::endl;
     for (size_t i = 0; i < connections_.size(); i++) {
         if (&connections_[i] == &connection) {
             std::cout << "connection erased from connections_\n";
@@ -59,7 +56,7 @@ void Webserver::handleClientData_(EventManager& notifier, const Connection& conn
     std::vector<char> data;
     data.reserve(READ_SOCKET_SIZE);
     int count = 0;
-    while ((count = recv(connection.socket.getFd(), buf.data(), READ_SOCKET_SIZE, MSG_DONTWAIT))) {
+    while ((count = recv(connection.getSocket().getFd(), buf.data(), READ_SOCKET_SIZE, MSG_DONTWAIT))) {
         std::cout << "count = " << count << " - errno: " << errno << std::endl;
         if (count == -1) {
             if (errno == EAGAIN || errno == EWOULDBLOCK)

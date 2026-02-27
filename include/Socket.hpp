@@ -58,8 +58,8 @@ public:
 
 private:
     int fd_;
-    const std::string hostname_;
-    const std::string port_;
+    std::string hostname_;
+    std::string port_;
     struct addrinfo* addrinf_; // head of the linked list
     struct addrinfo* curraddr_;
 
