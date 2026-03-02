@@ -1,6 +1,6 @@
 #include "../include/EventManager.hpp"
 
-EventManager::EventManager(const std::vector<Connection>& connections)
+EventManager::EventManager(std::vector<Connection*>& connections)
     : connections_(connections)
 {
 }
@@ -9,7 +9,7 @@ int EventManager::manage()
 {
     nfds_t nfds = connections_.size();
     for (size_t i = 0; i < nfds; ++i)
-        addPollFds(connections_[i].getSocket().getFd());
+        addPollFds(connections_[i]->getSocket().getFd());
     int poll_count = poll(fds_.data(), nfds, -1);
     if (poll_count == -1)
         throw std::runtime_error(std::strerror(errno));
@@ -36,7 +36,7 @@ void EventManager::addPollFds(int fd)
 void EventManager::removePollFds(int fd)
 {
     for (size_t i = 0; i < connections_.size(); ++i) {
-        if (connections_[i].getSocket().getFd() == fd) {
+        if (connections_[i]->getSocket().getFd() == fd) {
             if (i >= fds_.size()) {
                 std::stringstream s;
                 s << "Index '" << i << "' out of bounds of fds_\n";

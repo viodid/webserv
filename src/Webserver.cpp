@@ -6,12 +6,23 @@ Webserver::Webserver(const std::vector<VirtualHost>& config)
 {
 }
 
+Webserver::~Webserver()
+{
+    for (size_t i = 0; i < connections_.size(); i++) 
+        delete connections_[i];
+#if DEBUG
+    std::cout << "[Debug] Webserver destructor called " << std::endl;
+#endif
+}
+
+
 void Webserver::init()
 {
     for (std::vector<VirtualHost>::const_iterator it = config_.begin();
         it != config_.end(); it++) {
         Socket* socket_ptr = new Socket(it->getHostname(), it->getPort());
-        connections_.push_back(Connection(Connection::LISTENER, socket_ptr, *it));
+        Connection* connection_ptr = new Connection(Connection::LISTENER, socket_ptr, *it);
+        connections_.push_back(connection_ptr);
     }
 }
 
@@ -22,10 +33,10 @@ void Webserver::run()
     const std::vector<pollfd>& pollfds = notifier.getPollFds();
     for (size_t i = 0; i < connections_.size(); i++) {
         if (pollfds[i].revents & POLLIN) {
-            if (connections_[i].getType() == Connection::CLIENT)
-                handleNewConnection_(notifier, connections_[i]);
+            if (connections_[i]->getType() == Connection::CLIENT)
+                handleNewConnection_(notifier, *connections_[i]);
             else
-                handleClientData_(notifier, connections_[i]);
+                handleClientData_(notifier, *connections_[i]);
         }
     }
 }
@@ -35,7 +46,8 @@ void Webserver::handleNewConnection_(EventManager& notifier, const Connection& c
     int cfd = connection.getSocket().acceptConn();
     notifier.addPollFds(cfd);
     Socket* socket_ptr = new Socket(cfd);
-    connections_.push_back(Connection(Connection::CLIENT, socket_ptr, connection.getConfig()));
+    Connection* connection_ptr = new Connection(Connection::CLIENT, socket_ptr, connection.getConfig());
+    connections_.push_back(connection_ptr);
 }
 
 void Webserver::handleClosedConn_(EventManager& manager, const Connection& connection)
@@ -43,7 +55,7 @@ void Webserver::handleClosedConn_(EventManager& manager, const Connection& conne
     manager.removePollFds(connection.getSocket().getFd());
     std::cout << "closed conn fd: " << connection.getSocket().getFd() << std::endl;
     for (size_t i = 0; i < connections_.size(); i++) {
-        if (&connections_[i] == &connection) {
+        if (connections_[i] == &connection) {
             std::cout << "connection erased from connections_\n";
             connections_.erase(connections_.begin() + i);
             break;

@@ -21,7 +21,7 @@ public:
      *
      * @param connections The connections vector to manage by this obj.
      */
-    EventManager(const std::vector<Connection>& connections);
+    EventManager(std::vector<Connection*>& connections);
 
     /**
      * @brief Calls `poll` system call and waits for one or more socket
@@ -46,6 +46,6 @@ public:
     void removePollFds(int fd);
 
 private:
-    const std::vector<Connection>& connections_;
+    const std::vector<Connection*>& connections_;
     std::vector<pollfd> fds_;
 };

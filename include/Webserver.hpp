@@ -7,13 +7,14 @@
 class Webserver {
 public:
     Webserver(const std::vector<VirtualHost>& config);
+    ~Webserver();
 
     void init();
     void run();
 
 private:
     const std::vector<VirtualHost>& config_;
-    std::vector<Connection> connections_;
+    std::vector<Connection*> connections_;
 
     void handleNewConnection_(EventManager& manager, const Connection& conn);
     void handleClientData_(EventManager& manager, const Connection& conn);

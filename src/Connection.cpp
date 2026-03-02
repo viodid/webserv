@@ -9,6 +9,9 @@ Connection::Connection(Type type, Socket* socket, const VirtualHost& vh)
 
 Connection::~Connection() {
     delete socket_;
+#if DEBUG
+    std::cout << "[Debug] Connection destructor called " << std::endl;
+#endif
 }
 
 Connection::Type Connection::getType() const
