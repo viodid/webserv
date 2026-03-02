@@ -1,4 +1,5 @@
 #include "../include/Socket.hpp"
+#include <iostream>
 #include <sys/socket.h>
 
 Socket::Socket(int fd)
@@ -108,7 +109,7 @@ void Socket::bindAndListen_()
     char buf[100];
     for (curraddr_ = addrinf_; curraddr_ != NULL; curraddr_ = curraddr_->ai_next) {
         std::cout << inet_ntop2((void*)curraddr_->ai_addr, buf, curraddr_->ai_addrlen)
-            << ":" << curraddr_->ai_protocol << "\n";
+            << ":" << ((struct sockaddr_in*)curraddr_->ai_addr)->sin_port << "\n";
     }
     std::cout << "[Debug] success listen on lfd " << fd_ << std::endl;
 #endif
