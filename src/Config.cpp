@@ -88,7 +88,7 @@ const Config create_mock_config()
     methods1.push_back(Location::GET);
     std::vector<Location> l1;
     l1.push_back(Location(methods1, "", "/var/www/html", "/var/www/html/403.html", false));
-    vh.push_back(VirtualHost("localhost", "55555", 100000, std::vector<std::pair<Location::ErrorPages, std::string> >(), l1));
+    vh.push_back(VirtualHost("127.0.0.1", "55555", 100000, std::vector<std::pair<Location::ErrorPages, std::string> >(), l1));
     // vh2
     std::vector<Location::AllowedMethods> methods2;
     methods2.push_back(Location::GET);
