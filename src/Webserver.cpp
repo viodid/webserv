@@ -33,7 +33,7 @@ void Webserver::run()
     const std::vector<pollfd>& pollfds = notifier.getPollFds();
     for (size_t i = 0; i < connections_.size(); i++) {
         if (pollfds[i].revents & POLLIN) {
-            if (connections_[i]->getType() == Connection::CLIENT)
+            if (connections_[i]->getType() == Connection::LISTENER)
                 handleNewConnection_(notifier, *connections_[i]);
             else
                 handleClientData_(notifier, *connections_[i]);
