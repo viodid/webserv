@@ -10,8 +10,8 @@ void Webserver::init()
 {
     for (std::vector<VirtualHost>::const_iterator it = config_.begin();
         it != config_.end(); it++) {
-        Socket socket(it->getHostname(), it->getPort());
-        connections_.push_back(Connection(Connection::LISTENER, socket, *it));
+        Socket* socket_ptr = new Socket(it->getHostname(), it->getPort());
+        connections_.push_back(Connection(Connection::LISTENER, socket_ptr, *it));
     }
 }
 
@@ -34,7 +34,8 @@ void Webserver::handleNewConnection_(EventManager& notifier, const Connection& c
 {
     int cfd = connection.getSocket().acceptConn();
     notifier.addPollFds(cfd);
-    connections_.push_back(Connection(Connection::CLIENT, Socket(cfd), connection.getConfig()));
+    Socket* socket_ptr = new Socket(cfd);
+    connections_.push_back(Connection(Connection::CLIENT, socket_ptr, connection.getConfig()));
 }
 
 void Webserver::handleClosedConn_(EventManager& manager, const Connection& connection)

@@ -11,8 +11,11 @@ Socket::Socket(int fd)
 }
 
 Socket::Socket(const std::string& hostname, const std::string& port)
-    : hostname_(hostname)
+    : fd_(-1)
+    , hostname_(hostname)
     , port_(port)
+    , addrinf_(NULL)
+    , curraddr_(NULL)
 {
     bindAndListen_();
 }
@@ -24,8 +27,7 @@ Socket::~Socket()
     if (close(fd_) != 0)
         std::cerr << "[Error] closing lfd " << fd_ << ": " << std::strerror(errno) << std::endl;
 #if DEBUG
-    else
-        std::cout << "[Debug] success close lfd " << fd_ << std::endl;
+    std::cout << "[Debug] success close lfd " << fd_ << std::endl;
 #endif
 }
 

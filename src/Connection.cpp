@@ -1,10 +1,14 @@
 #include "../include/Connection.hpp"
 
-Connection::Connection(Type type, const Socket& socket, const VirtualHost& vh)
+Connection::Connection(Type type, Socket* socket, const VirtualHost& vh)
     : type_(type)
     , socket_(socket)
     , config_(vh)
 {
+}
+
+Connection::~Connection() {
+    delete socket_;
 }
 
 Connection::Type Connection::getType() const
@@ -14,7 +18,7 @@ Connection::Type Connection::getType() const
 
 const Socket& Connection::getSocket() const
 {
-    return socket_;
+    return *socket_;
 }
 
 const VirtualHost& Connection::getConfig() const

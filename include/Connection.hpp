@@ -16,7 +16,8 @@ public:
         LISTENER,
         CLIENT
     };
-    Connection(Type, const Socket&, const VirtualHost&);
+    Connection(Type, Socket*, const VirtualHost&);
+    ~Connection();
 
     Type getType() const;
     const Socket& getSocket() const;
@@ -28,7 +29,7 @@ public:
 
 private:
     Type type_;
-    Socket socket_;
+    Socket* socket_;
     VirtualHost config_;
     std::string input_buffer_;
     std::string output_buffer_;
