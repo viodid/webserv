@@ -59,6 +59,7 @@ void Webserver::handleClosedConn_(EventManager& manager, const Connection& conne
     for (size_t i = 0; i < connections_.size(); i++) {
         if (connections_[i] == &connection) {
             std::cout << "connection erased from connections_: " << i << "\n";
+            delete connections_[i];
             connections_.erase(connections_.begin() + i);
             break;
         }

@@ -28,7 +28,7 @@ Socket::~Socket()
     if (close(fd_) != 0)
         std::cerr << "[Error] closing lfd " << fd_ << ": " << std::strerror(errno) << std::endl;
 #if DEBUG
-    std::cout << "[Debug] success close fd " << fd_ << std::endl;
+    std::cout << "[Debug] destructor socket: success close fd " << fd_ << std::endl;
 #endif
 }
 
