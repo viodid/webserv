@@ -28,7 +28,7 @@ Socket::~Socket()
     if (close(fd_) != 0)
         std::cerr << "[Error] closing lfd " << fd_ << ": " << std::strerror(errno) << std::endl;
 #if DEBUG
-    std::cout << "[Debug] success close lfd " << fd_ << std::endl;
+    std::cout << "[Debug] success close fd " << fd_ << std::endl;
 #endif
 }
 
@@ -107,9 +107,12 @@ void Socket::bindAndListen_()
 
 #if DEBUG
     char buf[100];
-    for (curraddr_ = addrinf_; curraddr_ != NULL; curraddr_ = curraddr_->ai_next) {
-        std::cout << inet_ntop2((void*)curraddr_->ai_addr, buf, curraddr_->ai_addrlen)
-            << ":" << ((struct sockaddr_in*)curraddr_->ai_addr)->sin_port << "\n";
+
+
+    struct addrinfo* addr;
+    for (addr = addrinf_; addr != NULL; addr = addr->ai_next) {
+        std::cout << inet_ntop2((void*)addr->ai_addr, buf, addr->ai_addrlen)
+            << ":" << ((struct sockaddr_in*)addr->ai_addr)->sin_port << "\n";
     }
     std::cout << "[Debug] success listen on lfd " << fd_ << std::endl;
 #endif
