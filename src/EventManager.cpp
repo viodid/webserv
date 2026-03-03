@@ -3,20 +3,19 @@
 EventManager::EventManager(std::vector<Connection*>& connections)
     : connections_(connections)
 {
+    for (size_t i = 0; i < connections_.size(); ++i)
+        addPollFds(connections_[i]->getSocket().getFd());
 }
 
 int EventManager::manage()
 {
-    nfds_t nfds = connections_.size();
-    for (size_t i = 0; i < nfds; ++i)
-        addPollFds(connections_[i]->getSocket().getFd());
-    int poll_count = poll(fds_.data(), nfds, -1);
+    int poll_count = poll(fds_.data(), connections_.size(), -1);
     if (poll_count == -1)
         throw std::runtime_error(std::strerror(errno));
 
 #if DEBUG
     std::cout << "poll_count: " << poll_count << std::endl
-              << "pfds.size(): " << nfds << std::endl;
+              << "connections_ size: " << connections_.size() << std::endl;
 #endif
 
     return poll_count;
