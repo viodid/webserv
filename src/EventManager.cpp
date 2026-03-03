@@ -43,6 +43,9 @@ void EventManager::removePollFds(int fd)
                 throw std::runtime_error(s.str());
             }
             fds_.erase(fds_.begin() + i);
+# if DEBUG
+            std::cout << "pollfds removed: " << connections_[i]->getSocket().getFd() << "\n";
+# endif
             return;
         }
     }

@@ -29,14 +29,16 @@ void Webserver::init()
 void Webserver::run()
 {
     EventManager notifier(connections_);
-    notifier.manage();
-    const std::vector<pollfd>& pollfds = notifier.getPollFds();
-    for (size_t i = 0; i < connections_.size(); i++) {
-        if (pollfds[i].revents & POLLIN) {
-            if (connections_[i]->getType() == Connection::LISTENER)
-                handleNewConnection_(notifier, *connections_[i]);
-            else
-                handleClientData_(notifier, *connections_[i]);
+    for (;;) {
+        notifier.manage();
+        const std::vector<pollfd>& pollfds = notifier.getPollFds();
+        for (size_t i = 0; i < connections_.size(); i++) {
+            if (pollfds[i].revents & POLLIN) {
+                if (connections_[i]->getType() == Connection::LISTENER)
+                    handleNewConnection_(notifier, *connections_[i]);
+                else
+                    handleClientData_(notifier, *connections_[i]);
+            }
         }
     }
 }
@@ -56,7 +58,7 @@ void Webserver::handleClosedConn_(EventManager& manager, const Connection& conne
     std::cout << "closed conn fd: " << connection.getSocket().getFd() << std::endl;
     for (size_t i = 0; i < connections_.size(); i++) {
         if (connections_[i] == &connection) {
-            std::cout << "connection erased from connections_\n";
+            std::cout << "connection erased from connections_: " << i << "\n";
             connections_.erase(connections_.begin() + i);
             break;
         }
@@ -65,6 +67,7 @@ void Webserver::handleClosedConn_(EventManager& manager, const Connection& conne
 
 void Webserver::handleClientData_(EventManager& notifier, const Connection& connection)
 {
+    std::cout << "------------\n";
     std::vector<char> buf(READ_SOCKET_SIZE);
     std::vector<char> data;
     data.reserve(READ_SOCKET_SIZE);
@@ -79,8 +82,8 @@ void Webserver::handleClientData_(EventManager& notifier, const Connection& conn
         }
         data.insert(data.end(), buf.begin(), buf.end());
     }
+    std::cout << "count = " << count << " - errno: " << errno << std::endl;
     if (count == 0) // conn closed by client
         return handleClosedConn_(notifier, connection);
-    std::cout << data.data();
-    std::cout << "here\n";
+    std::cout << data.data() << "\n";
 }
