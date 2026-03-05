@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+#include <vector>
 
 class HttpRequestLine {
     /*
@@ -7,6 +9,8 @@ class HttpRequestLine {
      * request-target
      * http-version
     */
+public:
+    HttpRequestLine(const std::string&, const std::string&, const std::string&);
 };
 
 class HttpFieldLine {
@@ -15,6 +19,8 @@ class HttpFieldLine {
      * field-name
      * field-value
     */
+public:
+    HttpFieldLine(const std::string&, const std::string&);
 };
 
 /*
@@ -28,4 +34,5 @@ public:
      * And an optional message body followed by a new line '\r\n'
      * https://www.rfc-editor.org/rfc/rfc9112#name-field-syntax
     */
+    HttpRequest(const HttpFieldLine&, const std::vector<HttpFieldLine>&, const std::string&);
 };
