@@ -2,26 +2,23 @@
 #include <string>
 #include <vector>
 
-class HttpRequestLine {
-    /*
-     * Composed of:
-     * mehthod
-     * request-target
-     * http-version
-    */
-public:
-    HttpRequestLine(const std::string&, const std::string&, const std::string&);
-};
-
 class HttpFieldLine {
-    /*
-     * Composed of:
-     * field-name
-     * field-value
-    */
 public:
     HttpFieldLine(const std::string&, const std::string&);
+private:
+    const std::string& field_name_;
+    const std::string& field_value_;
 };
+
+class HttpRequestLine {
+public:
+    HttpRequestLine(const std::string&, const std::string&, const std::string&);
+private:
+    const std::string& method_;
+    const std::string& request_target_;
+    const std::string& http_version_;
+};
+
 
 /*
  * Data holder class - it represents an HTTP 1.0 or 1.1 request
@@ -34,5 +31,9 @@ public:
      * And an optional message body followed by a new line '\r\n'
      * https://www.rfc-editor.org/rfc/rfc9112#name-field-syntax
     */
-    HttpRequest(const HttpFieldLine&, const std::vector<HttpFieldLine>&, const std::string&);
+    HttpRequest(const HttpRequestLine&, const std::vector<HttpFieldLine>&, const std::string&);
+private:
+    const HttpRequestLine& request_line_;
+    const std::vector<HttpFieldLine>& field_lines_;
+    const std::string& body_;
 };
