@@ -33,6 +33,23 @@ Location::AllowedMethods Location::methodFromString(const std::string& method)
     throw std::runtime_error("Unsupported HTTP method: " + method);
 }
 
+Location::ErrorPages Location::errorPageFromCode(const std::string& code)
+{
+    if (code == "400") return Location::E_400;
+    if (code == "403") return Location::E_403;
+    if (code == "404") return Location::E_404;
+    if (code == "405") return Location::E_405;
+    if (code == "408") return Location::E_408;
+    if (code == "413") return Location::E_413;
+    if (code == "414") return Location::E_414;
+    if (code == "500") return Location::E_500;
+    if (code == "501") return Location::E_501;
+    if (code == "502") return Location::E_502;
+    if (code == "503") return Location::E_503;
+    if (code == "504") return Location::E_504;
+    throw std::runtime_error("Unsupported error page code: " + code);
+}
+
 const std::string& Location::getPath() const
 {
     return path_;

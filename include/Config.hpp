@@ -20,7 +20,15 @@ public:
         E_400,
         E_403,
         E_404,
-        E_500
+        E_405,
+        E_408,
+        E_413,
+        E_414,
+        E_500,
+        E_501,
+        E_502,
+        E_503,
+        E_504
     };
     Location(const std::string, const std::vector<AllowedMethods>,
         const std::string, const std::string, const std::string, const std::string, bool,
@@ -28,6 +36,7 @@ public:
         const std::map<std::string, std::string> = std::map<std::string, std::string>());
 
     static AllowedMethods methodFromString(const std::string& method);
+    static ErrorPages       errorPageFromCode(const std::string& code);
 
     const std::string& getPath() const;
     const std::vector<AllowedMethods>& getAllowedMethods() const;
