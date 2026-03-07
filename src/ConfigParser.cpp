@@ -20,3 +20,22 @@ void ConfigParser::readFile()
     content_ = ss.str();
     file.close();
 }
+
+// Skip Whitespace and comments
+void ConfigParser::skipWhitespaceAndComments()
+{
+    while (pos_ < content_.size()) {
+        // Skip whitespace
+        if (std::isspace(static_cast<unsigned char>(content_[pos_]))) {
+            ++pos_;
+            continue;
+        }
+        // Skip line comments starting with #
+        if (content_[pos_] == '#') {
+            while (pos_ < content_.size() && content_[pos_] != '\n')
+                ++pos_;
+            continue;
+        }
+        break;
+    }
+}
