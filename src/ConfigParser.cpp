@@ -69,3 +69,11 @@ std::string ConfigParser::nextToken()
     }
     return content_.substr(start, pos_ - start);
 }
+
+std::string ConfigParser::peekToken()
+{
+    size_t saved = pos_;
+    std::string tok = nextToken();
+    pos_ = saved;
+    return tok;
+}
