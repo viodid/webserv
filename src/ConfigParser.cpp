@@ -39,3 +39,33 @@ void ConfigParser::skipWhitespaceAndComments()
         break;
     }
 }
+
+// Tokenization
+bool isSingleCharToken(char c) {
+    return c == '{' || c == '}' || c == ';';
+}
+
+std::string ConfigParser::nextToken()
+{
+    skipWhitespaceAndComments();
+    if (pos_ >= content_.size())
+        return "";
+
+    // Single-character tokens: { } ;
+    char c = content_[pos_];
+    if (isSingleCharToken(c)) {
+        ++pos_;
+        return std::string(1, c);
+    }
+
+    // Word token (everything until whitespace or special char)
+    size_t start = pos_;
+    while (pos_ < content_.size()) {
+        char ch = content_[pos_];
+        if (std::isspace(static_cast<unsigned char>(ch))
+            || isSingleCharToken(ch) || ch == '#')
+            break;
+        ++pos_;
+    }
+    return content_.substr(start, pos_ - start);
+}
