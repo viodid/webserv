@@ -244,11 +244,11 @@ VirtualHost ConfigParser::parseServerBlock()
 
     if (hostname.empty() || port.empty())
         throw std::runtime_error("ConfigParser: server block missing 'listen' directive");
-		
-	char* endptr;
-	long port_num = std::strtol(port.c_str(), &endptr, 10);
-	if (*endptr != '\0' || port_num < 1 || port_num > 65535)
-		throw std::runtime_error("ConfigParser: invalid port number: " + port);
+
+    char* endptr;
+    long port_num = std::strtol(port.c_str(), &endptr, 10);
+    if (*endptr != '\0' || port_num < 1 || port_num > 65535)
+        throw std::runtime_error("ConfigParser: invalid port number: " + port);
 
     return VirtualHost(hostname, port, client_max_body_size, error_pages, locations);
 }
