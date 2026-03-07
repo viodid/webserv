@@ -244,11 +244,59 @@ VirtualHost ConfigParser::parseServerBlock()
 
     if (hostname.empty() || port.empty())
         throw std::runtime_error("ConfigParser: server block missing 'listen' directive");
-
+		
 	char* endptr;
 	long port_num = std::strtol(port.c_str(), &endptr, 10);
 	if (*endptr != '\0' || port_num < 1 || port_num > 65535)
 		throw std::runtime_error("ConfigParser: invalid port number: " + port);
 
     return VirtualHost(hostname, port, client_max_body_size, error_pages, locations);
+}
+
+// ==================== Location block ====================
+
+Location ConfigParser::parseLocationBlock()
+{
+    std::string path = nextToken();
+    if (path.empty() || path == "{")
+        throw std::runtime_error("ConfigParser: location missing path");
+    expect("{");
+
+    std::string root;
+    std::string default_file;
+    std::string redirection_code;
+    std::string redirection_path;
+    bool        dir_listing = false;
+    std::string upload_store;
+    std::map<std::string, std::string> cgi_map;
+    std::vector<Location::AllowedMethods> methods;
+
+    for (std::string tok = peekToken(); tok != "}"; tok = peekToken()) {
+        if (tok.empty())
+            throw std::runtime_error("ConfigParser: unexpected end of file inside location block");
+        tok = nextToken();
+        if (tok == "root")
+            { root = nextToken(); expect(";"); }
+        else if (tok == "index")
+            { default_file = nextToken(); expect(";"); }
+        else if (tok == "autoindex")
+            parseAutoindex(dir_listing);
+        else if (tok == "allowed_methods")
+            parseAllowedMethods(methods);
+        else if (tok == "return")
+            parseReturn(redirection_code, redirection_path);
+        else if (tok == "upload_store")
+            { upload_store = nextToken(); expect(";"); }
+        else if (tok == "cgi_pass")
+            parseCgiPass(cgi_map);
+        else
+            skipUnknownDirective(tok, "location");
+    }
+    nextToken(); // consume '}'
+
+	// If no allowed_methods specified, default to GET
+    if (methods.empty())
+        methods.push_back(Location::GET);
+
+    return Location(path, methods, redirection_code, redirection_path, root, default_file, dir_listing, upload_store, cgi_map);
 }
