@@ -89,7 +89,7 @@ void ConfigParser::expect(const std::string& expected)
     }
 }
 
-// ==================== Directive helpers ====================
+// ==================== Directive helpers (server) ====================
 
 void ConfigParser::skipUnknownDirective(const std::string& tok, const std::string& block)
 {
@@ -129,3 +129,62 @@ void ConfigParser::parseListen(std::string& hostname, std::string& port)
     expect(";");
 }
 
+void ConfigParser::parseClientMaxBodySize(size_t& size)
+{
+    std::string size_str = nextToken();
+    char* endptr;
+    long val = std::strtol(size_str.c_str(), &endptr, 10);
+    if (*endptr != '\0' || val < 0)
+        throw std::runtime_error("ConfigParser: invalid client_max_body_size: " + size_str);
+    size = static_cast<size_t>(val);
+    expect(";");
+}
+
+void ConfigParser::parseErrorPage(std::vector<std::pair<Location::ErrorPages, std::string> >& pages)
+{
+    std::string code = nextToken();
+    std::string path = nextToken();
+    pages.push_back(std::make_pair(Location::errorPageFromCode(code), path));
+    expect(";");
+}
+
+// ==================== Directive helpers (Location) ====================
+
+void ConfigParser::parseAutoindex(bool& dir_listing)
+{
+    std::string val = nextToken();
+    if (val == "on")
+        dir_listing = true;
+    else if (val == "off")
+        dir_listing = false;
+    else
+        throw std::runtime_error("ConfigParser: autoindex must be 'on' or 'off', got: " + val);
+    expect(";");
+}
+
+void ConfigParser::parseAllowedMethods(std::vector<Location::AllowedMethods>& methods)
+{
+    for (std::string m = peekToken(); m != ";" && !m.empty(); m = peekToken())
+        methods.push_back(Location::methodFromString(nextToken()));
+    expect(";");
+    if (methods.empty())
+        throw std::runtime_error("ConfigParser: allowed_methods requires at least one method");
+}
+
+void ConfigParser::parseReturn(std::string& code, std::string& path)
+{
+    std::string first = nextToken();
+    if (!first.empty() && std::isdigit(static_cast<unsigned char>(first[0]))) {
+        code = first;
+        path = nextToken();
+    } else {
+        path = first;
+    }
+    expect(";");
+}
+
+void ConfigParser::parseCgiPass(std::map<std::string, std::string>& cgi_map)
+{
+    cgi_map[nextToken()] = nextToken();
+    expect(";");
+}
