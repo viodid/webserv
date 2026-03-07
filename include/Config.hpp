@@ -21,9 +21,10 @@ public:
         E_404,
         E_500
     };
-    Location(const std::vector<AllowedMethods>, const std::string,
-        const std::string, const std::string, bool);
+    Location(const std::string, const std::vector<AllowedMethods>,
+        const std::string, const std::string, const std::string, bool);
 
+    const std::string& getPath() const;
     const std::vector<AllowedMethods>& getAllowedMethods() const;
     const std::string& getRedirection() const;
     const std::string& getRoot() const;
@@ -31,6 +32,7 @@ public:
     bool isDirectoryListing() const;
 
 private:
+    std::string path_;
     std::vector<AllowedMethods> allowed_methods_;
     std::string redirection_;
     std::string root_;

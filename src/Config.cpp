@@ -1,11 +1,13 @@
 #include "../include/Config.hpp"
 
-Location::Location(const std::vector<AllowedMethods> methods,
+Location::Location(const std::string path,
+    const std::vector<AllowedMethods> methods,
     const std::string redirection,
     const std::string root,
     const std::string default_file,
     bool dir_listing)
-    : allowed_methods_(methods)
+    : path_(path)
+    , allowed_methods_(methods)
     , redirection_(redirection)
     , root_(root)
     , default_file_(default_file)
@@ -13,6 +15,10 @@ Location::Location(const std::vector<AllowedMethods> methods,
 {
 }
 
+const std::string& Location::getPath() const
+{
+    return path_;
+}
 const std::vector<Location::AllowedMethods>& Location::getAllowedMethods() const
 {
     return allowed_methods_;
@@ -87,14 +93,14 @@ const Config create_mock_config()
     std::vector<Location::AllowedMethods> methods1;
     methods1.push_back(Location::GET);
     std::vector<Location> l1;
-    l1.push_back(Location(methods1, "", "/var/www/html", "/var/www/html/403.html", false));
+    l1.push_back(Location("/", methods1, "", "/var/www/html", "/var/www/html/403.html", false));
     vh.push_back(VirtualHost("127.0.0.1", "5555", 100000, std::vector<std::pair<Location::ErrorPages, std::string> >(), l1));
     // vh2
     std::vector<Location::AllowedMethods> methods2;
     methods2.push_back(Location::GET);
     methods2.push_back(Location::POST);
     std::vector<Location> l2;
-    l1.push_back(Location(methods2, "", "/var/www/html", "/var/www/html/403.html", false));
+    l2.push_back(Location("/", methods2, "", "/var/www/html", "/var/www/html/403.html", false));
     vh.push_back(VirtualHost("localhost", "42069", 100000, std::vector<std::pair<Location::ErrorPages, std::string> >(), l2));
 
     return Config(vh);
