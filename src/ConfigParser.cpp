@@ -188,3 +188,67 @@ void ConfigParser::parseCgiPass(std::map<std::string, std::string>& cgi_map)
     cgi_map[nextToken()] = nextToken();
     expect(";");
 }
+
+// Main parse
+Config ConfigParser::parse()
+{
+    readFile();
+    pos_ = 0;
+    std::vector<VirtualHost> virtual_hosts;
+    skipWhitespaceAndComments();
+    while (pos_ < content_.size()) {
+        std::string tok = nextToken();
+        if (tok.empty())
+            break;
+        if (tok != "server") {
+            std::stringstream ss;
+            ss << "ConfigParser: expected 'server' but got '" << tok
+               << "' at position " << pos_;
+            throw std::runtime_error(ss.str());
+        }
+        virtual_hosts.push_back(parseServerBlock());
+        skipWhitespaceAndComments();
+    }
+    if (virtual_hosts.empty())
+        throw std::runtime_error("ConfigParser: no server blocks found in " + filepath_);
+    return Config(virtual_hosts);
+}
+
+// ==================== Server block ====================
+VirtualHost ConfigParser::parseServerBlock()
+{
+    expect("{");
+
+    std::string hostname;
+    std::string port;
+    size_t      client_max_body_size = 1048576; // 1 MiB default
+    std::vector<std::pair<Location::ErrorPages, std::string> > error_pages;
+    std::vector<Location> locations;
+
+    for (std::string tok = peekToken(); tok != "}"; tok = peekToken()) {
+        if (tok.empty())
+            throw std::runtime_error("ConfigParser: unexpected end of file inside server block");
+        tok = nextToken();
+        if (tok == "listen")
+            parseListen(hostname, port);
+        else if (tok == "client_max_body_size")
+            parseClientMaxBodySize(client_max_body_size);
+        else if (tok == "error_page")
+            parseErrorPage(error_pages);
+        else if (tok == "location")
+            locations.push_back(parseLocationBlock());
+        else
+            skipUnknownDirective(tok, "server");
+    }
+    nextToken(); // consume '}'
+
+    if (hostname.empty() || port.empty())
+        throw std::runtime_error("ConfigParser: server block missing 'listen' directive");
+
+	char* endptr;
+	long port_num = std::strtol(port.c_str(), &endptr, 10);
+	if (*endptr != '\0' || port_num < 1 || port_num > 65535)
+		throw std::runtime_error("ConfigParser: invalid port number: " + port);
+
+    return VirtualHost(hostname, port, client_max_body_size, error_pages, locations);
+}
