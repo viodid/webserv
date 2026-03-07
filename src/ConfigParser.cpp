@@ -8,3 +8,15 @@ ConfigParser::ConfigParser(const std::string& filepath)
     , pos_(0)
 {
 }
+
+// Read File
+void ConfigParser::readFile()
+{
+    std::ifstream file(filepath_.c_str());
+    if (!file.is_open())
+        throw std::runtime_error("ConfigParser: cannot open file: " + filepath_);
+    std::stringstream ss;
+    ss << file.rdbuf();
+    content_ = ss.str();
+    file.close();
+}
