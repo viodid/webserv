@@ -77,3 +77,14 @@ std::string ConfigParser::peekToken()
     pos_ = saved;
     return tok;
 }
+
+void ConfigParser::expect(const std::string& expected)
+{
+    std::string tok = nextToken();
+    if (tok != expected) {
+        std::stringstream ss;
+        ss << "ConfigParser: expected '" << expected
+           << "' but got '" << tok << "' at position " << pos_;
+        throw std::runtime_error(ss.str());
+    }
+}
