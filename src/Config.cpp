@@ -1,17 +1,24 @@
 #include "../include/Config.hpp"
+#include <map>
 
 Location::Location(const std::string path,
     const std::vector<AllowedMethods> methods,
-    const std::string redirection,
+    const std::string redirection_code,
+    const std::string redirection_path,
     const std::string root,
     const std::string default_file,
-    bool dir_listing)
+    bool dir_listing,
+    const std::string upload_store,
+    const std::map<std::string, std::string> cgi_map)
     : path_(path)
     , allowed_methods_(methods)
-    , redirection_(redirection)
+    , redirection_code_(redirection_code)
+    , redirection_path_(redirection_path)
     , root_(root)
     , default_file_(default_file)
     , directory_listing_(dir_listing)
+    , upload_store_(upload_store)
+    , cgi_map_(cgi_map)
 {
 }
 
@@ -23,9 +30,13 @@ const std::vector<Location::AllowedMethods>& Location::getAllowedMethods() const
 {
     return allowed_methods_;
 }
-const std::string& Location::getRedirection() const
+const std::string& Location::getRedirectionCode() const
 {
-    return redirection_;
+    return redirection_code_;
+}
+const std::string& Location::getRedirectionPath() const
+{
+    return redirection_path_;
 }
 const std::string& Location::getRoot() const
 {
@@ -38,6 +49,14 @@ const std::string& Location::getDefaultFile() const
 bool Location::isDirectoryListing() const
 {
     return directory_listing_;
+}
+const std::string& Location::getUploadStore() const
+{
+    return upload_store_;
+}
+const std::map<std::string, std::string>& Location::getCgiMap() const
+{
+    return cgi_map_;
 }
 
 VirtualHost::VirtualHost(
@@ -93,14 +112,14 @@ const Config create_mock_config()
     std::vector<Location::AllowedMethods> methods1;
     methods1.push_back(Location::GET);
     std::vector<Location> l1;
-    l1.push_back(Location("/", methods1, "", "/var/www/html", "/var/www/html/403.html", false));
+    l1.push_back(Location("/", methods1, "", "", "/var/www/html", "/var/www/html/403.html", false));
     vh.push_back(VirtualHost("127.0.0.1", "5555", 100000, std::vector<std::pair<Location::ErrorPages, std::string> >(), l1));
     // vh2
     std::vector<Location::AllowedMethods> methods2;
     methods2.push_back(Location::GET);
     methods2.push_back(Location::POST);
     std::vector<Location> l2;
-    l2.push_back(Location("/", methods2, "", "/var/www/html", "/var/www/html/403.html", false));
+    l2.push_back(Location("/", methods2, "", "", "/var/www/html", "/var/www/html/403.html", false));
     vh.push_back(VirtualHost("localhost", "42069", 100000, std::vector<std::pair<Location::ErrorPages, std::string> >(), l2));
 
     return Config(vh);
