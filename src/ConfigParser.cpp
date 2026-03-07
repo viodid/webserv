@@ -88,3 +88,44 @@ void ConfigParser::expect(const std::string& expected)
         throw std::runtime_error(ss.str());
     }
 }
+
+// ==================== Directive helpers ====================
+
+void ConfigParser::skipUnknownDirective(const std::string& tok, const std::string& block)
+{
+    std::cerr << "ConfigParser: warning: unknown directive '" << tok
+              << "' in " << block << " block, skipping\n";
+    if (peekToken() == "{") {
+        nextToken();
+        int depth = 1;
+        while (depth > 0) {
+            std::string t = nextToken();
+            if (t.empty()) break;
+            if (t == "{") ++depth;
+            else if (t == "}") --depth;
+        }
+    } else {
+		std::string peek = peekToken();
+		while (!peek.empty() && peek != "}") {
+			std::string tok = nextToken();
+			if (tok == ";")
+				break;
+			peek = peekToken();
+		}
+    }
+}
+
+void ConfigParser::parseListen(std::string& hostname, std::string& port)
+{
+    std::string addr = nextToken();
+    size_t colon = addr.rfind(':');
+    if (colon == std::string::npos) { // not found
+        hostname = "0.0.0.0";
+        port = addr;
+    } else {
+        hostname = addr.substr(0, colon);
+        port = addr.substr(colon + 1);
+    }
+    expect(";");
+}
+
