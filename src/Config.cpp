@@ -1,5 +1,6 @@
 #include "../include/Config.hpp"
 #include <map>
+#include <stdexcept>
 
 Location::Location(const std::string path,
     const std::vector<AllowedMethods> methods,
@@ -20,6 +21,16 @@ Location::Location(const std::string path,
     , upload_store_(upload_store)
     , cgi_map_(cgi_map)
 {
+}
+
+Location::AllowedMethods Location::methodFromString(const std::string& method)
+{
+    if (method == "GET")    return Location::GET;
+    if (method == "HEAD")   return Location::HEAD;
+    if (method == "POST")   return Location::POST;
+    if (method == "PUT")    return Location::PUT;
+    if (method == "DELETE") return Location::DELETE;
+    throw std::runtime_error("Unsupported HTTP method: " + method);
 }
 
 const std::string& Location::getPath() const

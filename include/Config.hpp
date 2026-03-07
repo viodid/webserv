@@ -27,6 +27,8 @@ public:
         const std::string = "",
         const std::map<std::string, std::string> = std::map<std::string, std::string>());
 
+    static AllowedMethods methodFromString(const std::string& method);
+
     const std::string& getPath() const;
     const std::vector<AllowedMethods>& getAllowedMethods() const;
     const std::string& getRedirectionCode() const;
