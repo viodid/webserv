@@ -79,6 +79,12 @@ public:
 private:
 	static bool parseRequestLine(const std::string& line, HttpRequest& req);
 	static bool parseHeader(const std::string& line, HttpRequest& req);
+	static bool parseHeaderSection_(const std::string& buffer, size_t first_line_end,
+	                                size_t header_end, HttpRequest& req);
+	static bool parseBody_(const std::string& body_data, bool is_complete,
+	                       size_t max_body_size, HttpRequest& req);
+	static bool parseContentLengthBody_(const std::string& body_data, bool is_complete,
+	                                    size_t max_body_size, HttpRequest& req);
 	static bool parseChunkedBody(const std::string& body_data, HttpRequest& req,
 	                             size_t max_body_size);
 	static bool isValidVersion(const std::string& version);
