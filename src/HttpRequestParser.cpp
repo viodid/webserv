@@ -163,6 +163,54 @@ bool HttpRequestParser::parseContentLengthBody_(const std::string& body_data, bo
 
 // ==================== HttpRequestParser Private Methods ====================
 
+// Parses the request line (e.g. "GET /index.html HTTP/1.1") and fills the method, path, query_string, and version fields of HttpRequest.
+bool HttpRequestParser::parseRequestLine(const std::string& line, HttpRequest& req)
+{
+    std::istringstream iss(line);
+    std::string        method_str;
+    std::string        uri;
+    std::string        version;
+
+    if (!(iss >> method_str >> uri >> version)) {
+        req.state     = PARSE_BAD_REQUEST;
+        req.error_msg = "Malformed request line";
+        return false;
+    }
+
+    HttpRequestLine request_line(method_str, uri, version);
+
+    // Validate and map to enum
+    try {
+        req.method = Location::methodFromString(request_line.getMethod());
+    } catch (const std::runtime_error&) {
+        req.state     = PARSE_NOT_IMPLEMENTED;
+        req.error_msg = "Method not supported: " + request_line.getMethod();
+        return false;
+    }
+
+    req.version = request_line.getHttpVersion();
+    if (!isValidVersion(req.version)) {
+        req.state     = PARSE_BAD_REQUEST;
+        req.error_msg = "Invalid HTTP version: " + req.version;
+        return false;
+    }
+    if (request_line.getRequestTarget().length() > MAX_URI_LENGTH) {
+        req.state     = PARSE_URI_TOO_LONG;
+        req.error_msg = "URI too long";
+        return false;
+    }
+
+    const std::string& target = request_line.getRequestTarget();
+    size_t query_pos = target.find('?');
+    if (query_pos != std::string::npos) {
+        req.path         = target.substr(0, query_pos);
+        req.query_string = target.substr(query_pos + 1);
+    } else {
+        req.path = target;
+    }
+    return true;
+}
+
 bool HttpRequestParser::parseHeader(const std::string& line, HttpRequest& req)
 {
     std::string clean = line;
