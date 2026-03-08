@@ -91,6 +91,26 @@ HttpRequest HttpRequestParser::parseIncremental(const std::string& buffer, bool 
     return req;
 }
 
+bool HttpRequestParser::parseHeaderSection_(const std::string& buffer, size_t first_line_end,
+                                            size_t header_end, HttpRequest& req)
+{
+	size_t headers_start = first_line_end + 2;
+    std::string        headers_str = buffer.substr(headers_start, header_end - headers_start);
+    std::istringstream stream(headers_str);
+    std::string        line;
+
+    while (std::getline(stream, line)) {
+        if (line.empty() || line == "\r")
+            break;
+        if (!parseHeader(line, req)) {
+            req.state     = PARSE_BAD_REQUEST;
+            req.error_msg = "Invalid header format";
+            return false;
+        }
+    }
+    return true;
+}
+
 // ==================== HttpRequestParser Private Methods ====================
 
 bool HttpRequestParser::isValidVersion(const std::string& version)
