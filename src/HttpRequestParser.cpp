@@ -163,6 +163,72 @@ bool HttpRequestParser::parseContentLengthBody_(const std::string& body_data, bo
 
 // ==================== HttpRequestParser Private Methods ====================
 
+bool HttpRequestParser::parseHeader(const std::string& line, HttpRequest& req)
+{
+    std::string clean = line;
+    if (!clean.empty() && clean[clean.size() - 1] == '\r')
+        clean.erase(clean.size() - 1);
+
+    size_t colon = clean.find(':');
+    if (colon == std::string::npos || colon == 0)
+        return false;
+
+    std::string fname  = toLower(trim(clean.substr(0, colon)));
+    std::string fvalue = trim(clean.substr(colon + 1));
+    HttpFieldLine field(fname, fvalue);
+    req.headers[field.getFieldName()] = field.getFieldValue();
+    return true;
+}
+
+bool HttpRequestParser::parseChunkedBody(const std::string& body_data, HttpRequest& req,
+                                         size_t max_body_size)
+{
+    std::string result;
+    size_t      pos = 0;
+
+    while (pos < body_data.size()) {
+        size_t chunk_size_end = body_data.find("\r\n", pos);
+        if (chunk_size_end == std::string::npos) { // No CRLF after chunk size
+            req.state     = PARSE_INCOMPLETE;
+            req.error_msg = "Incomplete chunk size";
+            return false;
+        }
+
+        std::string chunk_str = body_data.substr(pos, chunk_size_end - pos);
+        char*       endptr;
+        long        chunk_size = std::strtol(chunk_str.c_str(), &endptr, 16); // Hexadecimal to decimal
+
+        if (endptr == chunk_str.c_str() || chunk_size < 0) {
+            req.state     = PARSE_BAD_REQUEST;
+            req.error_msg = "Invalid chunk size";
+            return false;
+        }
+        if (chunk_size == 0) {
+            req.body = result;
+            return true; // final chunk
+        }
+        if (result.size() + static_cast<size_t>(chunk_size) > max_body_size) {
+            req.state     = PARSE_ENTITY_TOO_LARGE;
+            req.error_msg = "Chunked body exceeds client_max_body_size";
+            return false;
+        }
+
+        pos = chunk_size_end + 2; // Move past the chunk size line and CRLF (\r\n)
+        if (pos + static_cast<size_t>(chunk_size) + 2 > body_data.size()) {
+            req.state     = PARSE_INCOMPLETE;
+            req.error_msg = "Incomplete chunk data";
+            return false;
+        }
+
+        result.append(body_data.substr(pos, chunk_size));
+        pos += chunk_size + 2;
+    }
+
+    req.state     = PARSE_INCOMPLETE;
+    req.error_msg = "Missing final chunk";
+    return false;
+}
+
 bool HttpRequestParser::isValidVersion(const std::string& version)
 {
     return version == "HTTP/1.0" || version == "HTTP/1.1";
