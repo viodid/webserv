@@ -185,7 +185,9 @@ void ConfigParser::parseReturn(std::string& code, std::string& path)
 
 void ConfigParser::parseCgiPass(std::map<std::string, std::string>& cgi_map)
 {
-    cgi_map[nextToken()] = nextToken();
+    std::string ext     = nextToken();
+    std::string handler = nextToken();
+    cgi_map[ext] = handler;
     expect(";");
 }
 
