@@ -111,6 +111,56 @@ bool HttpRequestParser::parseHeaderSection_(const std::string& buffer, size_t fi
     return true;
 }
 
+bool HttpRequestParser::parseBody_(const std::string& body_data, bool is_complete,
+                                   size_t max_body_size, HttpRequest& req)
+{
+	// Chunked body: divided
+    if (req.hasHeader("transfer-encoding") &&
+        toLower(req.getHeader("transfer-encoding")).find("chunked") != std::string::npos) {
+        if (!parseChunkedBody(body_data, req, max_body_size)) {
+            if (!is_complete)
+                req.state = PARSE_INCOMPLETE;
+            return false;
+        }
+        req.state = PARSE_SUCCESS;
+        return true;
+    }
+	// Content-Length body: all at once
+    if (req.hasHeader("content-length"))
+        return parseContentLengthBody_(body_data, is_complete, max_body_size, req);
+	// No body or unsupported Transfer-Encoding
+    if (req.method == Location::POST || req.method == Location::PUT)
+        req.body = body_data;
+    req.state = PARSE_SUCCESS;
+    return true;
+}
+
+// Parses the body when Content-Length is specified (all at once).
+bool HttpRequestParser::parseContentLengthBody_(const std::string& body_data, bool is_complete,
+                                                size_t max_body_size, HttpRequest& req)
+{
+    char* endptr;
+    long  clen = std::strtol(req.getHeader("content-length").c_str(), &endptr, 10);
+    if (*endptr != '\0' || clen < 0) {
+        req.state     = PARSE_BAD_REQUEST;
+        req.error_msg = "Invalid Content-Length";
+        return false;
+    }
+    if (static_cast<size_t>(clen) > max_body_size) {
+        req.state     = PARSE_ENTITY_TOO_LARGE;
+        req.error_msg = "Body exceeds client_max_body_size";
+        return false;
+    }
+    if (body_data.size() < static_cast<size_t>(clen)) {
+        req.state     = is_complete ? PARSE_BAD_REQUEST : PARSE_INCOMPLETE;
+        req.error_msg = is_complete ? "Incomplete body" : "";
+        return false;
+    }
+    req.body  = body_data.substr(0, clen);
+    req.state = PARSE_SUCCESS;
+    return true;
+}
+
 // ==================== HttpRequestParser Private Methods ====================
 
 bool HttpRequestParser::isValidVersion(const std::string& version)
