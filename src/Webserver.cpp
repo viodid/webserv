@@ -1,5 +1,6 @@
 // TODO: primeagen 1:04:00
 #include "../include/Webserver.hpp"
+#include "../include/HttpRequestParser.hpp"
 
 Webserver::Webserver(const std::vector<VirtualHost>& config)
     : config_(config)
@@ -72,19 +73,35 @@ void Webserver::handleClientData_(EventManager& notifier, const Connection& conn
     std::vector<char> buf(READ_SOCKET_SIZE);
     std::vector<char> data;
     data.reserve(READ_SOCKET_SIZE);
-    int count = 0;
-    while ((count = recv(connection.getSocket().getFd(), buf.data(), READ_SOCKET_SIZE, MSG_DONTWAIT))) {
-        std::cout << "count = " << count << " - errno: " << errno << std::endl;
-        if (count == -1) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-                break;
-            else
-                throw std::runtime_error(std::strerror(errno));
-        }
+
+    ssize_t count = recv(connection.getSocket().getFd(), buf.data(), READ_SOCKET_SIZE, 0);
+    while (count == static_cast<ssize_t>(READ_SOCKET_SIZE)) {
         data.insert(data.end(), buf.begin(), buf.end());
+        count = recv(connection.getSocket().getFd(), buf.data(), READ_SOCKET_SIZE, 0);
     }
-    std::cout << "count = " << count << " - errno: " << errno << std::endl;
-    if (count == 0) // conn closed by client
+    if (count > 0)
+        data.insert(data.end(), buf.begin(), buf.begin() + count);
+
+    if (count == 0) // connection closed by client
         return handleClosedConn_(notifier, connection);
-    std::cout << data.data() << "\n";
+
+    if (data.empty())
+        return;
+
+    std::string raw(data.begin(), data.end());
+    HttpRequest req = HttpRequestParser::parseIncremental(
+        raw, false, connection.getConfig().getSocketSize());
+
+    if (req.state == PARSE_SUCCESS) {
+        std::cout << "[Parser] Method:  " << req.method << "\n";
+        std::cout << "[Parser] Path:    " << req.path   << "\n";
+        std::cout << "[Parser] Version: " << req.version << "\n";
+        if (!req.query_string.empty())
+            std::cout << "[Parser] Query:   " << req.query_string << "\n";
+        if (!req.body.empty())
+            std::cout << "[Parser] Body (" << req.body.size() << " bytes)\n";
+    } else {
+        std::cout << "[Parser] state=" << req.state
+                  << " msg=" << req.error_msg << "\n";
+    }
 }
