@@ -298,8 +298,15 @@ bool HttpRequestParser::parseChunkedBody(const std::string& body_data, HttpReque
             return false;
         }
 
-        result.append(body_data.substr(pos, chunk_size));
-        pos += chunk_size + 2;
+        size_t data_end = pos + static_cast<size_t>(chunk_size);
+        // Verify that the chunk data is properly terminated with CRLF
+        if (body_data[data_end] != '\r' || body_data[data_end + 1] != '\n') {
+            req.state     = PARSE_BAD_REQUEST;
+            req.error_msg = "Invalid chunk data terminator";
+            return false;
+        }
+        result.append(body_data.substr(pos, static_cast<size_t>(chunk_size)));
+        pos = data_end + 2; // Move past the data and its terminating CRLF
     }
 
     req.state     = PARSE_INCOMPLETE;
