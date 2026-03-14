@@ -21,9 +21,6 @@ void Webserver::init()
 {
     for (std::vector<VirtualHost>::const_iterator it = config_.begin(); it != config_.end(); it++) {
         Socket* socket_ptr = new Socket(it->getHostname(), it->getPort());
-        int flags = fcntl(socket_ptr->getFd(), F_GETFL, 0);
-        if (flags != -1)
-            fcntl(socket_ptr->getFd(), F_SETFL, flags | O_NONBLOCK);
 
         Connection* connection_ptr = new Connection(Connection::LISTENER, socket_ptr, *it);
         connections_.push_back(connection_ptr);
