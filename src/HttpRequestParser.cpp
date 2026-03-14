@@ -134,8 +134,14 @@ bool HttpRequestParser::parseBody_(const std::string& body_data, bool is_complet
     if (req.hasHeader("transfer-encoding") &&
         toLower(req.getHeader("transfer-encoding")).find("chunked") != std::string::npos) {
         if (!parseChunkedBody(body_data, req, max_body_size)) {
-            if (!is_complete)
+            if (!is_complete) {
                 req.state = PARSE_INCOMPLETE;
+            } else if (req.state == PARSE_INCOMPLETE) {
+                // Buffer is complete but chunked body is still incomplete: treat as bad request
+                req.state     = PARSE_BAD_REQUEST;
+                if (req.error_msg.empty())
+                    req.error_msg = "Incomplete chunked body in complete request buffer";
+            }
             return false;
         }
         req.state = PARSE_SUCCESS;
