@@ -89,4 +89,5 @@ private:
 	                             size_t max_body_size);
 	static bool isValidVersion(const std::string& version);
 	static bool checkBodySize_(size_t body_size, size_t max_body_size, HttpRequest& req);
+	static bool handleMissingContentLength_(bool is_complete, HttpRequest& req);
 };

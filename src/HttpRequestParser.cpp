@@ -137,12 +137,23 @@ bool HttpRequestParser::parseBody_(const std::string& body_data, bool is_complet
         return parseContentLengthBody_(body_data, is_complete, max_body_size, req);
 	// No body or unsupported Transfer-Encoding
     if (req.method == Location::POST || req.method == Location::PUT) {
+        if (handleMissingContentLength_(is_complete, req))
+            return false;
         if (!checkBodySize_(body_data.size(), max_body_size, req))
             return false;
         req.body = body_data;
     }
     req.state = PARSE_SUCCESS;
     return true;
+}
+bool HttpRequestParser::handleMissingContentLength_(bool is_complete, HttpRequest& req)
+{
+    if (is_complete) {
+        req.state     = PARSE_BAD_REQUEST;
+        req.error_msg = "Missing Content-Length for POST/PUT request";
+        return true;
+    }
+    return false;
 }
 
 // Parses the body when Content-Length is specified (all at once).
