@@ -242,6 +242,43 @@ bool HttpRequestParser::parseRequestLine(const std::string& line, HttpRequest& r
     return true;
 }
 
+// Validate that the header field-name is a non-empty HTTP token.
+// RFC 7230/9110 define field-name as a "token" consisting of one or more tchar:
+// tchar = "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." /
+//         "^" / "_" / "`" / "|" / "~" / DIGIT / ALPHA
+static bool isValidHeaderFieldName(const std::string& name)
+{
+    if (name.empty())
+        return false;
+
+    for (std::string::const_iterator it = name.begin(); it != name.end(); ++it) {
+        unsigned char ch = static_cast<unsigned char>(*it);
+        if (std::isalnum(ch))
+            continue;
+        switch (ch) {
+            case '!':
+            case '#':
+            case '$':
+            case '%':
+            case '&':
+            case '\'':
+            case '*':
+            case '+':
+            case '-':
+            case '.':
+            case '^':
+            case '_':
+            case '`':
+            case '|':
+            case '~':
+                continue;
+            default:
+                return false;
+        }
+    }
+    return true;
+}
+
 bool HttpRequestParser::parseHeader(const std::string& line, HttpRequest& req)
 {
     std::string clean = line;
@@ -254,6 +291,11 @@ bool HttpRequestParser::parseHeader(const std::string& line, HttpRequest& req)
 
     std::string fname  = toLower(trim(clean.substr(0, colon)));
     std::string fvalue = trim(clean.substr(colon + 1));
+
+    // Reject headers with empty or syntactically invalid field-names.
+    if (!isValidHeaderFieldName(fname))
+        return false;
+
     HttpFieldLine field(fname, fvalue);
     req.headers[field.getFieldName()] = field.getFieldValue();
     return true;
