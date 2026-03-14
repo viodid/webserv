@@ -167,7 +167,7 @@ void ConfigParser::parseAutoindex(bool& dir_listing)
 
 void ConfigParser::parseAllowedMethods(std::vector<Location::AllowedMethods>& methods)
 {
-    for (std::string m = peekToken(); m != ";" && !m.empty(); m = peekToken())
+    for (std::string m = peekToken(); m != ";" && m != "}" && !m.empty(); m = peekToken())
         methods.push_back(Location::methodFromString(nextToken()));
     expect(";");
     if (methods.empty())
