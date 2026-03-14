@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <unistd.h>
 #include <cstdio>
+#include <cstdlib>
 
 // ============================================================
 // Helper: writes content to a temporary file and deletes it
