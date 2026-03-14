@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <cctype>
+#include <cerrno>
 
 // Constructor
 ConfigParser::ConfigParser(const std::string& filepath)
@@ -134,8 +135,9 @@ void ConfigParser::parseClientMaxBodySize(size_t& size)
 {
     std::string size_str = nextToken();
     char* endptr;
+	errno = 0;
     long val = std::strtol(size_str.c_str(), &endptr, 10);
-    if (*endptr != '\0' || val < 0)
+    if (errno == ERANGE || *endptr != '\0' || val < 0)
         throw std::runtime_error("ConfigParser: invalid client_max_body_size: " + size_str);
     size = static_cast<size_t>(val);
     expect(";");
