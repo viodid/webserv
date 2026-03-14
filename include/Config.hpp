@@ -33,7 +33,7 @@ public:
     Location(const std::string, const std::vector<AllowedMethods>,
         const std::string, const std::string, const std::string, const std::string, bool,
         const std::string = "",
-        const std::map<std::string, std::string> = std::map<std::string, std::string>());
+        const std::map<std::string, std::string>& = std::map<std::string, std::string>());
 
     static AllowedMethods methodFromString(const std::string& method);
     static ErrorPages       errorPageFromCode(const std::string& code);
