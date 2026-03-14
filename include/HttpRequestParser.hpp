@@ -11,8 +11,8 @@ public:
 	const std::string& getFieldName() const;
 	const std::string& getFieldValue() const;
 private:
-	const std::string& field_name_;
-	const std::string& field_value_;
+	std::string field_name_;
+	std::string field_value_;
 };
 
 // represents the first line of an HTTP request
