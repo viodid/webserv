@@ -177,7 +177,13 @@ void ConfigParser::parseAllowedMethods(std::vector<Location::AllowedMethods>& me
 void ConfigParser::parseReturn(std::string& code, std::string& path)
 {
     std::string first = nextToken();
-    if (!first.empty() && std::isdigit(static_cast<unsigned char>(first[0]))) {
+	bool is_numeric = !first.empty();
+    for (std::string::size_type i = 0; i < first.size() && is_numeric; ++i) {
+    	if (!std::isdigit(static_cast<unsigned char>(first[i]))) {
+        	is_numeric = false;
+    	}
+    }
+	if (is_numeric) {
         code = first;
         path = nextToken();
     } else {
