@@ -243,7 +243,7 @@ TEST(HttpRequestParser, IncompleteChunkedReturnsIncomplete)
         "Host: localhost\r\n"
         "Transfer-Encoding: chunked\r\n"
         "\r\n"
-        "5\r\nHello\r\n";  // sin chunk final
+        "5\r\nHello\r\n";  // missing final chunk terminator
     HttpRequest req = HttpRequestParser::parseIncremental(raw, false, 1024);
     EXPECT_EQ(req.state, PARSE_INCOMPLETE);
 }
