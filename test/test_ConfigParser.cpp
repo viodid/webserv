@@ -16,9 +16,16 @@ struct TempConf {
         int fd = mkstemp(tmpl); // Creates a unique temp file and returns its fd
         if (fd == -1)
             throw std::runtime_error("mkstemp failed");
-        if (write(fd, content.c_str(), content.size()) == -1) {
-            close(fd);
-            throw std::runtime_error("write to tmpfile failed");
+        	const char* data = content.c_str();
+        	const size_t size = content.size();
+    		size_t totalWritten = 0;
+        	while (totalWritten < size) {
+        	ssize_t written = write(fd, data + totalWritten, size - totalWritten);
+        	if (written == -1) {
+        		close(fd);
+        		throw std::runtime_error("write to tmpfile failed");
+        	}
+        	totalWritten += static_cast<size_t>(written);
         }
         close(fd);
         path = std::string(tmpl);
