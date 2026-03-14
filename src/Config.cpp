@@ -2,15 +2,15 @@
 #include <map>
 #include <stdexcept>
 
-Location::Location(const std::string path,
-    const std::vector<AllowedMethods> methods,
-    const std::string redirection_code,
-    const std::string redirection_path,
-    const std::string root,
-    const std::string default_file,
+Location::Location(std::string path,
+    std::vector<AllowedMethods> methods,
+    std::string redirection_code,
+    std::string redirection_path,
+    std::string root,
+    std::string default_file,
     bool dir_listing,
-    const std::string upload_store,
-    const std::map<std::string, std::string> cgi_map)
+    std::string upload_store,
+    const std::map<std::string, std::string>& cgi_map)
     : path_(path)
     , allowed_methods_(methods)
     , redirection_code_(redirection_code)

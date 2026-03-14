@@ -30,9 +30,9 @@ public:
         E_503,
         E_504
     };
-    Location(const std::string, const std::vector<AllowedMethods>,
-        const std::string, const std::string, const std::string, const std::string, bool,
-        const std::string = "",
+    Location(std::string, std::vector<AllowedMethods>,
+        std::string, std::string, std::string, std::string, bool,
+        std::string = "",
         const std::map<std::string, std::string>& = std::map<std::string, std::string>());
 
     static AllowedMethods methodFromString(const std::string& method);
