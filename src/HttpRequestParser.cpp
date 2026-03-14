@@ -3,6 +3,7 @@
 #include <sstream>
 #include <cstdlib>
 #include <cerrno>
+#include <cctype>
 
 // ==================== HttpFieldLine Methods ====================
 
