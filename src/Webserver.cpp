@@ -2,6 +2,7 @@
 #include "../include/Webserver.hpp"
 #include "../include/HttpRequestParser.hpp"
 #include <fcntl.h>
+#include <errno.h>
 
 Webserver::Webserver(const std::vector<VirtualHost>& config)
     : config_(config)
@@ -84,8 +85,17 @@ void Webserver::handleClientData_(EventManager& notifier, const Connection& conn
 
     if (count > 0) {
         data.insert(data.end(), buf.begin(), buf.begin() + count);
-    } else {
+    } else if (count == 0) {
+        // Peer has performed an orderly shutdown.
         return handleClosedConn_(notifier, connection);
+    } else { // count == -1
+        if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+            // Transient condition on non-blocking socket; keep connection open.
+            return;
+        } else {
+            // Real error, close the connection.
+            return handleClosedConn_(notifier, connection);
+        }
     }
 
     if (data.empty())
