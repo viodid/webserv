@@ -2,6 +2,7 @@
 #include "../include/Utils.hpp"
 #include <sstream>
 #include <cstdlib>
+#include <cerrno>
 
 // ==================== HttpFieldLine Methods ====================
 
@@ -139,24 +140,26 @@ bool HttpRequestParser::parseBody_(const std::string& body_data, bool is_complet
 bool HttpRequestParser::parseContentLengthBody_(const std::string& body_data, bool is_complete,
                                                 size_t max_body_size, HttpRequest& req)
 {
+    errno = 0;
     char* endptr;
-    long  clen = std::strtol(req.getHeader("content-length").c_str(), &endptr, 10);
-    if (*endptr != '\0' || clen < 0) {
-        req.state     = PARSE_BAD_REQUEST;
+    long clen = std::strtol(req.getHeader("content-length").c_str(), &endptr, 10);
+
+    if (errno == ERANGE || *endptr != '\0' || clen < 0) {
+        req.state = PARSE_BAD_REQUEST;
         req.error_msg = "Invalid Content-Length";
         return false;
     }
     if (static_cast<size_t>(clen) > max_body_size) {
-        req.state     = PARSE_ENTITY_TOO_LARGE;
+        req.state = PARSE_ENTITY_TOO_LARGE;
         req.error_msg = "Body exceeds client_max_body_size";
         return false;
     }
     if (body_data.size() < static_cast<size_t>(clen)) {
-        req.state     = is_complete ? PARSE_BAD_REQUEST : PARSE_INCOMPLETE;
+        req.state = is_complete ? PARSE_BAD_REQUEST : PARSE_INCOMPLETE;
         req.error_msg = is_complete ? "Incomplete body" : "";
         return false;
     }
-    req.body  = body_data.substr(0, clen);
+    req.body = body_data.substr(0, clen);
     req.state = PARSE_SUCCESS;
     return true;
 }
@@ -243,10 +246,11 @@ bool HttpRequestParser::parseChunkedBody(const std::string& body_data, HttpReque
         }
 
         std::string chunk_str = body_data.substr(pos, chunk_size_end - pos);
-        char*       endptr;
-        long        chunk_size = std::strtol(chunk_str.c_str(), &endptr, 16); // Hexadecimal to decimal
+        errno = 0;
+        char* endptr;
+        long chunk_size = std::strtol(chunk_str.c_str(), &endptr, 16); // Hexadecimal to decimal
 
-        if (endptr == chunk_str.c_str() || chunk_size < 0) {
+        if (errno == ERANGE || endptr == chunk_str.c_str() || chunk_size < 0) {
             req.state     = PARSE_BAD_REQUEST;
             req.error_msg = "Invalid chunk size";
             return false;
