@@ -3,7 +3,6 @@
 #include "../include/HttpRequestParser.hpp"
 #include <fcntl.h>
 #include <errno.h>
-#include <unordered_map>
 
 Webserver::Webserver(const std::vector<VirtualHost>& config)
     : config_(config)
@@ -96,16 +95,15 @@ void Webserver::handleClosedConn_(EventManager& manager, const Connection& conne
 
 void Webserver::handleClientData_(EventManager& notifier, const Connection& connection)
 {
-    static std::unordered_map<int, std::string> input_buffers;
-
     std::vector<char> buf(READ_SOCKET_SIZE);
+    std::vector<char> data;
+    data.reserve(READ_SOCKET_SIZE);
 
     int fd = connection.getSocket().getFd();
     ssize_t count = recv(fd, buf.data(), READ_SOCKET_SIZE, 0);
 
     if (count > 0) {
-        std::string &inbuf = input_buffers[fd];
-        inbuf.append(buf.data(), static_cast<std::size_t>(count));
+        data.insert(data.end(), buf.begin(), buf.begin() + count);
     } else if (count == 0) {
         // Peer has performed an orderly shutdown.
         return handleClosedConn_(notifier, connection);
@@ -119,12 +117,12 @@ void Webserver::handleClientData_(EventManager& notifier, const Connection& conn
         }
     }
 
-    std::string &inbuf = input_buffers[fd];
-    if (inbuf.empty())
+    if (data.empty())
         return;
 
+    std::string raw(data.begin(), data.end());
     HttpRequest req = HttpRequestParser::parseIncremental(
-        inbuf, false, connection.getConfig().getSocketSize());
+        raw, false, connection.getConfig().getSocketSize());
 
     if (req.state == PARSE_SUCCESS) {
         std::cout << "[Parser] Method:  " << req.method << "\n";
@@ -134,14 +132,8 @@ void Webserver::handleClientData_(EventManager& notifier, const Connection& conn
             std::cout << "[Parser] Query:   " << req.query_string << "\n";
         if (!req.body.empty())
             std::cout << "[Parser] Body (" << req.body.size() << " bytes)\n";
-        // Clear buffer after successfully parsing a full request.
-        inbuf.clear();
     } else {
         std::cout << "[Parser] state=" << req.state
                   << " msg=" << req.error_msg << "\n";
-        // On terminal error (anything but PARSE_INCOMPLETE), drop buffered data.
-        if (req.state != PARSE_INCOMPLETE) {
-            inbuf.clear();
-        }
     }
 }
