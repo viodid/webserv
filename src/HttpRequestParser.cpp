@@ -322,7 +322,10 @@ bool HttpRequestParser::parseChunkedBody(const std::string& body_data, HttpReque
         char* endptr;
         long chunk_size = std::strtol(chunk_str.c_str(), &endptr, 16); // Hexadecimal to decimal
 
-        if (errno == ERANGE || endptr == chunk_str.c_str() || chunk_size < 0) {
+        if (errno == ERANGE ||
+            endptr == chunk_str.c_str() ||
+            chunk_size < 0 ||
+            (*endptr != '\0' && *endptr != ';')) {
             req.state     = PARSE_BAD_REQUEST;
             req.error_msg = "Invalid chunk size";
             return false;
