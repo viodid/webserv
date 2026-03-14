@@ -1,25 +1,70 @@
 #include "../include/Config.hpp"
+#include <map>
+#include <stdexcept>
 
-Location::Location(const std::vector<AllowedMethods> methods,
-    const std::string redirection,
-    const std::string root,
-    const std::string default_file,
-    bool dir_listing)
-    : allowed_methods_(methods)
-    , redirection_(redirection)
+Location::Location(std::string path,
+    std::vector<AllowedMethods> methods,
+    std::string redirection_code,
+    std::string redirection_path,
+    std::string root,
+    std::string default_file,
+    bool dir_listing,
+    std::string upload_store,
+    const std::map<std::string, std::string>& cgi_map)
+    : path_(path)
+    , allowed_methods_(methods)
+    , redirection_code_(redirection_code)
+    , redirection_path_(redirection_path)
     , root_(root)
     , default_file_(default_file)
     , directory_listing_(dir_listing)
+    , upload_store_(upload_store)
+    , cgi_map_(cgi_map)
 {
 }
 
+Location::AllowedMethods Location::methodFromString(const std::string& method)
+{
+    if (method == "GET")    return Location::GET;
+    if (method == "HEAD")   return Location::HEAD;
+    if (method == "POST")   return Location::POST;
+    if (method == "PUT")    return Location::PUT;
+    if (method == "DELETE") return Location::DELETE;
+    throw std::runtime_error("Unsupported HTTP method: " + method);
+}
+
+Location::ErrorPages Location::errorPageFromCode(const std::string& code)
+{
+    if (code == "400") return Location::E_400;
+    if (code == "403") return Location::E_403;
+    if (code == "404") return Location::E_404;
+    if (code == "405") return Location::E_405;
+    if (code == "408") return Location::E_408;
+    if (code == "413") return Location::E_413;
+    if (code == "414") return Location::E_414;
+    if (code == "500") return Location::E_500;
+    if (code == "501") return Location::E_501;
+    if (code == "502") return Location::E_502;
+    if (code == "503") return Location::E_503;
+    if (code == "504") return Location::E_504;
+    throw std::runtime_error("Unsupported error page code: " + code);
+}
+
+const std::string& Location::getPath() const
+{
+    return path_;
+}
 const std::vector<Location::AllowedMethods>& Location::getAllowedMethods() const
 {
     return allowed_methods_;
 }
-const std::string& Location::getRedirection() const
+const std::string& Location::getRedirectionCode() const
 {
-    return redirection_;
+    return redirection_code_;
+}
+const std::string& Location::getRedirectionPath() const
+{
+    return redirection_path_;
 }
 const std::string& Location::getRoot() const
 {
@@ -32,6 +77,14 @@ const std::string& Location::getDefaultFile() const
 bool Location::isDirectoryListing() const
 {
     return directory_listing_;
+}
+const std::string& Location::getUploadStore() const
+{
+    return upload_store_;
+}
+const std::map<std::string, std::string>& Location::getCgiMap() const
+{
+    return cgi_map_;
 }
 
 VirtualHost::VirtualHost(
@@ -87,14 +140,14 @@ const Config create_mock_config()
     std::vector<Location::AllowedMethods> methods1;
     methods1.push_back(Location::GET);
     std::vector<Location> l1;
-    l1.push_back(Location(methods1, "", "/var/www/html", "/var/www/html/403.html", false));
+    l1.push_back(Location("/", methods1, "", "", "/var/www/html", "/var/www/html/403.html", false));
     vh.push_back(VirtualHost("127.0.0.1", "5555", 100000, std::vector<std::pair<Location::ErrorPages, std::string> >(), l1));
     // vh2
     std::vector<Location::AllowedMethods> methods2;
     methods2.push_back(Location::GET);
     methods2.push_back(Location::POST);
     std::vector<Location> l2;
-    l1.push_back(Location(methods2, "", "/var/www/html", "/var/www/html/403.html", false));
+    l2.push_back(Location("/", methods2, "", "", "/var/www/html", "/var/www/html/403.html", false));
     vh.push_back(VirtualHost("localhost", "42069", 100000, std::vector<std::pair<Location::ErrorPages, std::string> >(), l2));
 
     return Config(vh);

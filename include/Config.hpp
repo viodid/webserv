@@ -1,5 +1,6 @@
 #pragma once
 #include <cstddef>
+#include <map>
 #include <string>
 #include <utility>
 #include <vector>
@@ -19,23 +20,44 @@ public:
         E_400,
         E_403,
         E_404,
-        E_500
+        E_405,
+        E_408,
+        E_413,
+        E_414,
+        E_500,
+        E_501,
+        E_502,
+        E_503,
+        E_504
     };
-    Location(const std::vector<AllowedMethods>, const std::string,
-        const std::string, const std::string, bool);
+    Location(std::string, std::vector<AllowedMethods>,
+        std::string, std::string, std::string, std::string, bool,
+        std::string = "",
+        const std::map<std::string, std::string>& = std::map<std::string, std::string>());
 
+    static AllowedMethods methodFromString(const std::string& method);
+    static ErrorPages       errorPageFromCode(const std::string& code);
+
+    const std::string& getPath() const;
     const std::vector<AllowedMethods>& getAllowedMethods() const;
-    const std::string& getRedirection() const;
+    const std::string& getRedirectionCode() const;
+    const std::string& getRedirectionPath() const;
     const std::string& getRoot() const;
     const std::string& getDefaultFile() const;
     bool isDirectoryListing() const;
+    const std::string& getUploadStore() const;
+    const std::map<std::string, std::string>& getCgiMap() const;
 
 private:
+    std::string path_;
     std::vector<AllowedMethods> allowed_methods_;
-    std::string redirection_;
+    std::string redirection_code_;
+    std::string redirection_path_;
     std::string root_;
     std::string default_file_;
     bool directory_listing_;
+    std::string upload_store_;
+    std::map<std::string, std::string> cgi_map_;
 };
 
 class VirtualHost {
