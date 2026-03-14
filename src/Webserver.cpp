@@ -74,16 +74,16 @@ void Webserver::handleClientData_(EventManager& notifier, const Connection& conn
     std::vector<char> data;
     data.reserve(READ_SOCKET_SIZE);
 
-    ssize_t count = recv(connection.getSocket().getFd(), buf.data(), READ_SOCKET_SIZE, 0);
-    while (count == static_cast<ssize_t>(READ_SOCKET_SIZE)) {
-        data.insert(data.end(), buf.begin(), buf.end());
+    ssize_t count = 0;
+    do {
         count = recv(connection.getSocket().getFd(), buf.data(), READ_SOCKET_SIZE, 0);
-    }
-    if (count > 0)
-        data.insert(data.end(), buf.begin(), buf.begin() + count);
-
-    if (count == 0) // connection closed by client
-        return handleClosedConn_(notifier, connection);
+        if (count > 0)
+            data.insert(data.end(), buf.begin(), buf.begin() + count);
+        else if (count == 0)
+            return handleClosedConn_(notifier, connection);
+        else if (count == -1)
+            break;
+    } while (count > 0);
 
     if (data.empty())
         return;
