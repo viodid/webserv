@@ -1,6 +1,7 @@
 #include "../include/ConfigParser.hpp"
 #include <cstdlib>
 #include <iostream>
+#include <cctype>
 
 // Constructor
 ConfigParser::ConfigParser(const std::string& filepath)
