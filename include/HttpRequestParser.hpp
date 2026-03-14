@@ -23,9 +23,9 @@ public:
 	const std::string& getRequestTarget() const;
 	const std::string& getHttpVersion() const;
 private:
-	const std::string& method_;
-	const std::string& request_target_;
-	const std::string& http_version_;
+	std::string method_;
+	std::string request_target_;
+	std::string http_version_;
 };
 
 // result codes returned by HttpRequestParser
