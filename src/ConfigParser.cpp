@@ -95,8 +95,14 @@ void ConfigParser::expect(const std::string& expected)
 
 void ConfigParser::skipUnknownDirective(const std::string& tok, const std::string& block)
 {
-    std::cerr << "ConfigParser: warning: unknown directive '" << tok
-              << "' in " << block << " block, skipping\n";
+    static const bool s_verbose =
+        (std::getenv("CONFIG_PARSER_SILENT") == NULL) &&
+        (std::getenv("CONFIG_PARSER_VERBOSE") != NULL ||
+         std::getenv("DEBUG") != NULL);
+    if (s_verbose) {
+        std::cerr << "ConfigParser: warning: unknown directive '" << tok
+                  << "' in " << block << " block, skipping\n";
+    }
     if (peekToken() == "{") {
         nextToken();
         int depth = 1;
