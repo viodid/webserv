@@ -88,4 +88,5 @@ private:
 	static bool parseChunkedBody(const std::string& body_data, HttpRequest& req,
 	                             size_t max_body_size);
 	static bool isValidVersion(const std::string& version);
+	static bool checkBodySize_(size_t body_size, size_t max_body_size, HttpRequest& req);
 };

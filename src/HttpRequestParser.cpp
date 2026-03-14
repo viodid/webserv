@@ -136,8 +136,11 @@ bool HttpRequestParser::parseBody_(const std::string& body_data, bool is_complet
     if (req.hasHeader("content-length"))
         return parseContentLengthBody_(body_data, is_complete, max_body_size, req);
 	// No body or unsupported Transfer-Encoding
-    if (req.method == Location::POST || req.method == Location::PUT)
+    if (req.method == Location::POST || req.method == Location::PUT) {
+        if (!checkBodySize_(body_data.size(), max_body_size, req))
+            return false;
         req.body = body_data;
+    }
     req.state = PARSE_SUCCESS;
     return true;
 }
@@ -155,11 +158,10 @@ bool HttpRequestParser::parseContentLengthBody_(const std::string& body_data, bo
         req.error_msg = "Invalid Content-Length";
         return false;
     }
-    if (static_cast<size_t>(clen) > max_body_size) {
-        req.state = PARSE_ENTITY_TOO_LARGE;
-        req.error_msg = "Body exceeds client_max_body_size";
+
+    if (!checkBodySize_(static_cast<size_t>(clen), max_body_size, req))
         return false;
-    }
+
     if (body_data.size() < static_cast<size_t>(clen)) {
         req.state = is_complete ? PARSE_BAD_REQUEST : PARSE_INCOMPLETE;
         req.error_msg = is_complete ? "Incomplete body" : "";
@@ -171,6 +173,15 @@ bool HttpRequestParser::parseContentLengthBody_(const std::string& body_data, bo
 }
 
 // ==================== HttpRequestParser Private Methods ====================
+bool HttpRequestParser::checkBodySize_(size_t body_size, size_t max_body_size, HttpRequest& req)
+{
+    if (body_size > max_body_size) {
+        req.state     = PARSE_ENTITY_TOO_LARGE;
+        req.error_msg = "Body exceeds client_max_body_size";
+        return false;
+    }
+    return true;
+}
 
 // Parses the request line (e.g. "GET /index.html HTTP/1.1") and fills the method, path, query_string, and version fields of HttpRequest.
 bool HttpRequestParser::parseRequestLine(const std::string& line, HttpRequest& req)
@@ -265,9 +276,7 @@ bool HttpRequestParser::parseChunkedBody(const std::string& body_data, HttpReque
             req.body = result;
             return true; // final chunk
         }
-        if (result.size() + static_cast<size_t>(chunk_size) > max_body_size) {
-            req.state     = PARSE_ENTITY_TOO_LARGE;
-            req.error_msg = "Chunked body exceeds client_max_body_size";
+        if (!checkBodySize_(result.size() + static_cast<size_t>(chunk_size), max_body_size, req)) {
             return false;
         }
 
