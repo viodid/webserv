@@ -195,6 +195,14 @@ TEST(HttpRequestParser, GetWithNoBodyIsOk)
     EXPECT_TRUE(req.body.empty());
 }
 
+TEST(HttpRequestParser, ContentLengthOverflowReturns400)
+{
+    std::string raw = "POST /upload HTTP/1.1\r\nHost: localhost\r\nContent-Length: 9999999999999999999999999999999\r\n\r\nbody";
+    HttpRequest req = HttpRequestParser::parse(raw, 1024);
+    EXPECT_EQ(req.state, PARSE_BAD_REQUEST);
+    EXPECT_EQ(req.error_msg, "Invalid Content-Length");
+}
+
 // ============================================================
 // Chunked transfer
 // ============================================================
