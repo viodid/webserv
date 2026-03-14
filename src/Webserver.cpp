@@ -48,7 +48,26 @@ void Webserver::run()
 
 void Webserver::handleNewConnection_(EventManager& notifier, const Connection& connection)
 {
-    int cfd = connection.getSocket().acceptConn();
+    int cfd;
+    try {
+        cfd = connection.getSocket().acceptConn();
+    } catch (const std::exception& e) {
+#if DEBUG
+        std::cerr << "[Debug] acceptConn() threw exception: " << e.what() << std::endl;
+#endif
+        return;
+    }
+
+    if (cfd < 0) {
+        // Non-blocking listener: no connection ready.
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return;
+        }
+#if DEBUG
+        std::cerr << "[Debug] acceptConn() failed, errno=" << errno << std::endl;
+#endif
+        return;
+    }
 
     int flags = fcntl(cfd, F_GETFL, 0);
     if (flags != -1)
