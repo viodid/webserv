@@ -23,6 +23,7 @@ struct TempConf {
         	ssize_t written = write(fd, data + totalWritten, size - totalWritten);
         	if (written == -1) {
         		close(fd);
+        		unlink(tmpl);
         		throw std::runtime_error("write to tmpfile failed");
         	}
         	totalWritten += static_cast<size_t>(written);
