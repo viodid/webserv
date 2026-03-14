@@ -43,7 +43,7 @@ void ConfigParser::skipWhitespaceAndComments()
 }
 
 // Tokenization
-bool isSingleCharToken(char c) {
+static bool isSingleCharToken(char c) {
     return c == '{' || c == '}' || c == ';';
 }
 
