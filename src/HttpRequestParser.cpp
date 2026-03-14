@@ -72,6 +72,11 @@ HttpRequest HttpRequestParser::parseIncremental(const std::string& buffer, bool 
     }
 
     size_t first_line_end = buffer.find("\r\n");
+	if (first_line_end == std::string::npos) {
+		req.state = PARSE_BAD_REQUEST;
+		req.error_msg = "Malformed request line";
+		return req;
+	}
     if (!parseRequestLine(buffer.substr(0, first_line_end), req))
         return req;
 
