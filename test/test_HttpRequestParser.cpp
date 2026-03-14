@@ -271,7 +271,10 @@ TEST(HttpFieldLine, StoresNameAndValue)
 
 TEST(HttpRequestLine, StoresComponents)
 {
-    HttpRequestLine rl("GET", "/path", "HTTP/1.1");
+	std::string method = "GET";
+	std::string target = "/path";
+	std::string version = "HTTP/1.1";
+	HttpRequestLine rl(method, target, version);
     EXPECT_EQ(rl.getMethod(), "GET");
     EXPECT_EQ(rl.getRequestTarget(), "/path");
     EXPECT_EQ(rl.getHttpVersion(), "HTTP/1.1");
