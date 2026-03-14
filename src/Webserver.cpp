@@ -59,17 +59,6 @@ void Webserver::handleNewConnection_(EventManager& notifier, const Connection& c
         return;
     }
 
-    if (cfd < 0) {
-        // Non-blocking listener: no connection ready.
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            return;
-        }
-#if DEBUG
-        std::cerr << "[Debug] acceptConn() failed, errno=" << errno << std::endl;
-#endif
-        return;
-    }
-
     int flags = fcntl(cfd, F_GETFL, 0);
     if (flags != -1)
         fcntl(cfd, F_SETFL, flags | O_NONBLOCK);
