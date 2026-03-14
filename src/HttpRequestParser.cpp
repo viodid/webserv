@@ -161,10 +161,11 @@ bool HttpRequestParser::parseContentLengthBody_(const std::string& body_data, bo
                                                 size_t max_body_size, HttpRequest& req)
 {
     errno = 0;
+    const std::string value = req.getHeader("content-length");
     char* endptr;
-    long clen = std::strtol(req.getHeader("content-length").c_str(), &endptr, 10);
+    long clen = std::strtol(value.c_str(), &endptr, 10);
 
-    if (errno == ERANGE || *endptr != '\0' || clen < 0) {
+    if (errno == ERANGE || endptr == value.c_str() || *endptr != '\0' || clen < 0) {
         req.state = PARSE_BAD_REQUEST;
         req.error_msg = "Invalid Content-Length";
         return false;
