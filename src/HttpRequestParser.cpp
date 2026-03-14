@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cerrno>
 #include <cctype>
+#include <stdexcept>
 
 // ==================== HttpFieldLine Methods ====================
 
