@@ -96,9 +96,10 @@ HttpRequest HttpRequestParser::parseIncremental(const std::string& buffer, bool 
         parseBody_(buffer.substr(body_start), is_complete, max_body_size, req);
     } else {
         // No body bytes present in the buffer. If headers indicate a body
-        // (e.g., Content-Length or Transfer-Encoding), delegate to parseBody_
-        // so it can decide between PARSE_INCOMPLETE and PARSE_BAD_REQUEST.
-        if (req.hasHeader("Content-Length") || req.hasHeader("Transfer-Encoding")) {
+        // (e.g., Content-Length or Transfer-Encoding) or method requires body,
+        // delegate to parseBody_ so it can decide between PARSE_INCOMPLETE and PARSE_BAD_REQUEST.
+        if (req.hasHeader("Content-Length") || req.hasHeader("Transfer-Encoding") ||
+            req.method == Location::POST || req.method == Location::PUT) {
             parseBody_(std::string(), is_complete, max_body_size, req);
         } else {
             req.state = PARSE_SUCCESS;
