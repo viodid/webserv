@@ -203,6 +203,22 @@ TEST(HttpRequestParser, ContentLengthOverflowReturns400)
     EXPECT_EQ(req.error_msg, "Invalid Content-Length");
 }
 
+TEST(HttpRequestParser, PostWithoutContentLengthReturns400)
+{
+    std::string raw = "POST /submit HTTP/1.1\r\nHost: localhost\r\n\r\n";
+    HttpRequest req = HttpRequestParser::parse(raw, 1024);
+    EXPECT_EQ(req.state, PARSE_BAD_REQUEST);
+    EXPECT_EQ(req.error_msg, "Missing Content-Length for POST/PUT request");
+}
+
+TEST(HttpRequestParser, PutWithoutContentLengthReturns400)
+{
+    std::string raw = "PUT /resource HTTP/1.1\r\nHost: localhost\r\n\r\n";
+    HttpRequest req = HttpRequestParser::parse(raw, 1024);
+    EXPECT_EQ(req.state, PARSE_BAD_REQUEST);
+    EXPECT_EQ(req.error_msg, "Missing Content-Length for POST/PUT request");
+}
+
 // ============================================================
 // Chunked transfer
 // ============================================================
