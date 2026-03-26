@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 class HttpRequestLine {
@@ -16,6 +17,7 @@ private:
     std::string http_version_;
 };
 
+// TODO: unused class
 class HttpFieldLine {
 public:
     HttpFieldLine(const std::string&, const std::string&);
@@ -42,11 +44,10 @@ public:
     HttpRequest(const HttpRequestLine&, const std::vector<HttpFieldLine>&, const std::string&);
 
     const HttpRequestLine& getRequestLine() const;
-    const std::vector<HttpFieldLine>& getFieldLines() const;
     const std::string& getBody() const;
 
 private:
     HttpRequestLine request_line_;
-    std::vector<HttpFieldLine> field_lines_;
+    std::unordered_map<std::string, std::string> field_lines_;
     std::string body_;
 };
