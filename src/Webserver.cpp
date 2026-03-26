@@ -8,13 +8,12 @@ Webserver::Webserver(const std::vector<VirtualHost>& config)
 
 Webserver::~Webserver()
 {
-    for (size_t i = 0; i < connections_.size(); i++) 
+    for (size_t i = 0; i < connections_.size(); i++)
         delete connections_[i];
 #if DEBUG
     std::cout << "[Debug] Webserver destructor called " << std::endl;
 #endif
 }
-
 
 void Webserver::init()
 {
