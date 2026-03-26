@@ -1,21 +1,5 @@
 #include "../include/HttpRequest.hpp"
 
-HttpFieldLine::HttpFieldLine(const std::string& fn, const std::string& fv)
-    : field_name_(fn)
-    , field_value_(fv)
-{
-}
-
-const std::string& HttpFieldLine::getFieldName() const
-{
-    return field_name_;
-}
-
-const std::string& HttpFieldLine::getFieldValue() const
-{
-    return field_value_;
-}
-
 HttpRequestLine::HttpRequestLine(const std::string& method,
     const std::string& request_target,
     const std::string& http_v)
@@ -38,6 +22,22 @@ const std::string& HttpRequestLine::getRequestTarget() const
 const std::string& HttpRequestLine::getHttpVersion() const
 {
     return http_version_;
+}
+
+HttpFieldLine::HttpFieldLine(const std::string& fn, const std::string& fv)
+    : field_name_(fn)
+    , field_value_(fv)
+{
+}
+
+const std::string& HttpFieldLine::getFieldName() const
+{
+    return field_name_;
+}
+
+const std::string& HttpFieldLine::getFieldValue() const
+{
+    return field_value_;
 }
 
 HttpRequest::HttpRequest(const HttpRequestLine& request_line,

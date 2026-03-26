@@ -2,18 +2,6 @@
 #include <string>
 #include <vector>
 
-class HttpFieldLine {
-public:
-    HttpFieldLine(const std::string&, const std::string&);
-
-    const std::string& getFieldName() const;
-    const std::string& getFieldValue() const;
-
-private:
-    std::string field_name_;
-    std::string field_value_;
-};
-
 class HttpRequestLine {
 public:
     HttpRequestLine(const std::string&, const std::string&, const std::string&);
@@ -26,6 +14,18 @@ private:
     std::string method_;
     std::string request_target_;
     std::string http_version_;
+};
+
+class HttpFieldLine {
+public:
+    HttpFieldLine(const std::string&, const std::string&);
+
+    const std::string& getFieldName() const;
+    const std::string& getFieldValue() const;
+
+private:
+    std::string field_name_;
+    std::string field_value_;
 };
 
 /*
