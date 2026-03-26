@@ -6,19 +6,26 @@ class HttpFieldLine {
 public:
     HttpFieldLine(const std::string&, const std::string&);
 
+    const std::string& getFieldName() const;
+    const std::string& getFieldValue() const;
+
 private:
-    const std::string& field_name_;
-    const std::string& field_value_;
+    std::string field_name_;
+    std::string field_value_;
 };
 
 class HttpRequestLine {
 public:
     HttpRequestLine(const std::string&, const std::string&, const std::string&);
 
+    const std::string& getMethod() const;
+    const std::string& getRequestTarget() const;
+    const std::string& getHttpVersion() const;
+
 private:
-    const std::string& method_;
-    const std::string& request_target_;
-    const std::string& http_version_;
+    std::string method_;
+    std::string request_target_;
+    std::string http_version_;
 };
 
 /*
@@ -34,8 +41,12 @@ public:
      */
     HttpRequest(const HttpRequestLine&, const std::vector<HttpFieldLine>&, const std::string&);
 
+    const HttpRequestLine& getRequestLine() const;
+    const std::vector<HttpFieldLine>& getFieldLines() const;
+    const std::string& getBody() const;
+
 private:
-    const HttpRequestLine& request_line_;
-    const std::vector<HttpFieldLine>& field_lines_;
-    const std::string& body_;
+    HttpRequestLine request_line_;
+    std::vector<HttpFieldLine> field_lines_;
+    std::string body_;
 };
