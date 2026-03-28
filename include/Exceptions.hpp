@@ -1,14 +1,23 @@
-#ifndef EXCEPTIONS_HPP
-#define EXCEPTIONS_HPP
-#include <exception>
+#pragma once
 #include <cerrno>
 #include <cstring>
+#include <exception>
+#include <string>
 
-class ExceptionGetAddrInfo : public std::exception {
+class ExceptionMalformedRequestLine : public std::exception {
 public:
+    ExceptionMalformedRequestLine(const std::string&);
     virtual const char* What() const throw();
+
+private:
+    const std::string msg_;
 };
 
-#endif
+class ExceptionMalformedFieldLine : public std::exception {
+public:
+    ExceptionMalformedFieldLine(const std::string&);
+    virtual const char* What() const throw();
 
-
+private:
+    const std::string msg_;
+};
