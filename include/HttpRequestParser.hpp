@@ -1,4 +1,5 @@
 #pragma once
+#include "Exceptions.hpp"
 #include "HttpRequest.hpp"
 #include <stdexcept>
 
@@ -6,8 +7,10 @@ class HttpRequestParser {
 public:
     HttpRequestParser(const std::string&);
 
-    HttpRequest parse() const;
+    HttpRequest parse();
 
 private:
-    const std::string stream_;
+    std::string stream_;
+
+    HttpRequestLine parseRequestLine_();
 };
