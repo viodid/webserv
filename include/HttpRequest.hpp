@@ -44,6 +44,7 @@ public:
     HttpRequest(const HttpRequestLine&, const std::unordered_map<std::string, std::string>&, const std::string&);
 
     const HttpRequestLine& getRequestLine() const;
+    const std::unordered_map<std::string, std::string>& getFieldNames() const;
     const std::string& getBody() const;
 
 private:
