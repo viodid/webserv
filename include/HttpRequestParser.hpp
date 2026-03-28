@@ -6,7 +6,7 @@ class HttpRequestParser {
 public:
     HttpRequestParser(const std::string&);
 
-    void parse() const;
+    HttpRequest parse() const;
 
 private:
     const std::string stream_;

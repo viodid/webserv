@@ -41,7 +41,7 @@ public:
      * And an optional message body followed by a new line '\r\n'
      * https://www.rfc-editor.org/rfc/rfc9112#name-field-syntax
      */
-    HttpRequest(const HttpRequestLine&, const std::vector<HttpFieldLine>&, const std::string&);
+    HttpRequest(const HttpRequestLine&, const std::unordered_map<std::string, std::string>&, const std::string&);
 
     const HttpRequestLine& getRequestLine() const;
     const std::string& getBody() const;
