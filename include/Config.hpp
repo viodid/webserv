@@ -5,30 +5,36 @@
 #include <utility>
 #include <vector>
 
+#define HTTP_METHODS(X) \
+    X(GET) \
+    X(HEAD) \
+    X(POST) \
+    X(PUT) \
+    X(DELETE)
+
+#define MAKE_ENUM(m) m,
+#define MAKE_STRING(m) #m,
 
 class Location {
 public:
     enum AllowedMethods {
-        GET,
-        HEAD,
-        POST,
-        PUT,
-        DELETE
+        HTTP_METHODS(MAKE_ENUM)
+        _COUNT
     };
 
     enum ErrorPages {
-        E_400,
-        E_403,
-        E_404,
-        E_405,
-        E_408,
-        E_413,
-        E_414,
-        E_500,
-        E_501,
-        E_502,
-        E_503,
-        E_504
+        E_400 = 400,
+        E_403 = 403,
+        E_404 = 404,
+        E_405 = 405,
+        E_408 = 408,
+        E_413 = 413,
+        E_414 = 414,
+        E_500 = 500,
+        E_501 = 501,
+        E_502 = 502,
+        E_503 = 503,
+        E_504 = 504
     };
     Location(std::string, std::vector<AllowedMethods>,
         std::string, std::string, std::string, std::string, bool,
@@ -49,15 +55,15 @@ public:
     const std::map<std::string, std::string>& getCgiMap() const;
 
 private:
-    std::string path_;
-    std::vector<AllowedMethods> allowed_methods_;
-    std::string redirection_code_;
-    std::string redirection_path_;
-    std::string root_;
-    std::string default_file_;
+    const std::string path_;
+    const std::vector<AllowedMethods> allowed_methods_;
+    const std::string redirection_code_;
+    const std::string redirection_path_;
+    const std::string root_;
+    const std::string default_file_;
     bool directory_listing_;
-    std::string upload_store_;
-    std::map<std::string, std::string> cgi_map_;
+    const std::string upload_store_;
+    const std::map<std::string, std::string> cgi_map_;
 };
 
 class VirtualHost {

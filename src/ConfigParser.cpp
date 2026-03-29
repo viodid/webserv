@@ -50,7 +50,7 @@ static bool isSingleCharToken(char c) {
 std::string ConfigParser::nextToken()
 {
     skipWhitespaceAndComments();
-    if (pos_ >= content_.size())
+    if (pos_ >= content_.size()) // EOF
         return "";
 
     // Single-character tokens: { } ;

@@ -2,14 +2,14 @@
 #include <map>
 #include <stdexcept>
 
-Location::Location(std::string path,
-    std::vector<AllowedMethods> methods,
-    std::string redirection_code,
-    std::string redirection_path,
-    std::string root,
-    std::string default_file,
+Location::Location(const std::string path,
+    const std::vector<AllowedMethods> methods,
+    const std::string redirection_code,
+    const std::string redirection_path,
+    const std::string root,
+    const std::string default_file,
     bool dir_listing,
-    std::string upload_store,
+    const std::string upload_store,
     const std::map<std::string, std::string>& cgi_map)
     : path_(path)
     , allowed_methods_(methods)
@@ -25,29 +25,17 @@ Location::Location(std::string path,
 
 Location::AllowedMethods Location::methodFromString(const std::string& method)
 {
-    if (method == "GET")    return Location::GET;
-    if (method == "HEAD")   return Location::HEAD;
-    if (method == "POST")   return Location::POST;
-    if (method == "PUT")    return Location::PUT;
-    if (method == "DELETE") return Location::DELETE;
+    static const char* METHODS[] = {HTTP_METHODS(MAKE_STRING)};
+    for (size_t i = 0; i < sizeof(METHODS) / sizeof(METHODS[0]); ++i) {
+        if (method == METHODS[i])
+            return static_cast<AllowedMethods>(i);
+    }
     throw std::runtime_error("Unsupported HTTP method: " + method);
 }
 
 Location::ErrorPages Location::errorPageFromCode(const std::string& code)
 {
-    if (code == "400") return Location::E_400;
-    if (code == "403") return Location::E_403;
-    if (code == "404") return Location::E_404;
-    if (code == "405") return Location::E_405;
-    if (code == "408") return Location::E_408;
-    if (code == "413") return Location::E_413;
-    if (code == "414") return Location::E_414;
-    if (code == "500") return Location::E_500;
-    if (code == "501") return Location::E_501;
-    if (code == "502") return Location::E_502;
-    if (code == "503") return Location::E_503;
-    if (code == "504") return Location::E_504;
-    throw std::runtime_error("Unsupported error page code: " + code);
+    return static_cast<Location::ErrorPages>(std::atoi(code.c_str()));
 }
 
 const std::string& Location::getPath() const

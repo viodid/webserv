@@ -441,3 +441,17 @@ TEST(ConfigParser, DefaultConfFileParsesSuccessfully)
     // Smoke-test the actual bundled config
     EXPECT_NO_THROW(ConfigParser("resources/default.conf").parse());
 }
+
+TEST(ConfigParser, RedirectWithCode302Parsed)
+{
+    Config cfg = parseConf(
+        "server {\n"
+        "    listen 127.0.0.1:8080;\n"
+        "    location /redirect {\n"
+        "        return 302 /;\n"
+        "    }\n"
+        "}\n");
+    const Location& loc = cfg.getVirtualHosts()[0].getLocations()[0];
+    EXPECT_EQ(loc.getRedirectionCode(), "302");
+    EXPECT_EQ(loc.getRedirectionPath(), "/");
+}
