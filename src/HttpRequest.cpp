@@ -41,7 +41,7 @@ const std::string& HttpFieldLine::getFieldValue() const
 }
 
 HttpRequest::HttpRequest(const HttpRequestLine& request_line,
-    const std::unordered_map<std::string, std::string>& field_lines,
+    const std::map<std::string, std::string>& field_lines,
     const std::string& body)
     : request_line_(request_line)
     , field_lines_(field_lines)
@@ -54,7 +54,7 @@ const HttpRequestLine& HttpRequest::getRequestLine() const
     return request_line_;
 }
 
-const std::unordered_map<std::string, std::string>& HttpRequest::getFieldNames() const
+const std::map<std::string, std::string>& HttpRequest::getFieldNames() const
 {
     return field_lines_;
 }

@@ -14,7 +14,7 @@ HttpRequestParser::HttpRequestParser(const std::string& s)
 HttpRequest HttpRequestParser::parse()
 {
     HttpRequestLine request_line = parseRequestLine_();
-    std::unordered_map<std::string, std::string> field_lines;
+    std::map<std::string, std::string> field_lines;
     // while (cursor < END) {
     //     size_t curr_delimeter = stream_.find(DELIMETER, cursor);
     //     parseFieldLine(field_lines, stream_.begin() + cursor, curr_delimeter);
@@ -71,9 +71,8 @@ HttpRequestLine HttpRequestParser::parseRequestLine_()
 
 static bool isSupportedHTTPVersion(const std::string& str)
 {
-    const std::unordered_set<std::string> supported_versions = {
-        "HTTP/1.0",
-        "HTTP/1.1",
-    };
+    std::set<std::string> supported_versions;
+    supported_versions.insert("HTTP/1.0");
+    supported_versions.insert("HTTP/1.1");
     return supported_versions.find(str) != supported_versions.end();
 }

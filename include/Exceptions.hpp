@@ -7,7 +7,9 @@
 class ExceptionMalformedRequestLine : public std::exception {
 public:
     ExceptionMalformedRequestLine(const std::string&);
-    virtual const char* what() const throw();
+    virtual ~ExceptionMalformedRequestLine() throw() { };
+
+    const char* what() const throw();
 
 private:
     const std::string msg_;
@@ -16,7 +18,9 @@ private:
 class ExceptionMalformedFieldLine : public std::exception {
 public:
     ExceptionMalformedFieldLine(const std::string&);
-    virtual const char* what() const throw();
+    virtual ~ExceptionMalformedFieldLine() throw() { };
+
+    const char* what() const throw();
 
 private:
     const std::string msg_;

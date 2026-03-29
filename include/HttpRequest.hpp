@@ -1,6 +1,6 @@
 #pragma once
+#include <map>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 class HttpRequestLine {
@@ -41,14 +41,14 @@ public:
      * And an optional message body followed by a new line '\r\n'
      * https://www.rfc-editor.org/rfc/rfc9112#name-field-syntax
      */
-    HttpRequest(const HttpRequestLine&, const std::unordered_map<std::string, std::string>&, const std::string&);
+    HttpRequest(const HttpRequestLine&, const std::map<std::string, std::string>&, const std::string&);
 
     const HttpRequestLine& getRequestLine() const;
-    const std::unordered_map<std::string, std::string>& getFieldNames() const;
+    const std::map<std::string, std::string>& getFieldNames() const;
     const std::string& getBody() const;
 
 private:
     HttpRequestLine request_line_;
-    std::unordered_map<std::string, std::string> field_lines_;
+    std::map<std::string, std::string> field_lines_;
     std::string body_;
 };
