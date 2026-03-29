@@ -32,7 +32,7 @@ TEST(HttpParserTest, ParseRequestLineInvalid)
 {
     EXPECT_THROW(HttpRequestParser("/coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ").parse(),
         ExceptionMalformedRequestLine);
-    EXPECT_THROW(HttpRequestParser("GET /coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ").parse(),
+    EXPECT_THROW(HttpRequestParser("GET HTTP/1.1 /coffee\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ").parse(),
         ExceptionMalformedRequestLine);
     EXPECT_THROW(HttpRequestParser("GET coffee 1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ").parse(),
         ExceptionMalformedRequestLine);

@@ -1,8 +1,4 @@
 #include "../include/HttpRequestParser.hpp"
-#include <cctype>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
 static const char DELIMETER[] = "\r\n";
 static const char END_MESSAGE[] = "\r\n\r\n";
@@ -17,11 +13,6 @@ HttpRequestParser::HttpRequestParser(const std::string& s)
  */
 HttpRequest HttpRequestParser::parse()
 {
-
-    if (stream_.find(END_MESSAGE) == std::string::npos)
-        throw std::runtime_error("registered nurse not present");
-
-    size_t cursor = stream_.find(DELIMETER);
     HttpRequestLine request_line = parseRequestLine_();
     std::unordered_map<std::string, std::string> field_lines;
     // while (cursor < END) {
@@ -46,7 +37,7 @@ HttpRequest HttpRequestParser::parse()
  * https://www.rfc-editor.org/rfc/rfc9112#name-request-line
  */
 // TODO: primeagen 1:04:00
-static bool isSupportedHTTPVersions(const std::string& str);
+static bool isSupportedHTTPVersion(const std::string& str);
 HttpRequestLine HttpRequestParser::parseRequestLine_()
 {
     std::string FIELD_DELIMETER = " ";
@@ -62,19 +53,23 @@ HttpRequestLine HttpRequestParser::parseRequestLine_()
         if (curr_deli == std::string::npos)
             throw ExceptionMalformedRequestLine("space character delimeter not found");
         parts.push_back(stream_.substr(cursor, curr_deli - cursor));
-        cursor += curr_deli + FIELD_DELIMETER.size();
+        cursor = curr_deli + FIELD_DELIMETER.size();
     }
 
+    // check METHOD
     for (std::string::iterator it = parts[0].begin(); it != parts[0].end(); it++) {
         if (!std::isupper(*it) || !std::isalpha(*it))
             throw ExceptionMalformedRequestLine("method is not uppercase or alphabetical");
     }
-    if (parts[2].size() != 8 || !isSupportedHTTPVersions(parts[2]))
+
+    if (parts[2].size() != 8 || !isSupportedHTTPVersion(parts[2]))
         throw ExceptionMalformedRequestLine("HTTP version unsopported");
+    parts[2] = parts[2].substr(5);
+    stream_ = stream_.substr(cursor);
     return HttpRequestLine(parts[0], parts[1], parts[2]);
 }
 
-static bool isSupportedHTTPVersions(const std::string& str)
+static bool isSupportedHTTPVersion(const std::string& str)
 {
     const std::unordered_set<std::string> supported_versions = {
         "HTTP/1.0",
