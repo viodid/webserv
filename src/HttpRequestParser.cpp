@@ -38,12 +38,16 @@ HttpRequest HttpRequestParser::parse()
  */
 // TODO: primeagen 1:04:00
 static bool isSupportedHTTPVersion(const std::string& str);
+
 HttpRequestLine HttpRequestParser::parseRequestLine_()
 {
     std::string FIELD_DELIMETER = " ";
     size_t delimeter_pos = stream_.find(DELIMETER);
+
     if (delimeter_pos == std::string::npos)
         throw ExceptionMalformedRequestLine("delimeter not found");
+
+    // request line parts break up
     size_t cursor = 0;
     std::vector<std::string> parts;
     while (parts.size() < 3) {
@@ -51,7 +55,7 @@ HttpRequestLine HttpRequestParser::parseRequestLine_()
             FIELD_DELIMETER = DELIMETER;
         size_t curr_deli = stream_.find(FIELD_DELIMETER, cursor);
         if (curr_deli == std::string::npos)
-            throw ExceptionMalformedRequestLine("space character delimeter not found");
+            throw ExceptionMalformedRequestLine("delimeter not found");
         parts.push_back(stream_.substr(cursor, curr_deli - cursor));
         cursor = curr_deli + FIELD_DELIMETER.size();
     }
@@ -64,8 +68,10 @@ HttpRequestLine HttpRequestParser::parseRequestLine_()
 
     if (parts[2].size() != 8 || !isSupportedHTTPVersion(parts[2]))
         throw ExceptionMalformedRequestLine("HTTP version unsopported");
+
     parts[2] = parts[2].substr(5);
     stream_ = stream_.substr(cursor);
+
     return HttpRequestLine(parts[0], parts[1], parts[2]);
 }
 
