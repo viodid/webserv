@@ -5,7 +5,7 @@ ExceptionMalformedFieldLine::ExceptionMalformedFieldLine(const std::string& str)
 {
 }
 
-const char* ExceptionMalformedRequestLine::What() const throw()
+const char* ExceptionMalformedRequestLine::what() const throw()
 {
     return msg_.c_str();
 }
@@ -15,7 +15,7 @@ ExceptionMalformedRequestLine::ExceptionMalformedRequestLine(const std::string& 
 {
 }
 
-const char* ExceptionMalformedFieldLine::What() const throw()
+const char* ExceptionMalformedFieldLine::what() const throw()
 {
     return msg_.c_str();
 }
