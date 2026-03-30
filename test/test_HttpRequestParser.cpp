@@ -1,6 +1,39 @@
 #include "../include/HttpRequestParser.hpp"
 #include <exception>
 #include <gtest/gtest.h>
+#include <stdexcept>
+
+class ChunkReader {
+public:
+    ChunkReader(const std::string& data, int nb)
+        : data_(data)
+        , bytes_per_read_(nb)
+        , pos_(0) { };
+
+    int read(char bufffer[], int len)
+    {
+        if (pos_ >= data_.size())
+            return 0;
+
+        if (len < bytes_per_read_)
+            throw std::runtime_error("buffer size is smaller than chunk reader");
+
+        int i { 0 };
+        for (auto it { data_.begin() + pos_ };
+            i < bytes_per_read_ || it != data_.end();
+            it++) {
+            bufffer[i] = *it;
+            i++;
+        }
+        pos_ += i;
+        return i;
+    };
+
+private:
+    const std::string data_;
+    const int bytes_per_read_;
+    int pos_;
+};
 
 TEST(HttpParserTest, ParseRequestLineCorrect)
 {
