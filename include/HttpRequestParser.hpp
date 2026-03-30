@@ -9,7 +9,9 @@
 #include <stdexcept>
 #include <vector>
 
-#define BUFFER_SIZE 1 << 10 // 1kib
+// #define BUFFER_SIZE 1 << 8 // 1B
+#define BUFFER_SIZE 8
+#define MAX_BUFFER_SIZE 1 << 10 // 10KiB
 
 class HttpRequestParser {
 public:
@@ -24,7 +26,6 @@ public:
 
 private:
     IReader& reader_;
-    std::string buffer_;
     RequestState state_;
 
     HttpRequestLine parseRequestLine_();

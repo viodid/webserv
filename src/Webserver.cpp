@@ -72,7 +72,6 @@ void Webserver::handleClientData_(EventManager& notifier, const Connection& conn
     std::vector<char> data;
     data.reserve(READ_SOCKET_SIZE);
     int count = 0;
-    // chunk read class state machine
     while ((count = recv(connection.getSocket().getFd(), buf.data(), READ_SOCKET_SIZE, MSG_DONTWAIT))) {
         std::cout << "count = " << count << " - errno: " << errno << std::endl;
         if (count == -1) {

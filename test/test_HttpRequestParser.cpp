@@ -1,9 +1,10 @@
 #include "../include/HttpRequestParser.hpp"
+#include "../include/IReader.hpp"
 #include <exception>
 #include <gtest/gtest.h>
 #include <stdexcept>
 
-class ChunkReader {
+class ChunkReader : IReader {
 public:
     ChunkReader(const std::string& data, int nb)
         : data_(data)

@@ -1,17 +1,43 @@
 #include "../include/HttpRequestParser.hpp"
+#include <stdexcept>
 
 static const char DELIMETER[] = "\r\n";
 static const char END_MESSAGE[] = "\r\n\r\n";
 
-HttpRequestParser::HttpRequestParser(const std::string& s)
-    : stream_(s)
+HttpRequestParser::HttpRequestParser(IReader& reader)
+    : reader_(reader)
 {
+}
+
+HttpRequest HttpRequestParser::parseFromReader()
+{
+    int read_idx = 0;
+    std::vector<char> buffer;
+
+    int buffer_size = BUFFER_SIZE;
+    buffer.reserve(buffer_size);
+
+    while (state_ != HttpRequestParser::RequestState::DONE) {
+
+        if (buffer.size() > MAX_BUFFER_SIZE)
+            throw std::runtime_error("overflow MAX_BUFFER_SIZE");
+
+        int read = reader_.read(buffer.data() + read_idx,
+            buffer.capacity() - read_idx);
+        if (read == len(buffer_size)) {
+            buffer_size *= 2;
+            buffer.reserve(buffer_size);
+        }
+        read_idx += read;
+
+        int parsed = parse_(buffer.data(), buffer_size);
+    }
 }
 
 /*
  * https://www.rfc-editor.org/rfc/rfc9112#name-message-parsing
  */
-HttpRequest HttpRequestParser::parse()
+int HttpRequestParser::parse_()
 {
     HttpRequestLine request_line = parseRequestLine_();
     std::map<std::string, std::string> field_lines;
@@ -36,7 +62,6 @@ HttpRequest HttpRequestParser::parse()
  * GET /foo HTTP/1.1
  * https://www.rfc-editor.org/rfc/rfc9112#name-request-line
  */
-// TODO: primeagen 1:04:00
 static bool isSupportedHTTPVersion(const std::string& str);
 
 HttpRequestLine HttpRequestParser::parseRequestLine_()

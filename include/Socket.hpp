@@ -13,7 +13,6 @@
 #include <unistd.h>
 
 #define SOCKET_BACKLOG 4096
-#define READ_SOCKET_SIZE 1 << 24 // 16MiB
 
 /**
  * @class Socket
