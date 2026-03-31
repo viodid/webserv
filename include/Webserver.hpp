@@ -4,6 +4,8 @@
 #include "EventManager.hpp"
 #include "Socket.hpp"
 
+#define READ_SOCKET_SIZE 1 << 12
+
 class Webserver {
 public:
     Webserver(const std::vector<VirtualHost>& config);

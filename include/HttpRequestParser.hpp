@@ -22,11 +22,16 @@ public:
 
     HttpRequestParser(IReader& reader);
 
-    HttpRequest parse();
+    const HttpRequest getRequest() const;
+    void parseFromReader();
 
 private:
     IReader& reader_;
-    RequestState state_;
+    HttpRequest request_;
+    RequestState current_state_;
 
-    HttpRequestLine parseRequestLine_();
+    int parse_(const char* buffer, int length);
+    int parseRequestLine_(const char* buffer, int length);
+
+    bool done() const;
 };
