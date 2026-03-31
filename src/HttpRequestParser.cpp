@@ -38,11 +38,13 @@ void HttpRequestParser::parseFromReader()
             buffer.resize(buffer_size);
         }
 
-        int bytes_parsed = parse_(buffer.data(), bytes_read);
+        int bytes_parsed = parse_(buffer.data(), read_idx);
 
         // remove already parsed content from buffer
-        buffer.erase(buffer.begin(), buffer.begin() + bytes_parsed);
-        buffer.resize(buffer_size);
+        if (bytes_parsed) {
+            buffer.erase(buffer.begin(), buffer.begin() + bytes_parsed);
+            buffer.resize(buffer_size);
+        }
     }
 }
 
