@@ -2,7 +2,7 @@
 #include "Config.hpp"
 #include "Connection.hpp"
 #include "EventManager.hpp"
-#include "HttpRequestParser.hpp"
+#include "HttpRequest/HttpRequest.hpp"
 
 class Webserver {
 public:

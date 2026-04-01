@@ -1,4 +1,4 @@
-#include "../include/HttpRequestParser.hpp"
+#include "../include/HttpRequest/HttpRequest.hpp"
 #include "../include/IReader.hpp"
 #include <exception>
 #include <gtest/gtest.h>
@@ -39,13 +39,12 @@ private:
 TEST(HttpParserTest, ParseRequestLineCorrectSmallBuffer)
 {
     ChunkReader reader("GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n", 1);
-    HttpRequestParser parser(reader);
+    HttpRequest request;
     try {
-        parser.parseFromReader();
-        HttpRequest request = parser.getRequest();
-        EXPECT_EQ("GET", request.request_line.method);
-        EXPECT_EQ("/", request.request_line.request_target);
-        EXPECT_EQ("1.1", request.request_line.http_version);
+        request.parseFromReader(reader);
+        EXPECT_EQ("GET", request.getRequestLine().getMethod());
+        EXPECT_EQ("/", request.getRequestLine().getRequestTarget());
+        EXPECT_EQ("1.1", request.getRequestLine().getHttpVersion());
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
         FAIL();
@@ -55,13 +54,12 @@ TEST(HttpParserTest, ParseRequestLineCorrectSmallBuffer)
 TEST(HttpParserTest, ParseRequestLineCorrectBigBuffer)
 {
     ChunkReader reader("GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n", 1024);
-    HttpRequestParser parser(reader);
+    HttpRequest request;
     try {
-        parser.parseFromReader();
-        HttpRequest request = parser.getRequest();
-        EXPECT_EQ("GET", request.request_line.method);
-        EXPECT_EQ("/", request.request_line.request_target);
-        EXPECT_EQ("1.1", request.request_line.http_version);
+        request.parseFromReader(reader);
+        EXPECT_EQ("GET", request.getRequestLine().getMethod());
+        EXPECT_EQ("/", request.getRequestLine().getRequestTarget());
+        EXPECT_EQ("1.1", request.getRequestLine().getHttpVersion());
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
         FAIL();
@@ -70,14 +68,13 @@ TEST(HttpParserTest, ParseRequestLineCorrectBigBuffer)
 
 TEST(HttpParserTest, ParseRequestLineCorrectWithPath)
 {
-    ChunkReader reader("GET /coffee HTTP/1.0\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n", 11);
-    HttpRequestParser parser(reader);
+    ChunkReader reader("GET /coffee HTTP/1.0\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n", 1024);
+    HttpRequest request;
     try {
-        parser.parseFromReader();
-        HttpRequest request = parser.getRequest();
-        EXPECT_EQ("GET", request.request_line.method);
-        EXPECT_EQ("/coffee", request.request_line.request_target);
-        EXPECT_EQ("1.0", request.request_line.http_version);
+        request.parseFromReader(reader);
+        EXPECT_EQ("GET", request.getRequestLine().getMethod());
+        EXPECT_EQ("/coffee", request.getRequestLine().getRequestTarget());
+        EXPECT_EQ("1.0", request.getRequestLine().getHttpVersion());
     } catch (std::exception& e) {
         std::cerr << e.what() << '\n';
         FAIL();
@@ -87,45 +84,44 @@ TEST(HttpParserTest, ParseRequestLineCorrectWithPath)
 TEST(HttpParserTest, ParseRequestLineMissingMethod)
 {
     ChunkReader reader("/coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
-    HttpRequestParser parser(reader);
-    EXPECT_THROW(parser.parseFromReader(),
+    HttpRequest parser;
+    EXPECT_THROW(parser.parseFromReader(reader),
         ExceptionMalformedRequestLine);
 }
 
 TEST(HttpParserTest, ParseRequestLineSwapOrder)
 {
     ChunkReader reader("GET HTTP/1.1 /coffee\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
-    HttpRequestParser parser(reader);
-    EXPECT_THROW(parser.parseFromReader(),
+    HttpRequest parser;
+    EXPECT_THROW(parser.parseFromReader(reader),
         ExceptionMalformedRequestLine);
 }
 
 TEST(HttpParserTest, ParseRequestLineWrongHttpVersion)
 {
     ChunkReader reader("GET /coffee HTTP/2.0\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
-    HttpRequestParser parser(reader);
-    EXPECT_THROW(parser.parseFromReader(),
+    HttpRequest parser;
+    EXPECT_THROW(parser.parseFromReader(reader),
         ExceptionMalformedRequestLine);
 }
 
 TEST(HttpParserTest, ParseRequestLineMultipleWS)
 {
     ChunkReader reader("GET  /coffee HTTP/2.0\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
-    HttpRequestParser parser(reader);
-    EXPECT_THROW(parser.parseFromReader(),
+    HttpRequest parser;
+    EXPECT_THROW(parser.parseFromReader(reader),
         ExceptionMalformedRequestLine);
 }
 
 TEST(HttpParserTest, ParseFieldLineCorrect)
 {
     ChunkReader reader("GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent:  curl/7.81.0\r\nAccept:   text/html\r\n\r\n", 1);
-    HttpRequestParser parser(reader);
+    HttpRequest request;
     try {
-        parser.parseFromReader();
-        HttpRequest request = parser.getRequest();
-        EXPECT_EQ("localhost:42069", request.field_lines["Host"]);
-        EXPECT_EQ("curl/7.81.0", request.field_lines["User-Agent"]);
-        EXPECT_EQ("text/html", request.field_lines["Accept"]);
+        request.parseFromReader(reader);
+        EXPECT_EQ("localhost:42069", request.getFieldLines().get("Host"));
+        EXPECT_EQ("curl/7.81.0", request.getFieldLines().get("User-Agent"));
+        EXPECT_EQ("text/html", request.getFieldLines().get("Accept"));
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
         FAIL();
@@ -135,15 +131,15 @@ TEST(HttpParserTest, ParseFieldLineCorrect)
 TEST(HttpParserTest, ParseFieldLineWrongMissingColon)
 {
     ChunkReader reader("GET /coffee HTTP/1.0\r\nHost  \r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
-    HttpRequestParser parser(reader);
-    EXPECT_THROW(parser.parseFromReader(),
+    HttpRequest parser;
+    EXPECT_THROW(parser.parseFromReader(reader),
         ExceptionMalformedFieldLine);
 }
 
 TEST(HttpParserTest, ParseFieldLineWrongFormat)
 {
     ChunkReader reader("GET /coffee HTTP/1.0\r\nHost : localhost\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
-    HttpRequestParser parser(reader);
-    EXPECT_THROW(parser.parseFromReader(),
+    HttpRequest parser;
+    EXPECT_THROW(parser.parseFromReader(reader),
         ExceptionMalformedFieldLine);
 }

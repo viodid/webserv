@@ -2,10 +2,10 @@ BINARY 		= webserv
 CXX 		= g++
 STD			= 98
 CXXFLAGS	= -std=c++$(STD) -Wall -Wextra -Wpedantic -g3 -O0 -DDEBUG=1
-#LDFLAGS		= -lgtest -lgtest_main -lpthread
+LDFLAGS		= -lgtest -lgtest_main -lpthread
 
-#SRCS 		= $(shell find . -type f -name '*.cpp' ! -name 'main.cpp' ! -name 'test_Socket.cpp' ! -name 'test_Config.cpp')
-SRCS		= $(shell find src -type f -name '*.cpp')
+SRCS 		= $(shell find . -type f -name '*.cpp' ! -name 'main.cpp' ! -name 'test_Socket.cpp' ! -name 'test_Config.cpp')
+#SRCS		= $(shell find src -type f -name '*.cpp')
 OBJS 		= $(SRCS:.cpp=.o)
 
 

@@ -69,21 +69,23 @@ void Webserver::handleClosedConn_(EventManager& manager, const Connection& conne
     }
 }
 
+void print_field_lines(const std::string& fn, const std::string& fv)
+{
+    std::cout << fn << ": " << fv << "\n";
+}
+
 void Webserver::handleClientData_(EventManager& notifier, Connection& connection)
 {
-    HttpRequestParser parser(connection);
+    HttpRequest request;
     try {
-        parser.parseFromReader();
-        HttpRequest request = parser.getRequest();
+        request.parseFromReader(connection);
         std::cout << "Request line:\n"
-                  << "- Method: " << request.request_line.method << "\n"
-                  << "- Target: " << request.request_line.request_target << "\n"
-                  << "- Version: " << request.request_line.http_version << "\n"
+                  << "- Method: " << request.getRequestLine().getMethod() << "\n"
+                  << "- Target: " << request.getRequestLine().getRequestTarget() << "\n"
+                  << "- Version: " << request.getRequestLine().getHttpVersion() << "\n"
                   << "Field line:\n";
-        for (std::map<std::string, std::string>::const_iterator it = request.field_lines.begin();
-            it != request.field_lines.end();
-            it++)
-            std::cout << it->first << ": " << it->second << "\n";
+        request.getFieldLines().forEach(&print_field_lines);
+
     } catch (ExceptionClientCloseConn& e) {
         return handleClosedConn_(notifier, connection);
     }
