@@ -5,9 +5,11 @@ Connection::Connection(Type type, Socket* socket, const VirtualHost& vh)
     , socket_(socket)
     , config_(vh)
 {
+    buffer_.reserve(Settings::CONNECTION_BUFFER_SIZE);
 }
 
-Connection::~Connection() {
+Connection::~Connection()
+{
     delete socket_;
 #if DEBUG
     std::cout << "[Debug] Connection destructor called " << std::endl;
@@ -43,4 +45,16 @@ void Connection::setInputBuffer(const std::string& s)
 void Connection::setOutputBuffer(const std::string& s)
 {
     output_buffer_ = s;
+}
+
+int Connection::read(char buffer[], int len)
+{
+    int read_n = recv(socket_->getFd(), buffer, len, MSG_DONTWAIT);
+    if (read_n == -1) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+            throw std::runtime_error(std::strerror(errno));
+    }
+    if (read_n == 0)
+        throw ExceptionClientCloseConn("");
+    return read_n;
 }

@@ -12,8 +12,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define SOCKET_BACKLOG 4096
-
 /**
  * @class Socket
  * @brief A simple RAII wrapper for a TCP socket.

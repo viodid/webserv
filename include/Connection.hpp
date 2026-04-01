@@ -1,6 +1,10 @@
 #pragma once
 #include "Config.hpp"
+#include "Exceptions.hpp"
+#include "IReader.hpp"
+#include "Settings.hpp"
 #include "Socket.hpp"
+#include <vector>
 
 /**
  * @class Connection
@@ -10,7 +14,7 @@
  * listener). Ties the VitualHost configuration to a socket and holds I/O
  * buffers.
  */
-class Connection {
+class Connection : public IReader {
 public:
     enum Type {
         LISTENER,
@@ -27,10 +31,13 @@ public:
     void setInputBuffer(const std::string&);
     void setOutputBuffer(const std::string&);
 
+    virtual int read(char buffer[], int len);
+
 private:
     Type type_;
     Socket* socket_;
     VirtualHost config_;
+    std::vector<char> buffer_;
     std::string input_buffer_;
     std::string output_buffer_;
 };

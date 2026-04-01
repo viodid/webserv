@@ -2,9 +2,7 @@
 #include "Config.hpp"
 #include "Connection.hpp"
 #include "EventManager.hpp"
-#include "Socket.hpp"
-
-#define READ_SOCKET_SIZE 1 << 12
+#include "HttpRequestParser.hpp"
 
 class Webserver {
 public:
@@ -19,6 +17,6 @@ private:
     std::vector<Connection*> connections_;
 
     void handleNewConnection_(EventManager& manager, const Connection& conn);
-    void handleClientData_(EventManager& manager, const Connection& conn);
+    void handleClientData_(EventManager& manager, Connection& conn);
     void handleClosedConn_(EventManager& manager, const Connection& conn);
 };

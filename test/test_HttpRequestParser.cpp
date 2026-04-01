@@ -2,7 +2,6 @@
 #include "../include/IReader.hpp"
 #include <exception>
 #include <gtest/gtest.h>
-#include <stdexcept>
 
 class ChunkReader : public IReader {
 public:
@@ -17,7 +16,7 @@ public:
             return 0;
 
         if (len < bytes_per_read_)
-            throw std::runtime_error("buffer size is smaller than chunk reader");
+            bytes_per_read_ = len;
 
         int i { 0 };
         for (auto it { data_.begin() + pos_ };
@@ -32,7 +31,7 @@ public:
 
 private:
     const std::string data_;
-    const int bytes_per_read_;
+    int bytes_per_read_;
     size_t pos_;
 };
 
@@ -70,7 +69,7 @@ TEST(HttpParserTest, ParseRequestLineCorrectBigBuffer)
 
 TEST(HttpParserTest, ParseRequestLineCorrectWithPath)
 {
-    ChunkReader reader("GET /coffee HTTP/1.0\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n", 1);
+    ChunkReader reader("GET /coffee HTTP/1.0\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n", 11);
     HttpRequestParser parser(reader);
     try {
         parser.parseFromReader();

@@ -25,3 +25,14 @@ public:
 private:
     const std::string msg_;
 };
+
+class ExceptionClientCloseConn : public std::exception {
+public:
+    ExceptionClientCloseConn(const std::string&);
+    virtual ~ExceptionClientCloseConn() throw() { };
+
+    const char* what() const throw();
+
+private:
+    const std::string msg_;
+};

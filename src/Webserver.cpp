@@ -32,6 +32,9 @@ void Webserver::run()
         notifier.manage();
         const std::vector<pollfd>& pollfds = notifier.getPollFds();
         for (size_t i = 0; i < connections_.size(); i++) {
+#if DEBUG
+            std::cout << "Connection no: " << i + 1 << "\n";
+#endif
             if (pollfds[i].revents & POLLIN) {
                 if (connections_[i]->getType() == Connection::LISTENER)
                     handleNewConnection_(notifier, *connections_[i]);
@@ -65,25 +68,17 @@ void Webserver::handleClosedConn_(EventManager& manager, const Connection& conne
     }
 }
 
-void Webserver::handleClientData_(EventManager& notifier, const Connection& connection)
+void Webserver::handleClientData_(EventManager& notifier, Connection& connection)
 {
-    std::cout << "------------\n";
-    std::vector<char> buf(READ_SOCKET_SIZE);
-    std::vector<char> data;
-    data.reserve(READ_SOCKET_SIZE);
-    int count = 0;
-    while ((count = recv(connection.getSocket().getFd(), buf.data(), READ_SOCKET_SIZE, MSG_DONTWAIT))) {
-        std::cout << "count = " << count << " - errno: " << errno << std::endl;
-        if (count == -1) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-                break;
-            else
-                throw std::runtime_error(std::strerror(errno));
-        }
-        data.insert(data.end(), buf.begin(), buf.end());
-    }
-    std::cout << "count = " << count << " - errno: " << errno << std::endl;
-    if (count == 0) // conn closed by client
+    HttpRequestParser parser(connection);
+    try {
+        parser.parseFromReader();
+        HttpRequest request = parser.getRequest();
+        std::cout << "Request line:\n"
+                  << "- Method: " << request.request_line.method << "\n"
+                  << "- Target: " << request.request_line.request_target << "\n"
+                  << "- Version: " << request.request_line.http_version << "\n";
+    } catch (ExceptionClientCloseConn& e) {
         return handleClosedConn_(notifier, connection);
-    std::cout << data.data() << "\n";
+    }
 }
