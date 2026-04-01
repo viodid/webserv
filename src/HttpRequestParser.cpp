@@ -1,13 +1,10 @@
 #include "../include/HttpRequestParser.hpp"
 #include <stdexcept>
 
-static const char DELIMETER[] = "\r\n";
-static const char END_MESSAGE[] = "\r\n\r\n";
-
 HttpRequestParser::HttpRequestParser(IReader& reader)
     : reader_(reader)
 {
-    current_state_ = HttpRequestParser::RequestState::INIT;
+    current_state_ = HttpRequestParser::INIT;
 }
 
 const HttpRequest HttpRequestParser::getRequest() const
@@ -20,12 +17,12 @@ void HttpRequestParser::parseFromReader()
     int read_idx = 0;
     std::vector<char> buffer;
 
-    int buffer_size = BUFFER_SIZE;
+    int buffer_size = Settings::PARSER_BUFFER_SIZE;
     buffer.resize(buffer_size);
 
     while (!done()) {
 
-        if (buffer.size() > MAX_BUFFER_SIZE)
+        if (buffer.size() > Settings::PARSER_MAX_BUFFER_SIZE)
             throw std::runtime_error("overrun MAX_BUFFER_SIZE");
 
         int bytes_read = reader_.read(buffer.data() + read_idx,
@@ -33,7 +30,7 @@ void HttpRequestParser::parseFromReader()
 
         read_idx += bytes_read;
 
-        if (bytes_read >= buffer_size) {
+        if (bytes_read >= buffer_size - read_idx) {
             buffer_size *= 2;
             buffer.resize(buffer_size);
         }
@@ -58,17 +55,17 @@ int HttpRequestParser::parse_(const char* buffer, int length)
 
     while (keep) {
         switch (current_state_) {
-        case HttpRequestParser::RequestState::INIT: {
+        case HttpRequestParser::INIT: {
             int n = parseRequestLine_(buffer + parsed, length - parsed);
             if (n == 0) {
                 keep = false;
                 break;
             }
-            current_state_ = HttpRequestParser::RequestState::DONE;
+            current_state_ = HttpRequestParser::DONE;
             parsed += n;
             break;
         }
-        case HttpRequestParser::RequestState::DONE: {
+        case HttpRequestParser::DONE: {
             keep = false;
             break;
         }
@@ -88,7 +85,7 @@ int HttpRequestParser::parseRequestLine_(const char* buffer, int length)
 {
     std::string FIELD_DELIMETER = " ";
     const std::string str_stream(buffer, length);
-    size_t delimeter_pos = str_stream.find(DELIMETER);
+    size_t delimeter_pos = str_stream.find(Settings::LINE_DELIMETER);
 
     if (delimeter_pos == std::string::npos)
         return 0;
@@ -99,7 +96,7 @@ int HttpRequestParser::parseRequestLine_(const char* buffer, int length)
     while (parts.size() < 3) {
 
         if (parts.size() == 2)
-            FIELD_DELIMETER = DELIMETER;
+            FIELD_DELIMETER = Settings::LINE_DELIMETER;
 
         size_t curr_deli = str_stream.find(FIELD_DELIMETER, cursor);
         if (curr_deli == std::string::npos)
@@ -136,5 +133,5 @@ static bool isSupportedHTTPVersion(const std::string& str)
 
 bool HttpRequestParser::done() const
 {
-    return current_state_ == HttpRequestParser::RequestState::DONE;
+    return current_state_ == HttpRequestParser::DONE;
 }

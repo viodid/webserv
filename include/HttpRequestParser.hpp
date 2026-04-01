@@ -2,6 +2,7 @@
 #include "Exceptions.hpp"
 #include "HttpRequest.hpp"
 #include "IReader.hpp"
+#include "Settings.hpp"
 #include <cctype>
 #include <iostream>
 #include <map>
@@ -9,15 +10,11 @@
 #include <stdexcept>
 #include <vector>
 
-// #define BUFFER_SIZE 1 << 8 // 1B
-#define BUFFER_SIZE 8
-#define MAX_BUFFER_SIZE 1 << 10 // 10KiB
-
 class HttpRequestParser {
 public:
     enum RequestState {
         INIT,
-        DONE,
+        DONE
     };
 
     HttpRequestParser(IReader& reader);

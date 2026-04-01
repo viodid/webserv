@@ -3,5 +3,5 @@
 class IReader {
 public:
     virtual ~IReader() { };
-    virtual int read(char bufffer[], int len) = 0;
+    virtual int read(char buffer[], int len) = 0;
 };
