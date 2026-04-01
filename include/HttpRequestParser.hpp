@@ -13,8 +13,9 @@
 class HttpRequestParser {
 public:
     enum RequestState {
-        INIT,
-        DONE
+        RequestLine,
+        FieldLine,
+        Done
     };
 
     HttpRequestParser(IReader& reader);
@@ -29,6 +30,7 @@ private:
 
     int parse_(const char* buffer, int length);
     int parseRequestLine_(const char* buffer, int length);
+    int parseFieldLine_(const char* buffer, int length);
 
     bool done() const;
 };

@@ -12,15 +12,16 @@ public:
 
     int read(char buffer[], int len)
     {
+        int to_read = bytes_per_read_;
         if (pos_ >= data_.size())
             return 0;
 
         if (len < bytes_per_read_)
-            bytes_per_read_ = len;
+            to_read = len;
 
         int i { 0 };
         for (auto it { data_.begin() + pos_ };
-            i < bytes_per_read_ && it != data_.end();
+            i < to_read && it != data_.end();
             it++) {
             buffer[i] = *it;
             i++;
@@ -31,7 +32,7 @@ public:
 
 private:
     const std::string data_;
-    int bytes_per_read_;
+    const int bytes_per_read_;
     size_t pos_;
 };
 
@@ -113,4 +114,36 @@ TEST(HttpParserTest, ParseRequestLineMultipleWS)
     HttpRequestParser parser(reader);
     EXPECT_THROW(parser.parseFromReader(),
         ExceptionMalformedRequestLine);
+}
+
+TEST(HttpParserTest, ParseFieldLineCorrect)
+{
+    ChunkReader reader("GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent:  curl/7.81.0\r\nAccept:   text/html\r\n\r\n", 1);
+    HttpRequestParser parser(reader);
+    try {
+        parser.parseFromReader();
+        HttpRequest request = parser.getRequest();
+        EXPECT_EQ("localhost:42069", request.field_lines["Host"]);
+        EXPECT_EQ("curl/7.81.0", request.field_lines["User-Agent"]);
+        EXPECT_EQ("text/html", request.field_lines["Accept"]);
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        FAIL();
+    }
+}
+
+TEST(HttpParserTest, ParseFieldLineWrongMissingColon)
+{
+    ChunkReader reader("GET /coffee HTTP/1.0\r\nHost  \r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
+    HttpRequestParser parser(reader);
+    EXPECT_THROW(parser.parseFromReader(),
+        ExceptionMalformedFieldLine);
+}
+
+TEST(HttpParserTest, ParseFieldLineWrongFormat)
+{
+    ChunkReader reader("GET /coffee HTTP/1.0\r\nHost : localhost\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
+    HttpRequestParser parser(reader);
+    EXPECT_THROW(parser.parseFromReader(),
+        ExceptionMalformedFieldLine);
 }

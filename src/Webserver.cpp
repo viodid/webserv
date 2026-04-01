@@ -1,5 +1,6 @@
 // TODO: primeagen 1:04:00
 #include "../include/Webserver.hpp"
+#include <map>
 
 Webserver::Webserver(const std::vector<VirtualHost>& config)
     : config_(config)
@@ -77,7 +78,12 @@ void Webserver::handleClientData_(EventManager& notifier, Connection& connection
         std::cout << "Request line:\n"
                   << "- Method: " << request.request_line.method << "\n"
                   << "- Target: " << request.request_line.request_target << "\n"
-                  << "- Version: " << request.request_line.http_version << "\n";
+                  << "- Version: " << request.request_line.http_version << "\n"
+                  << "Field line:\n";
+        for (std::map<std::string, std::string>::const_iterator it = request.field_lines.begin();
+            it != request.field_lines.end();
+            it++)
+            std::cout << it->first << ": " << it->second << "\n";
     } catch (ExceptionClientCloseConn& e) {
         return handleClosedConn_(notifier, connection);
     }
