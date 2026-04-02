@@ -1,6 +1,9 @@
 #pragma once
 #include "../Exceptions.hpp"
 #include "../Settings.hpp"
+#include "../Utils.hpp"
+#include <cctype>
+#include <iostream>
 #include <map>
 #include <string>
 #include <vector>

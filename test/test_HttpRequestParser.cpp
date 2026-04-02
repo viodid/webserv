@@ -143,3 +143,11 @@ TEST(HttpParserTest, ParseFieldLineWrongFormat)
     EXPECT_THROW(parser.parseFromReader(reader),
         ExceptionMalformedFieldLine);
 }
+
+TEST(HttpParserTest, ParseFieldLineWrongFieldNameToken)
+{
+    ChunkReader reader("GET /coffee HTTP/1.0\r\nHost: localhost\r\nUser-@gent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
+    HttpRequest parser;
+    EXPECT_THROW(parser.parseFromReader(reader),
+        ExceptionMalformedFieldLine);
+}

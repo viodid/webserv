@@ -16,3 +16,11 @@ size_t readFromFile(int fd, std::vector<char>& buf)
         return -1;
     return total;
 }
+
+std::string toLower(const std::string& str)
+{
+    std::string res = str;
+    for (size_t i = 0; i < res.size(); i++)
+        res[i] = static_cast<char>(tolower(res[i]));
+    return res;
+}

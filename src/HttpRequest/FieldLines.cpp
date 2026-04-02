@@ -1,21 +1,27 @@
 #include "../../include/HttpRequest/FieldLines.hpp"
+#include <cctype>
+
+static bool isToken(const std::string& str);
 
 const std::string& FieldLines::get(const std::string& field_name) const
 {
     static const std::string empty_field = "";
-    std::map<std::string, std::string>::const_iterator it = field_lines_.find(field_name);
+    std::map<std::string, std::string>::const_iterator it = field_lines_.find(toLower(field_name));
     if (it == field_lines_.end())
         return empty_field;
     return it->second;
 }
 
+// TODO: is token and to lower
 void FieldLines::set(const std::string& field_name, const std::string& field_value)
 {
+    if (!isToken(field_name))
+        throw ExceptionMalformedFieldLine("Field name invalid characters");
     std::map<std::string, std::string>::const_iterator it = field_lines_.find(field_name);
     if (it != field_lines_.end())
-        field_lines_[field_name] = it->second + "," + field_value;
+        field_lines_[toLower(field_name)] = it->second + "," + field_value;
     else
-        field_lines_[field_name] = field_value;
+        field_lines_[toLower(field_name)] = field_value;
 }
 
 void FieldLines::forEach(void (*f)(const std::string&, const std::string&)) const
@@ -68,4 +74,44 @@ int FieldLines::parse(const char* buffer, int length)
     set(parts[0], parts[1]);
 
     return delimeter_pos + std::string(Settings::LINE_DELIMETER).size();
+}
+
+/*
+ * https://datatracker.ietf.org/doc/html/rfc9110#name-tokens
+ */
+static bool isTokenCharacter(char c)
+{
+    if (std::isalnum(c))
+        return true;
+    switch (c) {
+    case '!':
+    case '#':
+    case '$':
+    case '%':
+    case '&':
+    case '\'':
+    case '*':
+    case '+':
+    case '-':
+    case '.':
+    case '^':
+    case '_':
+    case '`':
+    case '|':
+    case '~':
+        return true;
+    default:
+        return false;
+    }
+}
+
+static bool isToken(const std::string& str)
+{
+    if (str.empty())
+        return false;
+    for (size_t i = 0; i < str.size(); i++) {
+        if (!isTokenCharacter(str[i]))
+            return false;
+    }
+    return true;
 }
