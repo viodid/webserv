@@ -68,7 +68,7 @@ void Webserver::handleClosedConn_(EventManager& manager, const Connection& conne
     }
 }
 
-void print_field_lines(const std::string& fn, const std::string& fv)
+static void print_field_lines(const std::string& fn, const std::string& fv)
 {
     std::cout << fn << ": " << fv << "\n";
 }

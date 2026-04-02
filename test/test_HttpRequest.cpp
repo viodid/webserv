@@ -181,7 +181,20 @@ TEST(HttpRequestTest, ParseBodyCorrect)
     HttpRequest request;
     try {
         request.parseFromReader(reader);
-        EXPECT_EQ("this is the body", request.getBody());
+        EXPECT_EQ("this is the body", request.getBody().get());
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        FAIL();
+    }
+}
+
+TEST(HttpRequestTest, ParseBodyCorrectBigBuffer)
+{
+    ChunkReader reader("GET / HTTP/1.1\r\nContent-Length: 16\r\n\r\nthis is the body", 1024);
+    HttpRequest request;
+    try {
+        request.parseFromReader(reader);
+        EXPECT_EQ("this is the body", request.getBody().get());
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
         FAIL();
@@ -194,7 +207,7 @@ TEST(HttpRequestTest, ParseEmptyBody)
     HttpRequest request;
     try {
         request.parseFromReader(reader);
-        EXPECT_EQ("", request.getBody());
+        EXPECT_EQ("", request.getBody().get());
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
         FAIL();
@@ -207,7 +220,7 @@ TEST(HttpRequestTest, ParseNoContentLength)
     HttpRequest request;
     try {
         request.parseFromReader(reader);
-        EXPECT_EQ("", request.getBody());
+        EXPECT_EQ("", request.getBody().get());
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
         FAIL();
@@ -220,9 +233,17 @@ TEST(HttpRequestTest, ParseNoContentLengthButBody)
     HttpRequest request;
     try {
         request.parseFromReader(reader);
-        EXPECT_EQ("", request.getBody());
+        EXPECT_EQ("", request.getBody().get());
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
         FAIL();
     }
+}
+
+TEST(HttpRequestTest, ParseBiggerContentLengthThanBody)
+{
+    ChunkReader reader("GET / HTTP/1.1\r\nContent-Length: 100\r\n\r\nbatman", 1);
+    HttpRequest request;
+    EXPECT_THROW(request.parseFromReader(reader),
+        ExceptionMalformedBody);
 }

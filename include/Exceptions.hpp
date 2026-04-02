@@ -26,6 +26,17 @@ private:
     const std::string msg_;
 };
 
+class ExceptionMalformedBody : public std::exception {
+public:
+    ExceptionMalformedBody(const std::string&);
+    virtual ~ExceptionMalformedBody() throw() { };
+
+    const char* what() const throw();
+
+private:
+    const std::string msg_;
+};
+
 class ExceptionClientCloseConn : public std::exception {
 public:
     ExceptionClientCloseConn(const std::string&);

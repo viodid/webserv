@@ -1,4 +1,5 @@
 #include "../../include/HttpRequest/HttpRequest.hpp"
+#include <stdexcept>
 
 static bool done(HttpRequestState state);
 
@@ -101,21 +102,25 @@ int HttpRequest::parse_(const char* buffer, int length)
             }
             parsed += n;
             if (n == 2) {
-                if (!field_lines_.get("content-length").empty())
+                if (!field_lines_.get("content-length").empty()) {
                     curr_state_ = BodyState;
-                else
+                    keep = false;
+                } else
                     curr_state_ = Done;
             }
             break;
         }
         case BodyState: {
-            int n = body_.parse(buffer + parsed, length - parsed);
+            int n = body_.parse(buffer + parsed, length - parsed,
+                field_lines_.get("content-length"));
+
             if (n == 0) {
                 curr_state_ = Done;
                 break;
             }
 
             parsed += n;
+            keep = false;
             break;
         }
         case Done: {
