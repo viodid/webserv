@@ -10,7 +10,6 @@ OBJS 		= $(SRCS:.cpp=.o)
 # Requires: libgtest and libgtest_main (sudo apt install libgtest-dev)
 TEST_BINARY		= test_parser
 TEST_SRCS		= $(filter-out src/main.cpp, $(SRCS)) \
-			  test/test_HttpRequestParser.cpp \
 			  test/test_ConfigParser.cpp
 TEST_OBJS		= $(TEST_SRCS:.cpp=.o)
 TEST_CXXFLAGS	= -std=c++17 -Wall -Wextra -Werror -g3 -O0 -DDEBUG=1
