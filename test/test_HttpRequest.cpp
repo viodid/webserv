@@ -36,7 +36,10 @@ private:
     size_t pos_;
 };
 
-TEST(HttpParserTest, ParseRequestLineCorrectSmallBuffer)
+/*
+ * REQUEST LINE TESTS
+ */
+TEST(HttpRequestTest, ParseRequestLineCorrectSmallBuffer)
 {
     ChunkReader reader("GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n", 1);
     HttpRequest request;
@@ -51,7 +54,7 @@ TEST(HttpParserTest, ParseRequestLineCorrectSmallBuffer)
     }
 }
 
-TEST(HttpParserTest, ParseRequestLineCorrectBigBuffer)
+TEST(HttpRequestTest, ParseRequestLineCorrectBigBuffer)
 {
     ChunkReader reader("GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n", 1024);
     HttpRequest request;
@@ -66,7 +69,7 @@ TEST(HttpParserTest, ParseRequestLineCorrectBigBuffer)
     }
 }
 
-TEST(HttpParserTest, ParseRequestLineCorrectWithPath)
+TEST(HttpRequestTest, ParseRequestLineCorrectWithPath)
 {
     ChunkReader reader("GET /coffee HTTP/1.0\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n", 1024);
     HttpRequest request;
@@ -81,7 +84,7 @@ TEST(HttpParserTest, ParseRequestLineCorrectWithPath)
     }
 }
 
-TEST(HttpParserTest, ParseRequestLineMissingMethod)
+TEST(HttpRequestTest, ParseRequestLineMissingMethod)
 {
     ChunkReader reader("/coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
     HttpRequest parser;
@@ -89,7 +92,7 @@ TEST(HttpParserTest, ParseRequestLineMissingMethod)
         ExceptionMalformedRequestLine);
 }
 
-TEST(HttpParserTest, ParseRequestLineSwapOrder)
+TEST(HttpRequestTest, ParseRequestLineSwapOrder)
 {
     ChunkReader reader("GET HTTP/1.1 /coffee\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
     HttpRequest parser;
@@ -97,7 +100,7 @@ TEST(HttpParserTest, ParseRequestLineSwapOrder)
         ExceptionMalformedRequestLine);
 }
 
-TEST(HttpParserTest, ParseRequestLineWrongHttpVersion)
+TEST(HttpRequestTest, ParseRequestLineWrongHttpVersion)
 {
     ChunkReader reader("GET /coffee HTTP/2.0\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
     HttpRequest parser;
@@ -105,7 +108,7 @@ TEST(HttpParserTest, ParseRequestLineWrongHttpVersion)
         ExceptionMalformedRequestLine);
 }
 
-TEST(HttpParserTest, ParseRequestLineMultipleWS)
+TEST(HttpRequestTest, ParseRequestLineMultipleWS)
 {
     ChunkReader reader("GET  /coffee HTTP/2.0\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
     HttpRequest parser;
@@ -113,7 +116,10 @@ TEST(HttpParserTest, ParseRequestLineMultipleWS)
         ExceptionMalformedRequestLine);
 }
 
-TEST(HttpParserTest, ParseFieldLineCorrect)
+/*
+ * FIELD LINES TESTS
+ */
+TEST(HttpRequestTest, ParseFieldLineCorrect)
 {
     ChunkReader reader("GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent:  curl/7.81.0\r\nAccept:   text/html\r\n\r\n", 1);
     HttpRequest request;
@@ -128,7 +134,7 @@ TEST(HttpParserTest, ParseFieldLineCorrect)
     }
 }
 
-TEST(HttpParserTest, ParseFieldLineRepeatedHeader)
+TEST(HttpRequestTest, ParseFieldLineRepeatedHeader)
 {
     ChunkReader reader("GET / HTTP/1.1\r\nHost: localhost:42069\r\nHost:  0.0.0.0\r\nAccept:   text/html\r\n\r\n", 1);
     HttpRequest request;
@@ -142,7 +148,7 @@ TEST(HttpParserTest, ParseFieldLineRepeatedHeader)
     }
 }
 
-TEST(HttpParserTest, ParseFieldLineWrongMissingColon)
+TEST(HttpRequestTest, ParseFieldLineWrongMissingColon)
 {
     ChunkReader reader("GET /coffee HTTP/1.0\r\nHost  \r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
     HttpRequest parser;
@@ -150,7 +156,7 @@ TEST(HttpParserTest, ParseFieldLineWrongMissingColon)
         ExceptionMalformedFieldLine);
 }
 
-TEST(HttpParserTest, ParseFieldLineWrongFormat)
+TEST(HttpRequestTest, ParseFieldLineWrongFormat)
 {
     ChunkReader reader("GET /coffee HTTP/1.0\r\nHost : localhost\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
     HttpRequest parser;
@@ -158,10 +164,65 @@ TEST(HttpParserTest, ParseFieldLineWrongFormat)
         ExceptionMalformedFieldLine);
 }
 
-TEST(HttpParserTest, ParseFieldLineWrongFieldNameToken)
+TEST(HttpRequestTest, ParseFieldLineWrongFieldNameToken)
 {
     ChunkReader reader("GET /coffee HTTP/1.0\r\nHost: localhost\r\nUser-@gent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
     HttpRequest parser;
     EXPECT_THROW(parser.parseFromReader(reader),
         ExceptionMalformedFieldLine);
+}
+
+/*
+ * BODY TESTS
+ */
+TEST(HttpRequestTest, ParseBodyCorrect)
+{
+    ChunkReader reader("GET / HTTP/1.1\r\nContent-Length: 16\r\n\r\nthis is the body", 1);
+    HttpRequest request;
+    try {
+        request.parseFromReader(reader);
+        EXPECT_EQ("this is the body", request.getBody());
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        FAIL();
+    }
+}
+
+TEST(HttpRequestTest, ParseEmptyBody)
+{
+    ChunkReader reader("GET / HTTP/1.1\r\nContent-Length: 0\r\n\r\n", 1);
+    HttpRequest request;
+    try {
+        request.parseFromReader(reader);
+        EXPECT_EQ("", request.getBody());
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        FAIL();
+    }
+}
+
+TEST(HttpRequestTest, ParseNoContentLength)
+{
+    ChunkReader reader("GET / HTTP/1.1\r\n\r\n", 1);
+    HttpRequest request;
+    try {
+        request.parseFromReader(reader);
+        EXPECT_EQ("", request.getBody());
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        FAIL();
+    }
+}
+
+TEST(HttpRequestTest, ParseNoContentLengthButBody)
+{
+    ChunkReader reader("GET / HTTP/1.1\r\n\r\nbatman", 1);
+    HttpRequest request;
+    try {
+        request.parseFromReader(reader);
+        EXPECT_EQ("", request.getBody());
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        FAIL();
+    }
 }
