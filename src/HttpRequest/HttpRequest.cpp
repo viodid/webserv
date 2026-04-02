@@ -100,8 +100,22 @@ int HttpRequest::parse_(const char* buffer, int length)
                 break;
             }
             parsed += n;
-            if (n == 2)
+            if (n == 2) {
+                if (!field_lines_.get("content-length").empty())
+                    curr_state_ = BodyState;
+                else
+                    curr_state_ = Done;
+            }
+            break;
+        }
+        case BodyState: {
+            int n = body_.parse(buffer + parsed, length - parsed);
+            if (n == 0) {
                 curr_state_ = Done;
+                break;
+            }
+
+            parsed += n;
             break;
         }
         case Done: {

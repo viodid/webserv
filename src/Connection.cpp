@@ -54,7 +54,7 @@ int Connection::read(char buffer[], int len)
         if (errno == EAGAIN || errno == EWOULDBLOCK)
             throw std::runtime_error(std::strerror(errno));
     }
-    if (read_n == 0)
-        throw ExceptionClientCloseConn("");
+    // if (read_n == 0)
+    //     throw ExceptionClientCloseConn("");
     return read_n;
 }

@@ -10,6 +10,7 @@
 enum HttpRequestState {
     RequestLineState,
     FieldLinesState,
+    BodyState,
     Done
 };
 
