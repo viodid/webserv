@@ -12,8 +12,24 @@
     X(PUT) \
     X(DELETE)
 
+#define ERROR_PAGES(X) \
+    X(400) \
+    X(403) \
+    X(404) \
+    X(405) \
+    X(408) \
+    X(413) \
+    X(414) \
+    X(500) \
+    X(501) \
+    X(502) \
+    X(503) \
+    X(504)
+
 #define MAKE_ENUM(m) m,
 #define MAKE_STRING(m) #m,
+#define MAKE_ENUM_CODE(code) E_##code = code,
+#define COLLECT_CODE(code) code,
 
 class Location {
 public:
@@ -23,18 +39,8 @@ public:
     };
 
     enum ErrorPages {
-        E_400 = 400,
-        E_403 = 403,
-        E_404 = 404,
-        E_405 = 405,
-        E_408 = 408,
-        E_413 = 413,
-        E_414 = 414,
-        E_500 = 500,
-        E_501 = 501,
-        E_502 = 502,
-        E_503 = 503,
-        E_504 = 504
+        ERROR_PAGES(MAKE_ENUM_CODE)
+        _ERROR_COUNT
     };
     Location(std::string, std::vector<AllowedMethods>,
         std::string, std::string, std::string, std::string, bool,

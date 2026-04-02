@@ -102,23 +102,31 @@ void ConfigParser::skipUnknownDirective(const std::string& tok, const std::strin
         (void)tok;
         (void)block;
     #endif
-    if (peekToken() == "{") {
-        nextToken();
-        int depth = 1;
-        while (depth > 0) {
-            std::string t = nextToken();
-            if (t.empty()) break;
-            if (t == "{") ++depth;
-            else if (t == "}") --depth;
-        }
-    } else {
-		std::string peek = peekToken();
-		while (!peek.empty() && peek != "}") {
-			std::string tok = nextToken();
-			if (tok == ";")
-				break;
-			peek = peekToken();
+    std::string t;
+    while (true) {
+        t = nextToken();
+        if (t.empty()) {
+			break;
 		}
+        if (t == ";") {
+			break;
+		}
+        if (t == "{") {
+            int depth = 1;
+            while (depth > 0) {
+                t = nextToken();
+                if (t.empty()) {
+					break;
+				}
+                if (t == "{") {
+					++depth;
+				}
+                else if (t == "}") {
+					--depth;
+				}
+            }
+            break;
+        }
     }
 }
 
