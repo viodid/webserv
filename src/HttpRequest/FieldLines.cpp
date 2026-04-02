@@ -17,7 +17,7 @@ void FieldLines::set(const std::string& field_name, const std::string& field_val
 {
     if (!isToken(field_name))
         throw ExceptionMalformedFieldLine("Field name invalid characters");
-    std::map<std::string, std::string>::const_iterator it = field_lines_.find(field_name);
+    std::map<std::string, std::string>::const_iterator it = field_lines_.find(toLower(field_name));
     if (it != field_lines_.end())
         field_lines_[toLower(field_name)] = it->second + "," + field_value;
     else

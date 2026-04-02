@@ -128,6 +128,20 @@ TEST(HttpParserTest, ParseFieldLineCorrect)
     }
 }
 
+TEST(HttpParserTest, ParseFieldLineRepeatedHeader)
+{
+    ChunkReader reader("GET / HTTP/1.1\r\nHost: localhost:42069\r\nHost:  0.0.0.0\r\nAccept:   text/html\r\n\r\n", 1);
+    HttpRequest request;
+    try {
+        request.parseFromReader(reader);
+        EXPECT_EQ("localhost:42069,0.0.0.0", request.getFieldLines().get("Host"));
+        EXPECT_EQ("text/html", request.getFieldLines().get("Accept"));
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        FAIL();
+    }
+}
+
 TEST(HttpParserTest, ParseFieldLineWrongMissingColon)
 {
     ChunkReader reader("GET /coffee HTTP/1.0\r\nHost  \r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
