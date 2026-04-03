@@ -2,15 +2,13 @@ BINARY 		= webserv
 CXX 		= g++
 CXXFLAGS	= -std=c++98 -Wall -Wextra -Werror -Wpedantic -g3 -O0 -DDEBUG=1
 
-#SRCS 		= $(shell find . -type f -name '*.cpp' ! -name 'main.cpp' ! -name 'test_Socket.cpp')
 SRCS		= $(shell find src -type f -name '*.cpp')
 OBJS 		= $(SRCS:.cpp=.o)
 
 # ----- Test targets -----
 # Requires: libgtest and libgtest_main (sudo apt install libgtest-dev) (googletest)
 TEST_BINARY		= tests
-TEST_SRCS		= $(filter-out src/main.cpp, $(SRCS)) \
-			  test/test_ConfigParser.cpp
+TEST_SRCS		= $(shell find . -type f -name '*.cpp' ! -name 'main.cpp' ! -name 'test_Socket.cpp')
 TEST_OBJS		= $(TEST_SRCS:.cpp=.o)
 TEST_CXXFLAGS	= -std=c++17 -Wall -Wextra -Werror -g3 -O0 -DDEBUG=1
 TEST_LDFLAGS	= -lgtest -lgtest_main -lpthread

@@ -54,7 +54,7 @@ void HttpRequest::parseFromReader(IReader& reader)
             throw std::runtime_error("overrun MAX_BUFFER_SIZE");
 
         int bytes_read = reader.read(buffer.data() + read_idx,
-            buffer.capacity() - read_idx);
+            buffer.size() - read_idx);
 
         read_idx += bytes_read;
 
