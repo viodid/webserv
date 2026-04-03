@@ -20,12 +20,12 @@ const char* ExceptionMalformedFieldLine::what() const throw()
     return msg_.c_str();
 }
 
-ExceptionMalformedBody::ExceptionMalformedBody(const std::string& str)
+ExceptionBodyLength::ExceptionBodyLength(const std::string& str)
     : msg_(str)
 {
 }
 
-const char* ExceptionMalformedBody::what() const throw()
+const char* ExceptionBodyLength::what() const throw()
 {
     return msg_.c_str();
 }

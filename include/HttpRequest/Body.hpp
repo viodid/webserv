@@ -1,5 +1,6 @@
 #pragma once
 #include "../Exceptions.hpp"
+#include <cstdlib>
 #include <stdexcept>
 #include <string>
 
