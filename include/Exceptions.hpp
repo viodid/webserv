@@ -26,10 +26,10 @@ private:
     const std::string msg_;
 };
 
-class ExceptionMalformedBody : public std::exception {
+class ExceptionBodyLength : public std::exception {
 public:
-    ExceptionMalformedBody(const std::string&);
-    virtual ~ExceptionMalformedBody() throw() { };
+    ExceptionBodyLength(const std::string&);
+    virtual ~ExceptionBodyLength() throw() { };
 
     const char* what() const throw();
 

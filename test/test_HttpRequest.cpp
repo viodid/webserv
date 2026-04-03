@@ -245,5 +245,5 @@ TEST(HttpRequestTest, ParseBiggerContentLengthThanBody)
     ChunkReader reader("GET / HTTP/1.1\r\nContent-Length: 100\r\n\r\nbatman", 1);
     HttpRequest request;
     EXPECT_THROW(request.parseFromReader(reader),
-        ExceptionMalformedBody);
+        ExceptionBodyLength);
 }

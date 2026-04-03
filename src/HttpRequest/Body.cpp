@@ -19,7 +19,7 @@ int Body::parse(const char* buffer, int buf_len, const std::string& content_len)
         return 0;
     }
     if (buf_len == 0 && body_.size() + buf_len != static_cast<size_t>(i_cont_len))
-        throw ExceptionMalformedBody("Content-Length does not reflect body's length");
+        throw ExceptionBodyLength("Content-Length does not reflect body's length");
 
     body_ = body_.append(std::string(buffer, buf_len));
     return buf_len;

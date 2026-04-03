@@ -1,4 +1,3 @@
-// TODO: primeagen 1:04:00
 #include "../include/Webserver.hpp"
 
 Webserver::Webserver(const std::vector<VirtualHost>& config)
