@@ -66,7 +66,7 @@ int FieldLines::parse(const char* buffer, int length)
     // field-value
     std::string value = str_stream.substr(fl_delimeter + 1);
     size_t i;
-    for (i = 0; value[i] == ' ' && i < value.size(); i++) { }
+    for (i = 0; i < value.size() && value[i] == ' '; i++) { }
     if (i == value.size())
         throw ExceptionMalformedFieldLine("header value not found");
     parts.push_back(value.substr(i, value.find(Settings::LINE_DELIMETER) - i));
@@ -81,7 +81,7 @@ int FieldLines::parse(const char* buffer, int length)
  */
 static bool isTokenCharacter(char c)
 {
-    if (std::isalnum(c))
+    if (std::isalnum(static_cast<unsigned char>(c)))
         return true;
     switch (c) {
     case '!':

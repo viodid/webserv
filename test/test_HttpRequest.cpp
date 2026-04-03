@@ -1,6 +1,7 @@
 #include "../include/HttpRequest/HttpRequest.hpp"
 #include "../include/IReader.hpp"
 #include <exception>
+#include <iostream>
 #include <gtest/gtest.h>
 
 class ChunkReader : public IReader {

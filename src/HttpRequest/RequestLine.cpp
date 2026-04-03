@@ -61,7 +61,7 @@ int RequestLine::parse(const char* buffer, int length)
     }
 
     if (parts[2].size() != 8 || !isSupportedHTTPVersion(parts[2]))
-        throw ExceptionMalformedRequestLine("HTTP version unsopported");
+        throw ExceptionMalformedRequestLine("HTTP version unsupported");
 
     parts[2] = parts[2].substr(5);
     method_ = parts[0];
