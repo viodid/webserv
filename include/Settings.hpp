@@ -1,7 +1,6 @@
 #pragma once
 
 namespace Settings {
-const int CONNECTION_BUFFER_SIZE = 1 << 14; // 10KiB
 const int PARSER_BUFFER_SIZE = 1024;
 const int PARSER_MAX_BUFFER_SIZE = 1 << 14; // 10KiB
 const unsigned long TIMEOUT_REQUEST_MS = 10;

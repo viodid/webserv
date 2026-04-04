@@ -31,13 +31,15 @@ public:
     void setInputBuffer(const std::string&);
     void setOutputBuffer(const std::string&);
 
+    /*
+     * Reads from a socket and copies over the given input buffer
+     *
+     * Returns the number of bytes read or raises a ExceptionClientCloseConn
+     */
     virtual int read(char buffer[], int len);
 
 private:
     Type type_;
     Socket* socket_;
     VirtualHost config_;
-    std::vector<char> buffer_;
-    std::string input_buffer_;
-    std::string output_buffer_;
 };

@@ -1,11 +1,12 @@
 #include "../include/Connection.hpp"
+#include <iostream>
+#include <stdexcept>
 
 Connection::Connection(Type type, Socket* socket, const VirtualHost& vh)
     : type_(type)
     , socket_(socket)
     , config_(vh)
 {
-    buffer_.reserve(Settings::CONNECTION_BUFFER_SIZE);
 }
 
 Connection::~Connection()
@@ -30,31 +31,19 @@ const VirtualHost& Connection::getConfig() const
 {
     return config_;
 }
-const std::string& Connection::getInputBuffer() const
-{
-    return input_buffer_;
-}
-const std::string& Connection::getOutputBuffer() const
-{
-    return output_buffer_;
-}
-void Connection::setInputBuffer(const std::string& s)
-{
-    input_buffer_ = s;
-}
-void Connection::setOutputBuffer(const std::string& s)
-{
-    output_buffer_ = s;
-}
 
 int Connection::read(char buffer[], int len)
 {
+    // TODO: rm
+    if (len == 0)
+        throw std::runtime_error("buffer len shouldn't be 0\n");
     int read_n = recv(socket_->getFd(), buffer, len, MSG_DONTWAIT);
+    std::cout << "connection#read_n: " << read_n << "\n";
     if (read_n == -1) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK)
-            throw std::runtime_error(std::strerror(errno));
+        std::cout << "read on an empty socket\n";
+        return 0;
     }
-    // if (read_n == 0)
-    //     throw ExceptionClientCloseConn("");
+    if (read_n == 0)
+        throw ExceptionClientCloseConn("");
     return read_n;
 }
