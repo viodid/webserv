@@ -106,7 +106,8 @@ int HttpRequest::parse_(const char* buffer, int length)
             }
             parsed += n;
             if (n == 2) {
-                if (!field_lines_.get("content-length").empty()) {
+                const std::string& content_length = field_lines_.get("content-length");
+                if (!content_length.empty() && content_length != "0") {
                     curr_state_ = BodyState;
                     keep = false;
                 } else
@@ -119,11 +120,12 @@ int HttpRequest::parse_(const char* buffer, int length)
                 field_lines_.get("content-length"));
 
             if (n == 0) {
-                curr_state_ = Done;
+                keep = false;
                 break;
             }
 
             parsed += n;
+            curr_state_ = Done;
             keep = false;
             break;
         }
