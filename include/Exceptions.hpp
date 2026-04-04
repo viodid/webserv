@@ -47,3 +47,36 @@ public:
 private:
     const std::string msg_;
 };
+
+class ExceptionClientErrConn : public std::exception {
+public:
+    ExceptionClientErrConn(const std::string&);
+    virtual ~ExceptionClientErrConn() throw() { };
+
+    const char* what() const throw();
+
+private:
+    const std::string msg_;
+};
+
+class ExceptionConnLenExceeded : public std::exception {
+public:
+    ExceptionConnLenExceeded(const std::string&);
+    virtual ~ExceptionConnLenExceeded() throw() { };
+
+    const char* what() const throw();
+
+private:
+    const std::string msg_;
+};
+
+class ExceptionRequestTimeout : public std::exception {
+public:
+    ExceptionRequestTimeout(const std::string&);
+    virtual ~ExceptionRequestTimeout() throw() { };
+
+    const char* what() const throw();
+
+private:
+    const std::string msg_;
+};
