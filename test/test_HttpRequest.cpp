@@ -1,21 +1,26 @@
 #include "../include/HttpRequest/HttpRequest.hpp"
 #include "../include/IReader.hpp"
+#include <chrono>
 #include <exception>
-#include <iostream>
 #include <gtest/gtest.h>
+#include <iostream>
+#include <thread>
 
 class ChunkReader : public IReader {
 public:
-    ChunkReader(const std::string& data, int nb)
+    ChunkReader(const std::string& data, int nb, size_t timeout_ms)
         : data_(data)
         , bytes_per_read_(nb)
+        , timeout_(timeout_ms)
         , pos_(0) { };
 
     int read(char buffer[], int len)
     {
         int to_read = bytes_per_read_;
-        if (pos_ >= data_.size())
+        if (pos_ >= data_.size()) {
+            std::cout << "chunkreader#read on an empty reader\n";
             return 0;
+        }
 
         if (len < bytes_per_read_)
             to_read = len;
@@ -28,12 +33,15 @@ public:
             i++;
         }
         pos_ += i;
+        if (timeout_ > 0)
+            std::this_thread::sleep_for(std::chrono::milliseconds(timeout_));
         return i;
     };
 
 private:
     const std::string data_;
     const int bytes_per_read_;
+    const size_t timeout_;
     size_t pos_;
 };
 
@@ -42,7 +50,7 @@ private:
  */
 TEST(HttpRequestTest, ParseRequestLineCorrectSmallBuffer)
 {
-    ChunkReader reader("GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n", 1);
+    ChunkReader reader("GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n", 1, 0);
     HttpRequest request;
     try {
         request.parseFromReader(reader);
@@ -57,7 +65,7 @@ TEST(HttpRequestTest, ParseRequestLineCorrectSmallBuffer)
 
 TEST(HttpRequestTest, ParseRequestLineCorrectBigBuffer)
 {
-    ChunkReader reader("GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n", 1024);
+    ChunkReader reader("GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n", 1024, 0);
     HttpRequest request;
     try {
         request.parseFromReader(reader);
@@ -72,7 +80,7 @@ TEST(HttpRequestTest, ParseRequestLineCorrectBigBuffer)
 
 TEST(HttpRequestTest, ParseRequestLineCorrectWithPath)
 {
-    ChunkReader reader("GET /coffee HTTP/1.0\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n", 1024);
+    ChunkReader reader("GET /coffee HTTP/1.0\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n", 1024, 0);
     HttpRequest request;
     try {
         request.parseFromReader(reader);
@@ -87,7 +95,7 @@ TEST(HttpRequestTest, ParseRequestLineCorrectWithPath)
 
 TEST(HttpRequestTest, ParseRequestLineMissingMethod)
 {
-    ChunkReader reader("/coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
+    ChunkReader reader("/coffee HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1, 0);
     HttpRequest parser;
     EXPECT_THROW(parser.parseFromReader(reader),
         ExceptionMalformedRequestLine);
@@ -95,7 +103,7 @@ TEST(HttpRequestTest, ParseRequestLineMissingMethod)
 
 TEST(HttpRequestTest, ParseRequestLineSwapOrder)
 {
-    ChunkReader reader("GET HTTP/1.1 /coffee\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
+    ChunkReader reader("GET HTTP/1.1 /coffee\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1, 0);
     HttpRequest parser;
     EXPECT_THROW(parser.parseFromReader(reader),
         ExceptionMalformedRequestLine);
@@ -103,7 +111,7 @@ TEST(HttpRequestTest, ParseRequestLineSwapOrder)
 
 TEST(HttpRequestTest, ParseRequestLineWrongHttpVersion)
 {
-    ChunkReader reader("GET /coffee HTTP/2.0\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
+    ChunkReader reader("GET /coffee HTTP/2.0\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1, 0);
     HttpRequest parser;
     EXPECT_THROW(parser.parseFromReader(reader),
         ExceptionMalformedRequestLine);
@@ -111,10 +119,18 @@ TEST(HttpRequestTest, ParseRequestLineWrongHttpVersion)
 
 TEST(HttpRequestTest, ParseRequestLineMultipleWS)
 {
-    ChunkReader reader("GET  /coffee HTTP/2.0\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
+    ChunkReader reader("GET  /coffee HTTP/2.0\r\nHost: localhost:42069\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1, 0);
     HttpRequest parser;
     EXPECT_THROW(parser.parseFromReader(reader),
         ExceptionMalformedRequestLine);
+}
+
+TEST(HttpRequestTest, ParseRequestLineIncomplete)
+{
+    ChunkReader reader("GET  /coffee HTTP/2.0", 1, 0);
+    HttpRequest parser;
+    EXPECT_THROW(parser.parseFromReader(reader),
+        ExceptionRequestTimeout);
 }
 
 /*
@@ -122,7 +138,7 @@ TEST(HttpRequestTest, ParseRequestLineMultipleWS)
  */
 TEST(HttpRequestTest, ParseFieldLineCorrect)
 {
-    ChunkReader reader("GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent:  curl/7.81.0\r\nAccept:   text/html\r\n\r\n", 1);
+    ChunkReader reader("GET / HTTP/1.1\r\nHost: localhost:42069\r\nUser-Agent:  curl/7.81.0\r\nAccept:   text/html\r\n\r\n", 1, 0);
     HttpRequest request;
     try {
         request.parseFromReader(reader);
@@ -137,7 +153,7 @@ TEST(HttpRequestTest, ParseFieldLineCorrect)
 
 TEST(HttpRequestTest, ParseFieldLineRepeatedHeader)
 {
-    ChunkReader reader("GET / HTTP/1.1\r\nHost: localhost:42069\r\nHost:  0.0.0.0\r\nAccept:   text/html\r\n\r\n", 1);
+    ChunkReader reader("GET / HTTP/1.1\r\nHost: localhost:42069\r\nHost:  0.0.0.0\r\nAccept:   text/html\r\n\r\n", 1, 0);
     HttpRequest request;
     try {
         request.parseFromReader(reader);
@@ -151,7 +167,7 @@ TEST(HttpRequestTest, ParseFieldLineRepeatedHeader)
 
 TEST(HttpRequestTest, ParseFieldLineWrongMissingColon)
 {
-    ChunkReader reader("GET /coffee HTTP/1.0\r\nHost  \r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
+    ChunkReader reader("GET /coffee HTTP/1.0\r\nHost  \r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1, 0);
     HttpRequest parser;
     EXPECT_THROW(parser.parseFromReader(reader),
         ExceptionMalformedFieldLine);
@@ -159,7 +175,7 @@ TEST(HttpRequestTest, ParseFieldLineWrongMissingColon)
 
 TEST(HttpRequestTest, ParseFieldLineWrongFormat)
 {
-    ChunkReader reader("GET /coffee HTTP/1.0\r\nHost : localhost\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
+    ChunkReader reader("GET /coffee HTTP/1.0\r\nHost : localhost\r\nUser-Agent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1, 0);
     HttpRequest parser;
     EXPECT_THROW(parser.parseFromReader(reader),
         ExceptionMalformedFieldLine);
@@ -167,7 +183,7 @@ TEST(HttpRequestTest, ParseFieldLineWrongFormat)
 
 TEST(HttpRequestTest, ParseFieldLineWrongFieldNameToken)
 {
-    ChunkReader reader("GET /coffee HTTP/1.0\r\nHost: localhost\r\nUser-@gent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1);
+    ChunkReader reader("GET /coffee HTTP/1.0\r\nHost: localhost\r\nUser-@gent: curl/7.81.0\r\nAccept: \r\n\r\n ", 1, 0);
     HttpRequest parser;
     EXPECT_THROW(parser.parseFromReader(reader),
         ExceptionMalformedFieldLine);
@@ -176,9 +192,9 @@ TEST(HttpRequestTest, ParseFieldLineWrongFieldNameToken)
 /*
  * BODY TESTS
  */
-TEST(HttpRequestTest, ParseBodyCorrect)
+TEST(HttpRequestTest, ParseBodyCorrectSmallBuffer)
 {
-    ChunkReader reader("GET / HTTP/1.1\r\nContent-Length: 16\r\n\r\nthis is the body", 1);
+    ChunkReader reader("GET / HTTP/1.1\r\nContent-Length: 16\r\n\r\nthis is the body", 1, 0);
     HttpRequest request;
     try {
         request.parseFromReader(reader);
@@ -191,7 +207,7 @@ TEST(HttpRequestTest, ParseBodyCorrect)
 
 TEST(HttpRequestTest, ParseBodyCorrectBigBuffer)
 {
-    ChunkReader reader("GET / HTTP/1.1\r\nContent-Length: 16\r\n\r\nthis is the body", 1024);
+    ChunkReader reader("GET / HTTP/1.1\r\nContent-Length: 16\r\n\r\nthis is the body", 1024, 0);
     HttpRequest request;
     try {
         request.parseFromReader(reader);
@@ -204,7 +220,7 @@ TEST(HttpRequestTest, ParseBodyCorrectBigBuffer)
 
 TEST(HttpRequestTest, ParseEmptyBody)
 {
-    ChunkReader reader("GET / HTTP/1.1\r\nContent-Length: 0\r\n\r\n", 1);
+    ChunkReader reader("GET / HTTP/1.1\r\nContent-Length: 0\r\n\r\n", 1, 0);
     HttpRequest request;
     try {
         request.parseFromReader(reader);
@@ -215,9 +231,22 @@ TEST(HttpRequestTest, ParseEmptyBody)
     }
 }
 
+TEST(HttpRequestTest, ParseExceededContentLenght)
+{
+    ChunkReader reader("GET / HTTP/1.1\r\nContent-Length: 1024\r\n\r\nhey", 1, 0);
+    HttpRequest request;
+    try {
+        request.parseFromReader(reader);
+        EXPECT_EQ("hey", request.getBody().get());
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        FAIL();
+    }
+}
+
 TEST(HttpRequestTest, ParseNoContentLength)
 {
-    ChunkReader reader("GET / HTTP/1.1\r\n\r\n", 1);
+    ChunkReader reader("GET / HTTP/1.1\r\n\r\n", 1, 0);
     HttpRequest request;
     try {
         request.parseFromReader(reader);
@@ -230,7 +259,7 @@ TEST(HttpRequestTest, ParseNoContentLength)
 
 TEST(HttpRequestTest, ParseNoContentLengthButBody)
 {
-    ChunkReader reader("GET / HTTP/1.1\r\n\r\nbatman", 1);
+    ChunkReader reader("GET / HTTP/1.1\r\n\r\nbatman", 1, 0);
     HttpRequest request;
     try {
         request.parseFromReader(reader);
@@ -243,8 +272,16 @@ TEST(HttpRequestTest, ParseNoContentLengthButBody)
 
 TEST(HttpRequestTest, ParseBiggerContentLengthThanBody)
 {
-    ChunkReader reader("GET / HTTP/1.1\r\nContent-Length: 100\r\n\r\nbatman", 1);
+    ChunkReader reader("GET / HTTP/1.1\r\nContent-Length: 100\r\n\r\nbatman", 1, 0);
     HttpRequest request;
     EXPECT_THROW(request.parseFromReader(reader),
         ExceptionBodyLength);
+}
+
+TEST(HttpRequestTest, ParseTimeoutRaisesException)
+{
+    ChunkReader reader("GET / HTTP/1.1\r\nContent-Length: 100\r\n\r\nbatman", 1, Settings::TIMEOUT_REQUEST_MS / 10);
+    HttpRequest request;
+    EXPECT_THROW(request.parseFromReader(reader),
+        ExceptionRequestTimeout);
 }

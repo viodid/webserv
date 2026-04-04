@@ -1,5 +1,6 @@
 #pragma once
 #include "../IReader.hpp"
+#include "../Utils.hpp"
 #include "Body.hpp"
 #include "FieldLines.hpp"
 #include "RequestLine.hpp"

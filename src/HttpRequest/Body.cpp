@@ -1,4 +1,5 @@
 #include "../../include/HttpRequest/Body.hpp"
+#include <iostream>
 
 const std::string& Body::get() const
 {
@@ -12,6 +13,7 @@ void Body::set(const std::string& body)
 
 int Body::parse(const char* buffer, int buf_len, const std::string& content_len)
 {
+    std::cout << "Body#read#buf_len: " << buf_len << "\n";
     int i_cont_len = std::atoi(content_len.c_str());
     if (!i_cont_len)
         return 0;

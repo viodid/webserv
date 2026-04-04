@@ -1,5 +1,4 @@
 #include "../include/Utils.hpp"
-#include <cctype>
 
 // Converts all characters in str to lowercase
 std::string toLower(const std::string& str)
@@ -20,4 +19,11 @@ std::string trim(const std::string& str)
     while (end > start && std::isspace(static_cast<unsigned char>(str[end - 1])))
         --end;
     return str.substr(start, end - start);
+}
+
+size_t currTimeMs()
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (static_cast<unsigned long>(tv.tv_sec) * 1000) + (tv.tv_usec / 1000);
 }
