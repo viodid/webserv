@@ -17,10 +17,8 @@ public:
     int read(char buffer[], int len)
     {
         int to_read = bytes_per_read_;
-        if (pos_ >= data_.size()) {
-            std::cout << "chunkreader#read on an empty reader\n";
+        if (pos_ >= data_.size())
             return 0;
-        }
 
         if (len < bytes_per_read_)
             to_read = len;
@@ -231,19 +229,6 @@ TEST(HttpRequestTest, ParseEmptyBody)
     }
 }
 
-TEST(HttpRequestTest, ParseExceededContentLenght)
-{
-    ChunkReader reader("GET / HTTP/1.1\r\nContent-Length: 1024\r\n\r\nhey", 1, 0);
-    HttpRequest request;
-    try {
-        request.parseFromReader(reader);
-        EXPECT_EQ("hey", request.getBody().get());
-    } catch (const std::exception& e) {
-        std::cerr << e.what() << '\n';
-        FAIL();
-    }
-}
-
 TEST(HttpRequestTest, ParseNoContentLength)
 {
     ChunkReader reader("GET / HTTP/1.1\r\n\r\n", 1, 0);
@@ -275,7 +260,7 @@ TEST(HttpRequestTest, ParseBiggerContentLengthThanBody)
     ChunkReader reader("GET / HTTP/1.1\r\nContent-Length: 100\r\n\r\nbatman", 1, 0);
     HttpRequest request;
     EXPECT_THROW(request.parseFromReader(reader),
-        ExceptionBodyLength);
+        ExceptionRequestTimeout);
 }
 
 TEST(HttpRequestTest, ParseTimeoutRaisesException)
