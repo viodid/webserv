@@ -44,11 +44,15 @@ void HttpRequest::parseFromReader(IReader& reader)
     int read_idx = 0;
     int bytes_parsed = 0;
     std::vector<char> buffer;
+    size_t start_time = currTimeMs();
 
     int buffer_size = Settings::PARSER_BUFFER_SIZE;
     buffer.resize(buffer_size);
 
     while (!done(curr_state_)) {
+
+        if (currTimeMs() - start_time > Settings::TIMEOUT_REQUEST_MS)
+            throw ExceptionRequestTimeout("");
 
         if (buffer.size() > Settings::PARSER_MAX_BUFFER_SIZE)
             throw std::runtime_error("overrun MAX_BUFFER_SIZE");
@@ -58,7 +62,7 @@ void HttpRequest::parseFromReader(IReader& reader)
 
         read_idx += bytes_read;
 
-        if (bytes_read + read_idx >= buffer_size) {
+        if (read_idx >= buffer_size) {
             buffer_size *= 2;
             buffer.resize(buffer_size);
         }
