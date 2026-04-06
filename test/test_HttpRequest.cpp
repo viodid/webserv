@@ -270,3 +270,11 @@ TEST(HttpRequestTest, ParseTimeoutRaisesException)
     EXPECT_THROW(request.parseFromReader(reader),
         ExceptionRequestTimeout);
 }
+
+TEST(HttpRequestTest, ParseMalformedContentLength)
+{
+    ChunkReader reader("GET / HTTP/1.1\r\nContent-Length: L00\r\n\r\nbatman", 1, 0);
+    HttpRequest request;
+    EXPECT_THROW(request.parseFromReader(reader),
+        ExceptionBodyLength);
+}
