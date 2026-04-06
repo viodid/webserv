@@ -1,6 +1,7 @@
 #pragma once
 #include "../Exceptions.hpp"
 #include "../Settings.hpp"
+#include <cctype>
 #include <set>
 #include <string>
 #include <vector>

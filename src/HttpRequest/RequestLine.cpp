@@ -1,6 +1,7 @@
 #include "../../include/HttpRequest/RequestLine.hpp"
 
 static bool isSupportedHTTPVersion(const std::string& str);
+static bool isWhiteSpace(const std::string& str);
 
 const std::string& RequestLine::getMethod() const
 {
@@ -54,6 +55,14 @@ int RequestLine::parse(const char* buffer, int length)
         cursor = curr_deli + FIELD_DELIMETER.size();
     }
 
+    // check empty parts
+    for (std::vector<std::string>::const_iterator it = parts.begin();
+        it != parts.end();
+        it++) {
+        if (isWhiteSpace(*it))
+            throw ExceptionMalformedRequestLine("empty part");
+    }
+
     // check METHOD
     for (std::string::iterator it = parts[0].begin(); it != parts[0].end(); it++) {
         if (!std::isupper(*it) || !std::isalpha(*it))
@@ -77,4 +86,13 @@ static bool isSupportedHTTPVersion(const std::string& str)
     supported_versions.insert("HTTP/1.0");
     supported_versions.insert("HTTP/1.1");
     return supported_versions.find(str) != supported_versions.end();
+}
+
+static bool isWhiteSpace(const std::string& str)
+{
+    for (size_t i = 0; i < str.size(); i++) {
+        if (str[i] == ' ' || str[i] == '\n' || str[i] == '\t' || str[i] == '\r')
+            return true;
+    }
+    return false;
 }
