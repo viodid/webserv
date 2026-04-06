@@ -52,6 +52,7 @@ public:
      */
     int getFd() const;
     int acceptConn() const;
+    int sendMsg(const std::string& msg);
 
 private:
     int fd_;
