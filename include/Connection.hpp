@@ -26,10 +26,6 @@ public:
     Type getType() const;
     const Socket& getSocket() const;
     const VirtualHost& getConfig() const;
-    const std::string& getInputBuffer() const;
-    const std::string& getOutputBuffer() const;
-    void setInputBuffer(const std::string&);
-    void setOutputBuffer(const std::string&);
 
     /*
      * Reads from a socket and copies over the given input buffer

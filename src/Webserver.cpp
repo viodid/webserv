@@ -77,6 +77,7 @@ void Webserver::handleClientData_(EventManager& notifier, Connection& connection
     HttpRequest request;
     try {
         request.parseFromReader(connection);
+#if DEBUG
         std::cout << "Request line:\n"
                   << "- Method: " << request.getRequestLine().getMethod() << "\n"
                   << "- Target: " << request.getRequestLine().getRequestTarget() << "\n"
@@ -85,6 +86,7 @@ void Webserver::handleClientData_(EventManager& notifier, Connection& connection
         request.getFieldLines().forEach(&print_field_lines);
         std::cout << "Body:\n"
                   << request.getBody().get() << "\n";
+#endif
 
     } catch (ExceptionClientCloseConn& e) {
         return handleClosedConn_(notifier, connection);

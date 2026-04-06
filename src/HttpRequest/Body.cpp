@@ -16,11 +16,11 @@ void Body::set(const std::string& body)
 
 int Body::parse(const char* buffer, size_t buf_len, const std::string& content_len)
 {
-
     if (content_length_ == 0) {
-        content_length_ = std::atoi(content_len.c_str());
+        char* end = NULL;
+        content_length_ = std::strtoul(content_len.c_str(), &end, 10);
         if (content_length_ == 0)
-            throw ExceptionMalformedFieldLine("malformed 'Content-Length' header");
+            throw ExceptionBodyLength("malformed 'Content-Length' header");
     }
 
     if (buf_len >= content_length_)

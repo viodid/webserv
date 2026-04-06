@@ -1,5 +1,4 @@
 #include "../../include/HttpRequest/HttpRequest.hpp"
-#include <stdexcept>
 
 static bool done(HttpRequestState state);
 
@@ -55,7 +54,7 @@ void HttpRequest::parseFromReader(IReader& reader)
             throw ExceptionRequestTimeout("");
 
         if (buffer.size() > Settings::PARSER_MAX_BUFFER_SIZE)
-            throw std::runtime_error("overrun MAX_BUFFER_SIZE");
+            throw ExceptionConnLenExceeded("overrun MAX_BUFFER_SIZE");
 
         int bytes_read = reader.read(buffer.data() + read_idx,
             buffer.size() - read_idx);
