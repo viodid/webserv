@@ -37,7 +37,7 @@
 *.out
 *.app
 webserv
-test_parser
+tests
 
 # debug information files
 *.dwo

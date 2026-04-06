@@ -12,9 +12,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define SOCKET_BACKLOG 4096
-#define READ_SOCKET_SIZE 1 << 24 // 16MiB
-
 /**
  * @class Socket
  * @brief A simple RAII wrapper for a TCP socket.

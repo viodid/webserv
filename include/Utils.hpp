@@ -1,9 +1,10 @@
 #pragma once
-#include <sys/socket.h>
-#include <unistd.h>
-#include <vector>
+#include <cctype>
 #include <string>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <unistd.h>
 
-size_t		readFromFile(int fd, std::vector<char>& buf);
-std::string	toLower(const std::string& str);
-std::string	trim(const std::string& str);
+std::string toLower(const std::string& str);
+std::string trim(const std::string& str);
+size_t currTimeMs();
