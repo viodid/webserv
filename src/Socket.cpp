@@ -1,6 +1,4 @@
 #include "../include/Socket.hpp"
-#include <iostream>
-#include <sys/socket.h>
 
 Socket::Socket(int fd)
     : fd_(fd)
@@ -43,6 +41,18 @@ int Socket::acceptConn() const
     if (cfd == -1)
         throw std::runtime_error(std::strerror(errno));
     return cfd;
+}
+
+ssize_t Socket::sendMsg(const std::string& msg) const
+{
+    ssize_t total_sent = 0;
+    while (total_sent < static_cast<ssize_t>(msg.size())) {
+        ssize_t send_n = send(fd_, msg.c_str(), msg.size(), MSG_NOSIGNAL);
+        if (send_n == -1)
+            throw ExceptionErrorConnectionSocket(std::strerror(errno));
+        total_sent += send_n;
+    }
+    return total_sent;
 }
 
 const char* inet_ntop2(void* addr, char* buf, size_t size)
@@ -104,15 +114,13 @@ void Socket::bindAndListen_()
         throw std::runtime_error(std::strerror(errno));
     }
 
-
 #if DEBUG
     char buf[100];
-
 
     struct addrinfo* addr;
     for (addr = addrinf_; addr != NULL; addr = addr->ai_next) {
         std::cout << inet_ntop2((void*)addr->ai_addr, buf, addr->ai_addrlen)
-            << ":" << ((struct sockaddr_in*)addr->ai_addr)->sin_port << "\n";
+                  << ":" << ((struct sockaddr_in*)addr->ai_addr)->sin_port << "\n";
     }
     std::cout << "[Debug] success listen on lfd " << fd_ << std::endl;
 #endif

@@ -4,7 +4,7 @@ EventManager::EventManager(std::vector<Connection*>& connections)
     : connections_(connections)
 {
     for (size_t i = 0; i < connections_.size(); ++i)
-        addPollFds(connections_[i]->getSocket().getFd());
+        addPollFds(connections_[i]->getFd());
 }
 
 int EventManager::manage()
@@ -35,16 +35,16 @@ void EventManager::addPollFds(int fd)
 void EventManager::removePollFds(int fd)
 {
     for (size_t i = 0; i < connections_.size(); ++i) {
-        if (connections_[i]->getSocket().getFd() == fd) {
+        if (connections_[i]->getFd() == fd) {
             if (i >= fds_.size()) {
                 std::stringstream s;
                 s << "Index '" << i << "' out of bounds of fds_\n";
                 throw std::runtime_error(s.str());
             }
             fds_.erase(fds_.begin() + i);
-# if DEBUG
-            std::cout << "pollfds removed: " << connections_[i]->getSocket().getFd() << "\n";
-# endif
+#if DEBUG
+            std::cout << "pollfds removed: " << connections_[i]->getFd() << "\n";
+#endif
             return;
         }
     }

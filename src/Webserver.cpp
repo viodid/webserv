@@ -31,9 +31,6 @@ void Webserver::run()
         notifier.manage();
         const std::vector<pollfd>& pollfds = notifier.getPollFds();
         for (size_t i = 0; i < connections_.size(); i++) {
-#if DEBUG
-            std::cout << "Connection no: " << i + 1 << "\n";
-#endif
             if (pollfds[i].revents & POLLIN) {
                 if (connections_[i]->getType() == Connection::LISTENER)
                     handleNewConnection_(notifier, *connections_[i]);
@@ -46,7 +43,7 @@ void Webserver::run()
 
 void Webserver::handleNewConnection_(EventManager& notifier, const Connection& connection)
 {
-    int cfd = connection.getSocket().acceptConn();
+    int cfd = connection.acceptNewConnection();
     notifier.addPollFds(cfd);
     Socket* socket_ptr = new Socket(cfd);
     Connection* connection_ptr = new Connection(Connection::CLIENT, socket_ptr, connection.getConfig());
@@ -55,11 +52,11 @@ void Webserver::handleNewConnection_(EventManager& notifier, const Connection& c
 
 void Webserver::handleClosedConn_(EventManager& manager, const Connection& connection)
 {
-    manager.removePollFds(connection.getSocket().getFd());
-    std::cout << "closed conn fd: " << connection.getSocket().getFd() << std::endl;
+    manager.removePollFds(connection.getFd());
+    std::cout << "closed conn fd: " << connection.getFd() << std::endl;
     for (size_t i = 0; i < connections_.size(); i++) {
         if (connections_[i] == &connection) {
-            std::cout << "connection erased from connections_: " << i << "\n";
+            std::cout << "connection erased from connections_: " << i + 1 << "\n";
             delete connections_[i];
             connections_.erase(connections_.begin() + i);
             break;
@@ -87,8 +84,13 @@ void Webserver::handleClientData_(EventManager& notifier, Connection& connection
         std::cout << "Body:\n"
                   << request.getBody().get() << "\n";
 #endif
+        connection.sendMsg("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: keep-alive\r\n\r\nHello World!");
 
     } catch (ExceptionClientCloseConn& e) {
+        std::cerr << e.what();
+        return handleClosedConn_(notifier, connection);
+    } catch (ExceptionErrorConnectionSocket& e) {
+        std::cerr << e.what();
         return handleClosedConn_(notifier, connection);
     }
 }

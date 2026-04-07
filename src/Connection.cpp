@@ -22,9 +22,21 @@ Connection::Type Connection::getType() const
     return type_;
 }
 
-const Socket& Connection::getSocket() const
+int Connection::getFd() const
 {
-    return *socket_;
+    return socket_->getFd();
+}
+
+int Connection::acceptNewConnection() const
+{
+    if (type_ != LISTENER)
+        throw ExceptionErrorConnectionSocket("acceptNewConnection() called on non-listener socket");
+    return socket_->acceptConn();
+}
+
+ssize_t Connection::sendMsg(const std::string& msg) const
+{
+    return socket_->sendMsg(msg);
 }
 
 const VirtualHost& Connection::getConfig() const

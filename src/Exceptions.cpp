@@ -69,3 +69,13 @@ const char* ExceptionRequestTimeout::what() const throw()
 {
     return msg_.c_str();
 }
+
+ExceptionErrorConnectionSocket::ExceptionErrorConnectionSocket(const std::string& str)
+    : msg_(str)
+{
+}
+
+const char* ExceptionErrorConnectionSocket::what() const throw()
+{
+    return msg_.c_str();
+}

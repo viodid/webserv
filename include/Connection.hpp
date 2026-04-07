@@ -24,8 +24,25 @@ public:
     ~Connection();
 
     Type getType() const;
-    const Socket& getSocket() const;
+    /*
+     * Gets the FD from the connection socket
+     */
+    int getFd() const;
+    /*
+     * Accepts a new connection and returns its FD (only for LISTENER connections)
+     */
+    int acceptNewConnection() const;
+    /*
+     * returns the connection Config
+     */
     const VirtualHost& getConfig() const;
+
+    /*
+     * Send a message to the socket.
+     *
+     * It returns the number of bytes sent.
+     */
+    ssize_t sendMsg(const std::string& msg) const;
 
     /*
      * Reads from a socket and copies over the given input buffer
