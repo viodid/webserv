@@ -87,6 +87,10 @@ void Webserver::handleClientData_(EventManager& notifier, Connection& connection
         connection.sendMsg("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: keep-alive\r\n\r\nHello World!");
 
     } catch (ExceptionClientCloseConn& e) {
+        std::cerr << e.what();
+        return handleClosedConn_(notifier, connection);
+    } catch (ExceptionErrorConnectionSocket& e) {
+        std::cerr << e.what();
         return handleClosedConn_(notifier, connection);
     }
 }

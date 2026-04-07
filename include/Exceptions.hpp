@@ -80,3 +80,14 @@ public:
 private:
     const std::string msg_;
 };
+
+class ExceptionErrorConnectionSocket : public std::exception {
+public:
+    ExceptionErrorConnectionSocket(const std::string&);
+    virtual ~ExceptionErrorConnectionSocket() throw() { };
+
+    const char* what() const throw();
+
+private:
+    const std::string msg_;
+};

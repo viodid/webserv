@@ -30,11 +30,11 @@ int Connection::getFd() const
 int Connection::acceptNewConnection() const
 {
     if (type_ != LISTENER)
-        throw std::runtime_error("somehow I've programed it poorly");
+        throw ExceptionErrorConnectionSocket("acceptNewConnection() called on non-listener socket");
     return socket_->acceptConn();
 }
 
-int Connection::sendMsg(const std::string& msg)
+ssize_t Connection::sendMsg(const std::string& msg) const
 {
     return socket_->sendMsg(msg);
 }

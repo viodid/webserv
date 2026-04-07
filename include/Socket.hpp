@@ -1,4 +1,5 @@
 #pragma once
+#include "Exceptions.hpp"
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
@@ -52,7 +53,7 @@ public:
      */
     int getFd() const;
     int acceptConn() const;
-    int sendMsg(const std::string& msg);
+    ssize_t sendMsg(const std::string& msg) const;
 
 private:
     int fd_;

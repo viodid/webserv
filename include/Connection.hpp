@@ -29,7 +29,7 @@ public:
      */
     int getFd() const;
     /*
-     * Accepts a new connection a returns its FD (only for LISTENER connections)
+     * Accepts a new connection and returns its FD (only for LISTENER connections)
      */
     int acceptNewConnection() const;
     /*
@@ -42,7 +42,7 @@ public:
      *
      * It returns the number of bytes sent.
      */
-    int sendMsg(const std::string& msg);
+    ssize_t sendMsg(const std::string& msg) const;
 
     /*
      * Reads from a socket and copies over the given input buffer

@@ -1,8 +1,4 @@
 #include "../include/Socket.hpp"
-#include <cerrno>
-#include <cstring>
-#include <iostream>
-#include <stdexcept>
 
 Socket::Socket(int fd)
     : fd_(fd)
@@ -47,12 +43,16 @@ int Socket::acceptConn() const
     return cfd;
 }
 
-int Socket::sendMsg(const std::string& msg)
+ssize_t Socket::sendMsg(const std::string& msg) const
 {
-    int send_n = send(fd_, msg.c_str(), msg.size(), 0);
-    if (send_n == -1)
-        throw std::runtime_error(std::strerror(errno));
-    return send_n;
+    ssize_t total_sent = 0;
+    while (total_sent < static_cast<ssize_t>(msg.size())) {
+        ssize_t send_n = send(fd_, msg.c_str(), msg.size(), MSG_NOSIGNAL);
+        if (send_n == -1)
+            throw ExceptionErrorConnectionSocket(std::strerror(errno));
+        total_sent += send_n;
+    }
+    return total_sent;
 }
 
 const char* inet_ntop2(void* addr, char* buf, size_t size)
