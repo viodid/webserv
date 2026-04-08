@@ -1,4 +1,5 @@
 #pragma once
+#include "Exceptions.hpp"
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstring>
@@ -11,9 +12,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
-
-#define SOCKET_BACKLOG 4096
-#define READ_SOCKET_SIZE 1 << 24 // 16MiB
 
 /**
  * @class Socket
@@ -55,6 +53,7 @@ public:
      */
     int getFd() const;
     int acceptConn() const;
+    ssize_t sendMsg(const std::string& msg) const;
 
 private:
     int fd_;

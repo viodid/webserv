@@ -1,6 +1,10 @@
 #pragma once
 #include "Config.hpp"
+#include "Exceptions.hpp"
+#include "IReader.hpp"
+#include "Settings.hpp"
 #include "Socket.hpp"
+#include <vector>
 
 /**
  * @class Connection
@@ -10,7 +14,7 @@
  * listener). Ties the VitualHost configuration to a socket and holds I/O
  * buffers.
  */
-class Connection {
+class Connection : public IReader {
 public:
     enum Type {
         LISTENER,
@@ -20,17 +24,35 @@ public:
     ~Connection();
 
     Type getType() const;
-    const Socket& getSocket() const;
+    /*
+     * Gets the FD from the connection socket
+     */
+    int getFd() const;
+    /*
+     * Accepts a new connection and returns its FD (only for LISTENER connections)
+     */
+    int acceptNewConnection() const;
+    /*
+     * returns the connection Config
+     */
     const VirtualHost& getConfig() const;
-    const std::string& getInputBuffer() const;
-    const std::string& getOutputBuffer() const;
-    void setInputBuffer(const std::string&);
-    void setOutputBuffer(const std::string&);
+
+    /*
+     * Send a message to the socket.
+     *
+     * It returns the number of bytes sent.
+     */
+    ssize_t sendMsg(const std::string& msg) const;
+
+    /*
+     * Reads from a socket and copies over the given input buffer
+     *
+     * Returns the number of bytes read or raises a ExceptionClientCloseConn
+     */
+    virtual int read(char buffer[], int len);
 
 private:
     Type type_;
     Socket* socket_;
     VirtualHost config_;
-    std::string input_buffer_;
-    std::string output_buffer_;
 };

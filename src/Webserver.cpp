@@ -1,4 +1,3 @@
-// TODO: primeagen 43:59
 #include "../include/Webserver.hpp"
 
 Webserver::Webserver(const std::vector<VirtualHost>& config)
@@ -8,13 +7,12 @@ Webserver::Webserver(const std::vector<VirtualHost>& config)
 
 Webserver::~Webserver()
 {
-    for (size_t i = 0; i < connections_.size(); i++) 
+    for (size_t i = 0; i < connections_.size(); i++)
         delete connections_[i];
 #if DEBUG
     std::cout << "[Debug] Webserver destructor called " << std::endl;
 #endif
 }
-
 
 void Webserver::init()
 {
@@ -45,7 +43,7 @@ void Webserver::run()
 
 void Webserver::handleNewConnection_(EventManager& notifier, const Connection& connection)
 {
-    int cfd = connection.getSocket().acceptConn();
+    int cfd = connection.acceptNewConnection();
     notifier.addPollFds(cfd);
     Socket* socket_ptr = new Socket(cfd);
     Connection* connection_ptr = new Connection(Connection::CLIENT, socket_ptr, connection.getConfig());
@@ -54,11 +52,11 @@ void Webserver::handleNewConnection_(EventManager& notifier, const Connection& c
 
 void Webserver::handleClosedConn_(EventManager& manager, const Connection& connection)
 {
-    manager.removePollFds(connection.getSocket().getFd());
-    std::cout << "closed conn fd: " << connection.getSocket().getFd() << std::endl;
+    manager.removePollFds(connection.getFd());
+    std::cout << "closed conn fd: " << connection.getFd() << std::endl;
     for (size_t i = 0; i < connections_.size(); i++) {
         if (connections_[i] == &connection) {
-            std::cout << "connection erased from connections_: " << i << "\n";
+            std::cout << "connection erased from connections_: " << i + 1 << "\n";
             delete connections_[i];
             connections_.erase(connections_.begin() + i);
             break;
@@ -66,25 +64,33 @@ void Webserver::handleClosedConn_(EventManager& manager, const Connection& conne
     }
 }
 
-void Webserver::handleClientData_(EventManager& notifier, const Connection& connection)
+static void print_field_lines(const std::string& fn, const std::string& fv)
 {
-    std::cout << "------------\n";
-    std::vector<char> buf(READ_SOCKET_SIZE);
-    std::vector<char> data;
-    data.reserve(READ_SOCKET_SIZE);
-    int count = 0;
-    while ((count = recv(connection.getSocket().getFd(), buf.data(), READ_SOCKET_SIZE, MSG_DONTWAIT))) {
-        std::cout << "count = " << count << " - errno: " << errno << std::endl;
-        if (count == -1) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-                break;
-            else
-                throw std::runtime_error(std::strerror(errno));
-        }
-        data.insert(data.end(), buf.begin(), buf.end());
-    }
-    std::cout << "count = " << count << " - errno: " << errno << std::endl;
-    if (count == 0) // conn closed by client
+    std::cout << fn << ": " << fv << "\n";
+}
+
+void Webserver::handleClientData_(EventManager& notifier, Connection& connection)
+{
+    HttpRequest request;
+    try {
+        request.parseFromReader(connection);
+#if DEBUG
+        std::cout << "Request line:\n"
+                  << "- Method: " << request.getRequestLine().getMethod() << "\n"
+                  << "- Target: " << request.getRequestLine().getRequestTarget() << "\n"
+                  << "- Version: " << request.getRequestLine().getHttpVersion() << "\n"
+                  << "Field line:\n";
+        request.getFieldLines().forEach(&print_field_lines);
+        std::cout << "Body:\n"
+                  << request.getBody().get() << "\n";
+#endif
+        connection.sendMsg("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: keep-alive\r\n\r\nHello World!");
+
+    } catch (ExceptionClientCloseConn& e) {
+        std::cerr << e.what();
         return handleClosedConn_(notifier, connection);
-    std::cout << data.data() << "\n";
+    } catch (ExceptionErrorConnectionSocket& e) {
+        std::cerr << e.what();
+        return handleClosedConn_(notifier, connection);
+    }
 }

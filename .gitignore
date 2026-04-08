@@ -37,6 +37,7 @@
 *.out
 *.app
 webserv
+tests
 
 # debug information files
 *.dwo
