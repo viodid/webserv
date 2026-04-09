@@ -93,16 +93,21 @@ void Webserver::handleClientData_(EventManager& notifier, Connection& connection
 
 #endif
 
+        // TODO: catch malformed requests and return appropriate response
     } catch (ExceptionClientCloseConn& e) {
         std::cerr << e.what();
         return handleClosedConn_(notifier, connection);
-    } catch (ExceptionErrorConnectionSocket& e) { // TODO: check if this exc can be raised here
+    } catch (ExceptionErrorConnectionSocket& e) {
         std::cerr << e.what();
         return handleClosedConn_(notifier, connection);
     }
 
-    // once the request has been complete; Done state
     if (request.isDone()) {
-        connection.sendMsg("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: keep-alive\r\n\r\nHello World!");
+        // connection.sendMsg("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: keep-alive\r\n\r\nHello World!");
+        /*
+         * 1. Event handler factory:
+         * Based on the requests, returns the corresponding handler (Static, CGI...)
+         *  - The request handler implements the interface (IRequestHandler)
+         */
     }
 }

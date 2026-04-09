@@ -1,5 +1,4 @@
 #include "../include/HttpRequest/HttpRequest.hpp"
-#include "../include/IReader.hpp"
 #include <chrono>
 #include <exception>
 #include <gtest/gtest.h>

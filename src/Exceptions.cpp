@@ -40,16 +40,6 @@ const char* ExceptionClientCloseConn::what() const throw()
     return msg_.c_str();
 }
 
-ExceptionClientErrConn::ExceptionClientErrConn(const std::string& str)
-    : msg_(str)
-{
-}
-
-const char* ExceptionClientErrConn::what() const throw()
-{
-    return msg_.c_str();
-}
-
 ExceptionConnLenExceeded::ExceptionConnLenExceeded(const std::string& str)
     : msg_(str)
 {

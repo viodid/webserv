@@ -48,17 +48,6 @@ private:
     const std::string msg_;
 };
 
-class ExceptionClientErrConn : public std::exception {
-public:
-    ExceptionClientErrConn(const std::string&);
-    virtual ~ExceptionClientErrConn() throw() { };
-
-    const char* what() const throw();
-
-private:
-    const std::string msg_;
-};
-
 class ExceptionConnLenExceeded : public std::exception {
 public:
     ExceptionConnLenExceeded(const std::string&);

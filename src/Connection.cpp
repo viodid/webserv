@@ -1,7 +1,4 @@
 #include "../include/Connection.hpp"
-#include <cstring>
-#include <iostream>
-#include <stdexcept>
 
 Connection::Connection(Type type, Socket* socket, const VirtualHost& vh)
     : type_(type)

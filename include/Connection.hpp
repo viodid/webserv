@@ -2,7 +2,7 @@
 #include "Config.hpp"
 #include "Exceptions.hpp"
 #include "HttpRequest/HttpRequest.hpp"
-#include "IReader.hpp"
+#include "Interfaces/IReader.hpp"
 #include "Settings.hpp"
 #include "Socket.hpp"
 #include <cstring>

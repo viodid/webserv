@@ -5,6 +5,13 @@ Body::Body()
     : content_length_(0)
 {
 }
+
+Body::Body(const std::string& body)
+    : body_(body)
+    , content_length_(0)
+{
+}
+
 const std::string& Body::get() const
 {
     return body_;
