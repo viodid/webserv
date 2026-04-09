@@ -21,6 +21,7 @@ void Webserver::init()
         Socket* socket_ptr = new Socket(it->getHostname(), it->getPort());
         Connection* connection_ptr = new Connection(Connection::LISTENER, socket_ptr, *it);
         connections_.push_back(connection_ptr);
+        requests_.push_back(NULL);
     }
 }
 
@@ -35,7 +36,8 @@ void Webserver::run()
                 if (connections_[i]->getType() == Connection::LISTENER)
                     handleNewConnection_(notifier, *connections_[i]);
                 else
-                    handleClientData_(notifier, *connections_[i]);
+                    handleClientData_(notifier, *connections_[i], *requests_[i]);
+                break;
             }
         }
     }
@@ -48,6 +50,7 @@ void Webserver::handleNewConnection_(EventManager& notifier, const Connection& c
     Socket* socket_ptr = new Socket(cfd);
     Connection* connection_ptr = new Connection(Connection::CLIENT, socket_ptr, connection.getConfig());
     connections_.push_back(connection_ptr);
+    requests_.push_back(new HttpRequest);
 }
 
 void Webserver::handleClosedConn_(EventManager& manager, const Connection& connection)
@@ -56,9 +59,14 @@ void Webserver::handleClosedConn_(EventManager& manager, const Connection& conne
     std::cout << "closed conn fd: " << connection.getFd() << std::endl;
     for (size_t i = 0; i < connections_.size(); i++) {
         if (connections_[i] == &connection) {
-            std::cout << "connection erased from connections_: " << i + 1 << "\n";
             delete connections_[i];
             connections_.erase(connections_.begin() + i);
+            delete requests_[i];
+            requests_.erase(requests_.begin() + i);
+#if DEBUG
+            std::cout << "connection erased from connections_: " << i + 1 << "\n";
+            std::cout << "request erased from requests_: " << i + 1 << "\n";
+#endif
             break;
         }
     }
@@ -69,9 +77,8 @@ static void print_field_lines(const std::string& fn, const std::string& fv)
     std::cout << fn << ": " << fv << "\n";
 }
 
-void Webserver::handleClientData_(EventManager& notifier, Connection& connection)
+void Webserver::handleClientData_(EventManager& notifier, Connection& connection, HttpRequest& request)
 {
-    HttpRequest request;
     try {
         request.parseFromReader(connection);
 #if DEBUG
@@ -83,14 +90,19 @@ void Webserver::handleClientData_(EventManager& notifier, Connection& connection
         request.getFieldLines().forEach(&print_field_lines);
         std::cout << "Body:\n"
                   << request.getBody().get() << "\n";
+
 #endif
-        connection.sendMsg("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: keep-alive\r\n\r\nHello World!");
 
     } catch (ExceptionClientCloseConn& e) {
         std::cerr << e.what();
         return handleClosedConn_(notifier, connection);
-    } catch (ExceptionErrorConnectionSocket& e) {
+    } catch (ExceptionErrorConnectionSocket& e) { // TODO: check if this exc can be raised here
         std::cerr << e.what();
         return handleClosedConn_(notifier, connection);
+    }
+
+    // once the request has been complete; Done state
+    if (request.isDone()) {
+        connection.sendMsg("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: keep-alive\r\n\r\nHello World!");
     }
 }

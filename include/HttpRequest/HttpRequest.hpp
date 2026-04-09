@@ -25,6 +25,7 @@ enum HttpRequestParseState {
 class HttpRequest {
 public:
     HttpRequest();
+    ~HttpRequest();
 
     const RequestLine& getRequestLine() const;
     const FieldLines& getFieldLines() const;

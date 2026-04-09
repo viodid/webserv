@@ -7,6 +7,12 @@ HttpRequest::HttpRequest()
 {
     buffer_.resize(Settings::PARSER_BUFFER_SIZE);
 }
+HttpRequest::~HttpRequest()
+{
+#if DEBUG
+    std::cout << "HttpRequest destructor called\n";
+#endif
+}
 const RequestLine& HttpRequest::getRequestLine() const
 {
     return request_line_;
