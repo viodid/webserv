@@ -1,12 +1,12 @@
 #include "../../include/HttpRequest/HttpRequest.hpp"
 
-static bool done(HttpRequestState state);
-
 HttpRequest::HttpRequest()
+    : start_time_(currTimeMs())
+    , curr_state_(RequestLineState)
+    , cursor_(0)
 {
-    curr_state_ = RequestLineState;
+    buffer_.resize(Settings::PARSER_BUFFER_SIZE);
 }
-
 const RequestLine& HttpRequest::getRequestLine() const
 {
     return request_line_;
@@ -40,40 +40,28 @@ void HttpRequest::setBody(const std::string& body)
 
 void HttpRequest::parseFromReader(IReader& reader)
 {
-    int read_idx = 0;
-    int bytes_parsed = 0;
-    std::vector<char> buffer;
-    size_t start_time = currTimeMs();
+    if (currTimeMs() - start_time_ > Settings::TIMEOUT_REQUEST_MS)
+        throw ExceptionRequestTimeout("");
 
-    int buffer_size = Settings::PARSER_BUFFER_SIZE;
-    buffer.resize(buffer_size);
+    if (buffer_.size() > Settings::PARSER_MAX_BUFFER_SIZE)
+        throw ExceptionConnLenExceeded("overrun MAX_BUFFER_SIZE");
 
-    while (!done(curr_state_)) {
+    int bytes_read = reader.read(buffer_.data() + cursor_,
+        buffer_.size() - cursor_);
 
-        if (currTimeMs() - start_time > Settings::TIMEOUT_REQUEST_MS)
-            throw ExceptionRequestTimeout("");
+    cursor_ += bytes_read;
 
-        if (buffer.size() > Settings::PARSER_MAX_BUFFER_SIZE)
-            throw ExceptionConnLenExceeded("overrun MAX_BUFFER_SIZE");
+    if (cursor_ >= buffer_.size())
+        buffer_.resize(buffer_.size() * 2);
 
-        int bytes_read = reader.read(buffer.data() + read_idx,
-            buffer.size() - read_idx);
+    int bytes_parsed = parse_(buffer_.data(), cursor_);
 
-        read_idx += bytes_read;
-
-        if (read_idx >= buffer_size) {
-            buffer_size *= 2;
-            buffer.resize(buffer_size);
-        }
-
-        bytes_parsed = parse_(buffer.data(), read_idx);
-
-        // remove already parsed content from buffer
-        if (bytes_parsed) {
-            buffer.erase(buffer.begin(), buffer.begin() + bytes_parsed);
-            buffer.resize(buffer_size);
-            read_idx -= bytes_parsed;
-        }
+    // remove already parsed content from buffer
+    if (bytes_parsed) {
+        int buffer_size = buffer_.size();
+        buffer_.erase(buffer_.begin(), buffer_.begin() + bytes_parsed);
+        buffer_.resize(buffer_size);
+        cursor_ -= bytes_parsed;
     }
 }
 
@@ -106,10 +94,9 @@ int HttpRequest::parse_(const char* buffer, int length)
             parsed += n;
             if (n == 2) {
                 const std::string& content_length = field_lines_.get("content-length");
-                if (!content_length.empty() && content_length != "0") {
+                if (!content_length.empty() && content_length != "0")
                     curr_state_ = BodyState;
-                    keep = false;
-                } else
+                else
                     curr_state_ = Done;
             }
             break;
@@ -137,7 +124,7 @@ int HttpRequest::parse_(const char* buffer, int length)
     return parsed;
 }
 
-static bool done(HttpRequestState state)
+bool HttpRequest::isDone() const
 {
-    return state == Done;
+    return curr_state_ == Done;
 }

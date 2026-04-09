@@ -1,4 +1,5 @@
 #include "../../include/HttpRequest/Body.hpp"
+#include <iostream>
 
 Body::Body()
     : content_length_(0)
@@ -22,7 +23,6 @@ int Body::parse(const char* buffer, size_t buf_len, const std::string& content_l
         if (content_length_ == 0)
             throw ExceptionBodyLength("malformed 'Content-Length' header");
     }
-
     if (buf_len >= content_length_)
         body_ = std::string(buffer, std::min(static_cast<size_t>(buf_len), content_length_));
 
