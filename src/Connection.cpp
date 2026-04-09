@@ -1,4 +1,5 @@
 #include "../include/Connection.hpp"
+#include <cstring>
 #include <iostream>
 #include <stdexcept>
 
@@ -46,9 +47,10 @@ const VirtualHost& Connection::getConfig() const
 
 int Connection::read(char buffer[], int len)
 {
-    int read_n = recv(socket_->getFd(), buffer, len, MSG_DONTWAIT);
+    int read_n = recv(socket_->getFd(), buffer, len, 0);
+    std::cout << "recv on socket: " << socket_->getFd() << " - read_n: " << read_n << "\n";
     if (read_n == -1)
-        return 0;
+        throw ExceptionErrorConnectionSocket(std::strerror(errno));
     if (read_n == 0)
         throw ExceptionClientCloseConn("");
     return read_n;
