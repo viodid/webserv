@@ -27,3 +27,35 @@ size_t currTimeMs()
     gettimeofday(&tv, NULL);
     return (static_cast<unsigned long>(tv.tv_sec) * 1000) + (tv.tv_usec / 1000);
 }
+
+std::string mapStatusCode(Location::ErrorPages status_code)
+{
+    switch (status_code) {
+    case Location::E_400:
+        return "Bad Request";
+    case Location::E_403:
+        return "Forbidden";
+    case Location::E_404:
+        return "Not Found";
+    case Location::E_405:
+        return "Method Not Allowed";
+    case Location::E_408:
+        return "Request Timeout";
+    case Location::E_413:
+        return "Content Too Large";
+    case Location::E_414:
+        return "URI Too Long";
+    case Location::E_500:
+        return "Internal Server Error";
+    case Location::E_501:
+        return "Not implemented";
+    case Location::E_502:
+        return "Bad Wategay";
+    case Location::E_503:
+        return "Service Unavailable";
+    case Location::E_504:
+        return "Gateway Timeout";
+    case Location::_ERROR_COUNT:
+        return "Not Implemented Error";
+    }
+}
