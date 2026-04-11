@@ -1,4 +1,12 @@
 #include "../include/Utils.hpp"
+#include <cstring>
+#include <fcntl.h>
+#include <stdexcept>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <cerrno>
 
 // Converts all characters in str to lowercase
 std::string toLower(const std::string& str)
@@ -21,6 +29,7 @@ std::string trim(const std::string& str)
     return str.substr(start, end - start);
 }
 
+// Gets the current time as ms since epoch
 size_t currTimeMs()
 {
     struct timeval tv;
@@ -28,34 +37,16 @@ size_t currTimeMs()
     return (static_cast<unsigned long>(tv.tv_sec) * 1000) + (tv.tv_usec / 1000);
 }
 
-std::string mapStatusCode(Location::ErrorPages status_code)
+size_t readFile(char* buffer, size_t len, const std::string& path)
 {
-    switch (status_code) {
-    case Location::E_400:
-        return "Bad Request";
-    case Location::E_403:
-        return "Forbidden";
-    case Location::E_404:
-        return "Not Found";
-    case Location::E_405:
-        return "Method Not Allowed";
-    case Location::E_408:
-        return "Request Timeout";
-    case Location::E_413:
-        return "Content Too Large";
-    case Location::E_414:
-        return "URI Too Long";
-    case Location::E_500:
-        return "Internal Server Error";
-    case Location::E_501:
-        return "Not implemented";
-    case Location::E_502:
-        return "Bad Wategay";
-    case Location::E_503:
-        return "Service Unavailable";
-    case Location::E_504:
-        return "Gateway Timeout";
-    case Location::_ERROR_COUNT:
-        return "Not Implemented Error";
-    }
+    int fd = open(path.c_str(), O_RDONLY);
+    if (fd == -1)
+        throw std::runtime_error(std::strerror(errno));
+
+    size_t bytes = read(fd, buffer, len);
+    if (fd == -1)
+        throw std::runtime_error(std::strerror(errno));
+    close(fd);
+
+    return bytes;
 }
