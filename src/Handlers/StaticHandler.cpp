@@ -5,3 +5,9 @@ StaticHandler::StaticHandler(const ErrorRenderer& error_renderer, const Location
     , conf_(conf)
 {
 }
+
+
+HttpResponse StaticHandler::handle()
+{
+    return HttpResponse(StatusLine("",Location::E_400), FieldLines(), Body());
+}

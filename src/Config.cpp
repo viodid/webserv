@@ -157,30 +157,53 @@ const Config create_mock_config()
     return Config(vh);
 }
 
-std::string mapStatusCode(Location::ErrorPages status_code)
+std::pair<std::string, std::string> generateDefaultErrorMsg(Location::ErrorPages status_code)
 {
+    std::string phrase;
+    std::string description;
+
     switch (status_code) {
     case Location::E_400:
-        return "Bad Request";
+        phrase = "Bad Request";
+        description = "The server could not understand the request due to invalid syntax.";
+        break;
     case Location::E_403:
-        return "Forbidden";
+        phrase = "Forbidden";
+        description = "You do not have permission to access this resource.";
+        break;
     case Location::E_404:
-        return "Not Found";
+        phrase = "Not Found";
+        description = "The requested resource could not be found on this server.";
+        break;
     case Location::E_405:
-        return "Method Not Allowed";
+        phrase = "Method Not Allowed";
+        description = "The specified HTTP method is not allowed for this resource.";
+        break;
     case Location::E_408:
-        return "Request Timeout";
+        phrase = "Request Timeout";
+        description = "The server timed out waiting for the request.";
+        break;
     case Location::E_413:
-        return "Content Too Large";
+        phrase = "Content Too Large";
+        description = "The request entity is larger than limits defined by server configuration.";
+        break;
     case Location::E_414:
-        return "URI Too Long";
+        phrase = "URI Too Long";
+        description = "The URI provided was too long for the server to process.";
+        break;
     case Location::E_500:
-        return "Internal Server Error";
+        phrase = "Internal Server Error";
+        description = "The server encountered an unexpected condition.";
+        break;
     case Location::E_501:
-        return "Not implemented";
+        phrase = "Not Implemented";
+        description = "The server does not support the functionality required to fulfill the request.";
+        break;
     case Location::_ERROR_COUNT:
-        return "Not Implemented Error";
-    default:
-        return "Not Implemented Error";
+        phrase = "Error code not found";
+        description = "";
+        break;
     }
+    return std::pair<std::string, std::string>(phrase, description);
+
 }

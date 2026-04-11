@@ -17,56 +17,6 @@ ErrorRenderer::ErrorRenderer(const std::vector<std::pair<Location::ErrorPages, s
         error_path_[it->first] = it->second;
 }
 
-std::pair<std::string, std::string> generateDefaultErrorMsg(Location::ErrorPages status_code) {
-    std::string phrase;
-    std::string description;
-
-    switch (status_code) {
-    case Location::E_400:
-        phrase = "Bad Request";
-        description = "The server could not understand the request due to invalid syntax.";
-        break;
-    case Location::E_403:
-        phrase = "Forbidden";
-        description = "You do not have permission to access this resource.";
-        break;
-    case Location::E_404:
-        phrase = "Not Found";
-        description = "The requested resource could not be found on this server.";
-        break;
-    case Location::E_405:
-        phrase = "Method Not Allowed";
-        description = "The specified HTTP method is not allowed for this resource.";
-        break;
-    case Location::E_408:
-        phrase = "Request Timeout";
-        description = "The server timed out waiting for the request.";
-        break;
-    case Location::E_413:
-        phrase = "Content Too Large";
-        description = "The request entity is larger than limits defined by server configuration.";
-        break;
-    case Location::E_414:
-        phrase = "URI Too Long";
-        description = "The URI provided was too long for the server to process.";
-        break;
-    case Location::E_500:
-        phrase = "Internal Server Error";
-        description = "The server encountered an unexpected condition.";
-        break;
-    case Location::E_501:
-        phrase = "Not Implemented";
-        description = "The server does not support the functionality required to fulfill the request.";
-        break;
-    case Location::_ERROR_COUNT:
-        phrase = "Error code not found";
-        description = "";
-        break;
-    }
-    return std::pair<std::string, std::string>({phrase, description});
-
-}
-
 std::string ErrorRenderer::render(Location::ErrorPages status_code)
 {
     const std::string placeholder_code = "{CODE}";
