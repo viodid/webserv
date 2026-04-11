@@ -8,3 +8,14 @@ HttpResponse::HttpResponse(const StatusLine& status_line,
     , body_(body)
 {
 }
+
+std::string generateResponseStatusMsg(ResponseStatusCode status_code) {
+    switch (status_code) {
+        case R_200:
+        return "OK";
+        case R_201:
+        return "Created";
+        case R_301:
+        return "Moved Permanently";
+    }
+}
