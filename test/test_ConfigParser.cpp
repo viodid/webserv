@@ -1,8 +1,8 @@
 #include "../include/ConfigParser.hpp"
-#include <gtest/gtest.h>
-#include <unistd.h>
 #include <cstdio>
 #include <cstdlib>
+#include <gtest/gtest.h>
+#include <unistd.h>
 
 // ============================================================
 // Helper: writes content to a temporary file and deletes it
@@ -16,17 +16,17 @@ struct TempConf {
         int fd = mkstemp(tmpl); // Creates a unique temp file and returns its fd
         if (fd == -1)
             throw std::runtime_error("mkstemp failed");
-        	const char* data = content.c_str();
-        	const size_t size = content.size();
-    		size_t totalWritten = 0;
-        	while (totalWritten < size) {
-        	ssize_t written = write(fd, data + totalWritten, size - totalWritten);
-        	if (written == -1) {
-        		close(fd);
-        		unlink(tmpl);
-        		throw std::runtime_error("write to tmpfile failed");
-        	}
-        	totalWritten += static_cast<size_t>(written);
+        const char* data = content.c_str();
+        const size_t size = content.size();
+        size_t totalWritten = 0;
+        while (totalWritten < size) {
+            ssize_t written = write(fd, data + totalWritten, size - totalWritten);
+            if (written == -1) {
+                close(fd);
+                unlink(tmpl);
+                throw std::runtime_error("write to tmpfile failed");
+            }
+            totalWritten += static_cast<size_t>(written);
         }
         close(fd);
         path = std::string(tmpl);
@@ -53,7 +53,7 @@ TEST(ConfigParser, ListenParsesHostAndPort)
         "}\n");
     const VirtualHost& vh = cfg.getVirtualHosts()[0];
     EXPECT_EQ(vh.getHostname(), "127.0.0.1");
-    EXPECT_EQ(vh.getPort(),     "8080");
+    EXPECT_EQ(vh.getPort(), "8080");
 }
 
 TEST(ConfigParser, ListenPortOnlyDefaultsHostToAny)
@@ -65,7 +65,7 @@ TEST(ConfigParser, ListenPortOnlyDefaultsHostToAny)
         "}\n");
     const VirtualHost& vh = cfg.getVirtualHosts()[0];
     EXPECT_EQ(vh.getHostname(), "0.0.0.0");
-    EXPECT_EQ(vh.getPort(),     "9090");
+    EXPECT_EQ(vh.getPort(), "9090");
 }
 
 TEST(ConfigParser, MissingListenThrows)
@@ -128,12 +128,11 @@ TEST(ConfigParser, ErrorPageParsed)
         "    error_page 500 /errors/500.html;\n"
         "    location / { root /var/www; }\n"
         "}\n");
-    const std::vector<std::pair<Location::ErrorPages, std::string> >& ep =
-        cfg.getVirtualHosts()[0].getErrorPages();
+    const std::vector<std::pair<Location::ErrorPages, std::string>>& ep = cfg.getVirtualHosts()[0].getErrorPages();
     ASSERT_EQ(ep.size(), static_cast<size_t>(2));
-    EXPECT_EQ(ep[0].first,  Location::E_404);
+    EXPECT_EQ(ep[0].first, Location::E_404);
     EXPECT_EQ(ep[0].second, "/errors/404.html");
-    EXPECT_EQ(ep[1].first,  Location::E_500);
+    EXPECT_EQ(ep[1].first, Location::E_500);
     EXPECT_EQ(ep[1].second, "/errors/500.html");
 }
 
@@ -212,6 +211,18 @@ TEST(ConfigParser, AutoindexOffParsed)
     EXPECT_FALSE(cfg.getVirtualHosts()[0].getLocations()[0].isDirectoryListing());
 }
 
+TEST(ConfigParser, AutoindexInferred)
+{
+    Config cfg = parseConf(
+        "server {\n"
+        "    listen 127.0.0.1:8080;\n"
+        "    location / {\n"
+        "        root /var/www;\n"
+        "    }\n"
+        "}\n");
+    EXPECT_FALSE(cfg.getVirtualHosts()[0].getLocations()[0].isDirectoryListing());
+}
+
 TEST(ConfigParser, AutoindexInvalidValueThrows)
 {
     EXPECT_THROW(
@@ -234,8 +245,7 @@ TEST(ConfigParser, AllowedMethodsGetPostDelete)
         "        allowed_methods GET POST DELETE;\n"
         "    }\n"
         "}\n");
-    const std::vector<Location::AllowedMethods>& m =
-        cfg.getVirtualHosts()[0].getLocations()[0].getAllowedMethods();
+    const std::vector<Location::AllowedMethods>& m = cfg.getVirtualHosts()[0].getLocations()[0].getAllowedMethods();
     ASSERT_EQ(m.size(), static_cast<size_t>(3));
     EXPECT_EQ(m[0], Location::GET);
     EXPECT_EQ(m[1], Location::POST);
@@ -250,8 +260,7 @@ TEST(ConfigParser, AllowedMethodsDefaultsToGet)
         "    listen 127.0.0.1:8080;\n"
         "    location / { root /var/www; }\n"
         "}\n");
-    const std::vector<Location::AllowedMethods>& m =
-        cfg.getVirtualHosts()[0].getLocations()[0].getAllowedMethods();
+    const std::vector<Location::AllowedMethods>& m = cfg.getVirtualHosts()[0].getLocations()[0].getAllowedMethods();
     ASSERT_EQ(m.size(), static_cast<size_t>(1));
     EXPECT_EQ(m[0], Location::GET);
 }
@@ -313,7 +322,7 @@ TEST(ConfigParser, UploadStoreParsed)
         "    }\n"
         "}\n");
     EXPECT_EQ(cfg.getVirtualHosts()[0].getLocations()[0].getUploadStore(),
-              "/var/www/upload");
+        "/var/www/upload");
 }
 
 // ============================================================
@@ -332,11 +341,10 @@ TEST(ConfigParser, CgiPassParsed)
         "        cgi_pass .py  /usr/bin/python3;\n"
         "    }\n"
         "}\n");
-    const std::map<std::string, std::string>& cgi =
-        cfg.getVirtualHosts()[0].getLocations()[0].getCgiMap();
+    const std::map<std::string, std::string>& cgi = cfg.getVirtualHosts()[0].getLocations()[0].getCgiMap();
     ASSERT_EQ(cgi.size(), static_cast<size_t>(2));
     EXPECT_EQ(cgi.at(".php"), "/usr/bin/php-cgi");
-    EXPECT_EQ(cgi.at(".py"),  "/usr/bin/python3");
+    EXPECT_EQ(cgi.at(".py"), "/usr/bin/python3");
 }
 
 // ============================================================
@@ -426,7 +434,7 @@ TEST(ConfigParser, NoServerBlockThrows)
 TEST(ConfigParser, NonExistentFileThrows)
 {
     EXPECT_THROW(ConfigParser("/tmp/does_not_exist_12345.conf").parse(),
-                 std::runtime_error);
+        std::runtime_error);
 }
 
 TEST(ConfigParser, UnclosedServerBlockThrows)
