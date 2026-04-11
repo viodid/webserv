@@ -17,8 +17,7 @@ ErrorRenderer::ErrorRenderer(const std::vector<std::pair<Location::ErrorPages, s
         error_path_[it->first] = it->second;
 }
 
-std::string generateDefaultErrorPage(Location::ErrorPages status_code)
-{
+std::pair<std::string, std::string> generateDefaultErrorMsg(Location::ErrorPages status_code) {
     std::string phrase;
     std::string description;
 
@@ -64,15 +63,22 @@ std::string generateDefaultErrorPage(Location::ErrorPages status_code)
         description = "";
         break;
     }
+    return std::pair<std::string, std::string>({phrase, description});
 
-    std::stringstream ss;
-    ss << status_code;
-    std::string codeStr = ss.str();
+}
 
+std::string ErrorRenderer::render(Location::ErrorPages status_code)
+{
     const std::string placeholder_code = "{CODE}";
     const std::string placeholder_phrase = "{PHRASE}";
     const std::string placeholder_desc = "{DESCRIPTION}";
     const std::string path = Settings::ERROR_PAGE_PATH;
+
+    std::stringstream ss;
+    ss << status_code;
+    std::string codeStr = ss.str();
+    std::pair<std::string, std::string> error_msg = generateDefaultErrorMsg(status_code);
+
 
     char buf[Settings::PARSER_MAX_BUFFER_SIZE];
     ssize_t bytes = readFile(buf, Settings::PARSER_MAX_BUFFER_SIZE, path.c_str());
@@ -84,10 +90,10 @@ std::string generateDefaultErrorPage(Location::ErrorPages status_code)
     templ.replace(templ.find(placeholder_code), placeholder_code.size(), codeStr);
     templ.replace(templ.find(placeholder_code), placeholder_code.size(), codeStr);
     // PHRASE
-    templ.replace(templ.find(placeholder_phrase), placeholder_phrase.size(), phrase);
-    templ.replace(templ.find(placeholder_phrase), placeholder_phrase.size(), phrase);
+    templ.replace(templ.find(placeholder_phrase), placeholder_phrase.size(), error_msg.first);
+    templ.replace(templ.find(placeholder_phrase), placeholder_phrase.size(), error_msg.first);
     // DESCRIPTION
-    templ.replace(templ.find(placeholder_desc), placeholder_desc.size(), description);
+    templ.replace(templ.find(placeholder_desc), placeholder_desc.size(), error_msg.second);
 
     return templ;
 }
