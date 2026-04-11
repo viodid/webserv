@@ -26,7 +26,7 @@ Location::Location(const std::string path,
 
 Location::AllowedMethods Location::methodFromString(const std::string& method)
 {
-    static const char* METHODS[] = {HTTP_METHODS(MAKE_STRING)};
+    static const char* METHODS[] = { HTTP_METHODS(MAKE_STRING) };
     for (size_t i = 0; i < sizeof(METHODS) / sizeof(METHODS[0]); ++i) {
         if (method == METHODS[i])
             return static_cast<AllowedMethods>(i);
@@ -38,14 +38,14 @@ Location::ErrorPages Location::errorPageFromCode(const std::string& code)
 {
     char* end;
     long value = std::strtol(code.c_str(), &end, 10);
-    
+
     if (end == code.c_str() || *end != '\0') {
         throw std::runtime_error("Invalid error code: " + code);
     }
-    
-    static const int VALID_CODES[] = {ERROR_PAGES(COLLECT_CODE)};
+
+    static const int VALID_CODES[] = { ERROR_PAGES(COLLECT_CODE) };
     static const size_t VALID_CODES_COUNT = sizeof(VALID_CODES) / sizeof(VALID_CODES[0]);
-    
+
     for (size_t i = 0; i < VALID_CODES_COUNT; ++i) {
         if (VALID_CODES[i] == value) {
             return static_cast<Location::ErrorPages>(value);
@@ -155,4 +155,32 @@ const Config create_mock_config()
     vh.push_back(VirtualHost("localhost", "42069", 100000, std::vector<std::pair<Location::ErrorPages, std::string> >(), l2));
 
     return Config(vh);
+}
+
+std::string mapStatusCode(Location::ErrorPages status_code)
+{
+    switch (status_code) {
+    case Location::E_400:
+        return "Bad Request";
+    case Location::E_403:
+        return "Forbidden";
+    case Location::E_404:
+        return "Not Found";
+    case Location::E_405:
+        return "Method Not Allowed";
+    case Location::E_408:
+        return "Request Timeout";
+    case Location::E_413:
+        return "Content Too Large";
+    case Location::E_414:
+        return "URI Too Long";
+    case Location::E_500:
+        return "Internal Server Error";
+    case Location::E_501:
+        return "Not implemented";
+    case Location::_ERROR_COUNT:
+        return "Not Implemented Error";
+    default:
+        return "Not Implemented Error";
+    }
 }

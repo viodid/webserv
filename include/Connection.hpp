@@ -40,14 +40,12 @@ public:
      * returns the connection Config
      */
     const VirtualHost& getConfig() const;
-
     /*
      * Send a message to the socket.
      *
      * It returns the number of bytes sent.
      */
     ssize_t sendMsg(const std::string& msg) const;
-
     /*
      * Reads from a socket and copies over the given input buffer
      *

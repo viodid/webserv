@@ -46,7 +46,7 @@ void Webserver::run()
 void Webserver::handleNewConnection_(EventManager& notifier, const Connection& connection)
 {
     int cfd = connection.acceptNewConnection();
-    notifier.addPollFds(cfd);
+    notifier.addFd(cfd);
     Socket* socket_ptr = new Socket(cfd);
     Connection* connection_ptr = new Connection(Connection::CLIENT, socket_ptr, connection.getConfig());
     connections_.push_back(connection_ptr);
@@ -55,7 +55,7 @@ void Webserver::handleNewConnection_(EventManager& notifier, const Connection& c
 
 void Webserver::handleClosedConn_(EventManager& manager, const Connection& connection)
 {
-    manager.removePollFds(connection.getFd());
+    manager.removeFd(connection.getFd());
     std::cout << "closed conn fd: " << connection.getFd() << std::endl;
     for (size_t i = 0; i < connections_.size(); i++) {
         if (connections_[i] == &connection) {

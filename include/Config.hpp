@@ -6,25 +6,22 @@
 #include <vector>
 
 #define HTTP_METHODS(X) \
-    X(GET) \
-    X(HEAD) \
-    X(POST) \
-    X(PUT) \
+    X(GET)              \
+    X(HEAD)             \
+    X(POST)             \
+    X(PUT)              \
     X(DELETE)
 
 #define ERROR_PAGES(X) \
-    X(400) \
-    X(403) \
-    X(404) \
-    X(405) \
-    X(408) \
-    X(413) \
-    X(414) \
-    X(500) \
-    X(501) \
-    X(502) \
-    X(503) \
-    X(504)
+    X(400)             \
+    X(403)             \
+    X(404)             \
+    X(405)             \
+    X(408)             \
+    X(413)             \
+    X(414)             \
+    X(500)             \
+    X(501)
 
 #define MAKE_ENUM(m) m,
 #define MAKE_STRING(m) #m,
@@ -35,12 +32,12 @@ class Location {
 public:
     enum AllowedMethods {
         HTTP_METHODS(MAKE_ENUM)
-        _COUNT
+            _COUNT
     };
 
     enum ErrorPages {
         ERROR_PAGES(MAKE_ENUM_CODE)
-        _ERROR_COUNT
+            _ERROR_COUNT
     };
     Location(std::string, std::vector<AllowedMethods>,
         std::string, std::string, std::string, std::string, bool,
@@ -48,7 +45,7 @@ public:
         const std::map<std::string, std::string>& = std::map<std::string, std::string>());
 
     static AllowedMethods methodFromString(const std::string& method);
-    static ErrorPages       errorPageFromCode(const std::string& code);
+    static ErrorPages errorPageFromCode(const std::string& code);
 
     const std::string& getPath() const;
     const std::vector<AllowedMethods>& getAllowedMethods() const;
@@ -101,5 +98,7 @@ public:
 private:
     std::vector<VirtualHost> virtual_hosts_;
 };
+
+std::string mapStatusCode(Location::ErrorPages status_code);
 
 const Config create_mock_config();
