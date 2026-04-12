@@ -35,7 +35,7 @@ Location::AllowedMethods Location::methodFromString(const std::string& method)
     throw ExceptionParserError("Unsupported HTTP method: " + method);
 }
 
-Location::ErrorPages Location::errorPageFromCode(const std::string& code)
+Location::StatusCodes Location::errorPageFromCode(const std::string& code)
 {
     char* end;
     long value = std::strtol(code.c_str(), &end, 10);
@@ -44,12 +44,12 @@ Location::ErrorPages Location::errorPageFromCode(const std::string& code)
         throw ExceptionParserError("Unsupported error code: " + code);
     }
     
-    static const int VALID_CODES[] = {ERROR_PAGES(COLLECT_CODE)};
+    static const int VALID_CODES[] = {STATUS_CODES(COLLECT_CODE)};
     static const size_t VALID_CODES_COUNT = sizeof(VALID_CODES) / sizeof(VALID_CODES[0]);
     
     for (size_t i = 0; i < VALID_CODES_COUNT; ++i) {
         if (VALID_CODES[i] == value) {
-            return static_cast<Location::ErrorPages>(value);
+            return static_cast<Location::StatusCodes>(value);
         }
     }
     throw ExceptionParserError("Unsupported error code: " + code);
@@ -96,7 +96,7 @@ VirtualHost::VirtualHost(
     const std::string hostname,
     const std::string port,
     size_t socket_size,
-    const std::vector<std::pair<Location::ErrorPages, std::string> > error_pages,
+    const std::vector<std::pair<Location::StatusCodes, std::string> > error_pages,
     const std::vector<Location> locations)
     : hostname_(hostname)
     , port_(port)
@@ -118,7 +118,7 @@ size_t VirtualHost::getSocketSize() const
 {
     return socket_size_;
 }
-const std::vector<std::pair<Location::ErrorPages, std::string> >& VirtualHost::getErrorPages() const
+const std::vector<std::pair<Location::StatusCodes, std::string> >& VirtualHost::getErrorPages() const
 {
     return error_pages_;
 }
@@ -146,14 +146,14 @@ const Config create_mock_config()
     methods1.push_back(Location::GET);
     std::vector<Location> l1;
     l1.push_back(Location("/", methods1, "", "", "/var/www/html", "/var/www/html/403.html", false));
-    vh.push_back(VirtualHost("127.0.0.1", "5555", 100000, std::vector<std::pair<Location::ErrorPages, std::string> >(), l1));
+    vh.push_back(VirtualHost("127.0.0.1", "5555", 100000, std::vector<std::pair<Location::StatusCodes, std::string> >(), l1));
     // vh2
     std::vector<Location::AllowedMethods> methods2;
     methods2.push_back(Location::GET);
     methods2.push_back(Location::POST);
     std::vector<Location> l2;
     l2.push_back(Location("/", methods2, "", "", "/var/www/html", "/var/www/html/403.html", false));
-    vh.push_back(VirtualHost("localhost", "42069", 100000, std::vector<std::pair<Location::ErrorPages, std::string> >(), l2));
+    vh.push_back(VirtualHost("localhost", "42069", 100000, std::vector<std::pair<Location::StatusCodes, std::string> >(), l2));
 
     return Config(vh);
 }
