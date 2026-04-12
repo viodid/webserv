@@ -1,4 +1,5 @@
 #include "../include/Config.hpp"
+#include "../include/Exceptions.hpp"
 #include <cstdlib>
 #include <map>
 #include <stdexcept>
@@ -31,7 +32,7 @@ Location::AllowedMethods Location::methodFromString(const std::string& method)
         if (method == METHODS[i])
             return static_cast<AllowedMethods>(i);
     }
-    throw std::runtime_error("Unsupported HTTP method: " + method);
+    throw ExceptionParserError("Unsupported HTTP method: " + method);
 }
 
 Location::ErrorPages Location::errorPageFromCode(const std::string& code)
@@ -51,7 +52,7 @@ Location::ErrorPages Location::errorPageFromCode(const std::string& code)
             return static_cast<Location::ErrorPages>(value);
         }
     }
-    throw std::runtime_error("Unsupported error code: " + code);
+    throw ExceptionParserError("Unsupported error code: " + code);
 }
 
 const std::string& Location::getPath() const

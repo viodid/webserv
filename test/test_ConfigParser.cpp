@@ -1,4 +1,5 @@
 #include "../include/ConfigParser.hpp"
+#include "../include/Exceptions.hpp"
 #include <gtest/gtest.h>
 #include <unistd.h>
 #include <cstdio>
@@ -72,14 +73,14 @@ TEST(ConfigParser, MissingListenThrows)
 {
     EXPECT_THROW(
         parseConf("server {\n location / { root /x; }\n}\n"),
-        std::runtime_error);
+        ExceptionParserError);
 }
 
 TEST(ConfigParser, InvalidPortThrows)
 {
     EXPECT_THROW(
         parseConf("server { listen 127.0.0.1:99999; location / { root /x; } }\n"),
-        std::runtime_error);
+        ExceptionParserError);
 }
 
 // ============================================================
@@ -112,7 +113,7 @@ TEST(ConfigParser, ClientMaxBodySizeInvalidThrows)
 {
     EXPECT_THROW(
         parseConf("server { listen 127.0.0.1:80; client_max_body_size abc; location / { root /x; } }\n"),
-        std::runtime_error);
+        ExceptionParserError);
 }
 
 // ============================================================
@@ -141,7 +142,7 @@ TEST(ConfigParser, UnknownErrorCodeThrows)
 {
     EXPECT_THROW(
         parseConf("server { listen 127.0.0.1:80; error_page 999 /x.html; location / { root /x; } }\n"),
-        std::runtime_error);
+        ExceptionParserError);
 }
 
 // ============================================================
@@ -216,7 +217,7 @@ TEST(ConfigParser, AutoindexInvalidValueThrows)
 {
     EXPECT_THROW(
         parseConf("server { listen 127.0.0.1:80; location / { autoindex maybe; } }\n"),
-        std::runtime_error);
+        ExceptionParserError);
 }
 
 // ============================================================
@@ -261,7 +262,7 @@ TEST(ConfigParser, UnknownMethodThrows)
 {
     EXPECT_THROW(
         parseConf("server { listen 127.0.0.1:80; location / { allowed_methods PATCH; } }\n"),
-        std::runtime_error);
+        ExceptionParserError);
 }
 
 // ============================================================
@@ -416,25 +417,25 @@ TEST(ConfigParser, UnknownLocationDirectiveSkipped)
 
 TEST(ConfigParser, EmptyFileThrows)
 {
-    EXPECT_THROW(parseConf(""), std::runtime_error);
+    EXPECT_THROW(parseConf(""), ExceptionParserError);
 }
 
 TEST(ConfigParser, NoServerBlockThrows)
 {
-    EXPECT_THROW(parseConf("# just a comment\n"), std::runtime_error);
+    EXPECT_THROW(parseConf("# just a comment\n"), ExceptionParserError);
 }
 
 TEST(ConfigParser, NonExistentFileThrows)
 {
     EXPECT_THROW(ConfigParser("/tmp/does_not_exist_12345.conf").parse(),
-                 std::runtime_error);
+                 ExceptionParserError);
 }
 
 TEST(ConfigParser, UnclosedServerBlockThrows)
 {
     EXPECT_THROW(
         parseConf("server { listen 127.0.0.1:80; location / { root /x; }\n"),
-        std::runtime_error);
+        ExceptionParserError);
 }
 
 TEST(ConfigParser, DefaultConfFileParsesSuccessfully)
@@ -472,7 +473,7 @@ TEST(ConfigParser, PostAllowedWithoutCgiOrUploadThrows)
             "        allowed_methods GET POST;\n"
             "    }\n"
             "}\n"),
-        std::runtime_error);
+        ExceptionParserError);
 }
 
 TEST(ConfigParser, PostAllowedWithCgiPassIsValid)
