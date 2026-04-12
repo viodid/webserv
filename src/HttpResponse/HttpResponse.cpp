@@ -1,5 +1,4 @@
 #include "../../include/HttpResponse/HttpResponse.hpp"
-#include <stdexcept>
 
 HttpResponse::HttpResponse(const StatusLine& status_line,
     const FieldLines& field_lines,
@@ -10,15 +9,3 @@ HttpResponse::HttpResponse(const StatusLine& status_line,
 {
 }
 
-std::string generateResponseStatusMsg(ResponseStatusCode status_code) {
-    switch (status_code) {
-        case R_200:
-        return "OK";
-        case R_201:
-        return "Created";
-        case R_301:
-        return "Moved Permanently";
-        default:
-            throw std::runtime_error("ResponseStatusCode not handled");
-    }
-}

@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <gtest/gtest.h>
+#include <stdexcept>
 #include <unistd.h>
 
 // ============================================================
@@ -165,6 +166,18 @@ TEST(ConfigParser, LocationRootParsed)
     EXPECT_EQ(loc.getPath(), "/static");
     EXPECT_EQ(loc.getRoot(), "/var/www/static");
 }
+
+TEST(ConfigParser, LocationMissingRoot)
+{
+    EXPECT_THROW(parseConf(
+        "server {\n"
+        "    listen 127.0.0.1:8080;\n"
+        "    location /static {\n"
+        "        index index.html;\n"
+        "    }\n"
+        "}\n"), std::runtime_error);
+}
+
 
 // ============================================================
 // location — index (subject: "default file to serve when the

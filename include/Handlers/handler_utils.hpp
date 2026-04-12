@@ -8,15 +8,20 @@
 #include <cstdlib>
 #include <cstring>
 #include <fcntl.h>
+#include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <string>
-#include <strstream>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
 
+class ErrorRenderer;
+
 std::size_t readFile(char* buffer, size_t len, const std::string& path);
 HttpResponse constructHttpErrorResponse(const HttpRequest& request,
     const ErrorRenderer& error_renderer,
-    Location::ErrorPages error_no);
+    Location::StatusCodes error_no);
 bool isMethodAllowed(const HttpRequest& request, const Location& location);
+std::string constructPath(const HttpRequest& request, const Location& location);
+bool isFileReadable(const std::string& path);

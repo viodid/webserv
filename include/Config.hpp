@@ -112,6 +112,6 @@ private:
  *
  * Second -> Error description, i.e "The server could not understand the request due to invalid syntax."
  */
-std::pair<std::string, std::string> generateDefaultErrorMsg(Location::StatusCodes status_code);
+std::pair<std::string, std::string> generateDefaultStatusMsg(Location::StatusCodes status_code);
 
 const Config create_mock_config();

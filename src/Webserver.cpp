@@ -99,6 +99,9 @@ void Webserver::handleClientData_(EventManager& notifier, Connection& connection
 
     if (request.isDone()) {
         ErrorRenderer error_renderer(connection.getConfig().getErrorPages());
+        StaticHandler handler(connection.getConfig().getLocations()[0], error_renderer);
+        HttpResponse response = handler.handle(request);
+        (void) response;
         connection.sendMsg("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: keep-alive\r\n\r\nHello World!");
         /*
          * 1. Event handler factory:

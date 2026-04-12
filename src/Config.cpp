@@ -158,12 +158,21 @@ const Config create_mock_config()
     return Config(vh);
 }
 
-std::pair<std::string, std::string> generateDefaultErrorMsg(Location::StatusCodes status_code)
+std::pair<std::string, std::string> generateDefaultStatusMsg(Location::StatusCodes status_code)
 {
     std::string phrase;
     std::string description;
 
     switch (status_code) {
+    case Location::S_200:
+        phrase = "OK";
+        break;
+    case Location::S_201:
+        phrase = "Created";
+        break;
+    case Location::S_301:
+        phrase = "Moved Permanently";
+        break;
     case Location::S_400:
         phrase = "Bad Request";
         description = "The server could not understand the request due to invalid syntax.";
@@ -203,6 +212,6 @@ std::pair<std::string, std::string> generateDefaultErrorMsg(Location::StatusCode
     default:
         throw std::runtime_error("unhandled status code msg generation\n");
     }
-    return std::pair<std::string, std::string>(phrase, description);
 
+    return std::pair<std::string, std::string>(phrase, description);
 }

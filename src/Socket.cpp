@@ -87,8 +87,9 @@ void Socket::bindAndListen_()
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    if (getaddrinfo(hostname_.data(), port_.data(), &hints, &addrinf_) != 0)
-        throw std::runtime_error(std::strerror(errno));
+    int ret = getaddrinfo(hostname_.data(), port_.data(), &hints, &addrinf_);
+    if (ret != 0)
+        throw std::runtime_error("getaddrinfo error\n");
 
     for (curraddr_ = addrinf_; curraddr_ != NULL; curraddr_ = curraddr_->ai_next) {
         fd_ = socket(curraddr_->ai_family, curraddr_->ai_socktype, curraddr_->ai_protocol);

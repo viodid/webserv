@@ -2,12 +2,7 @@
 #include "../HttpRequest/Body.hpp"
 #include "../HttpRequest/FieldLines.hpp"
 #include "StatusLine.hpp"
-
-enum ResponseStatusCode {
-    R_200 = 200,
-    R_201 = 201,
-    R_301 = 301
-};
+#include <stdexcept>
 
 class HttpResponse {
 public:
@@ -21,4 +16,3 @@ private:
     const Body body_;
 };
 
-std::string generateResponseStatusMsg(ResponseStatusCode status_code);
