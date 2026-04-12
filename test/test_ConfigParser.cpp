@@ -304,6 +304,21 @@ TEST(ConfigParser, ReturnWithCodeParsed)
     EXPECT_EQ(loc.getRedirectionPath(), "/new");
 }
 
+TEST(ConfigParser, RedirectionFailWithMultipleConfigurations)
+{
+    EXPECT_THROW(parseConf(
+        "server {\n"
+        "    listen 127.0.0.1:8080;\n"
+        "    location /old {\n"
+        "        root /var/www/upload;\n"
+        "        allowed_methods GET POST DELETE;\n"
+        "        upload_store /var/www/upload;\n"
+        "        return /new;\n"
+        "    }\n"
+        "}\n"), std::runtime_error);
+}
+
+
 // ============================================================
 // location — upload_store (subject: "Uploading files from the
 // clients to the server is authorized, and storage location

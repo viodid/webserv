@@ -4,11 +4,11 @@
 
 class StaticHandler : public IRequestHandler {
 public:
-    StaticHandler(const ErrorRenderer& error_renderer, const Location& conf);
+    StaticHandler(const Location& conf,const ErrorRenderer& error_renderer);
 
     virtual HttpResponse handle();
 
 private:
-    const ErrorRenderer error_renderer_;
     const Location conf_;
+    const ErrorRenderer error_renderer_;
 };

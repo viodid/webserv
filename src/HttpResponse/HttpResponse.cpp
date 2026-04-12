@@ -1,4 +1,5 @@
 #include "../../include/HttpResponse/HttpResponse.hpp"
+#include <stdexcept>
 
 HttpResponse::HttpResponse(const StatusLine& status_line,
     const FieldLines& field_lines,
@@ -17,5 +18,7 @@ std::string generateResponseStatusMsg(ResponseStatusCode status_code) {
         return "Created";
         case R_301:
         return "Moved Permanently";
+        default:
+            throw std::runtime_error("ResponseStatusCode not handled");
     }
 }
