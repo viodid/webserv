@@ -1,4 +1,5 @@
 #include "../include/ConfigParser.hpp"
+#include "../include/Exceptions.hpp"
 #include <gtest/gtest.h>
 #include <unistd.h>
 #include <cstdio>
@@ -72,14 +73,14 @@ TEST(ConfigParser, MissingListenThrows)
 {
     EXPECT_THROW(
         parseConf("server {\n location / { root /x; }\n}\n"),
-        std::runtime_error);
+        ExceptionParserError);
 }
 
 TEST(ConfigParser, InvalidPortThrows)
 {
     EXPECT_THROW(
         parseConf("server { listen 127.0.0.1:99999; location / { root /x; } }\n"),
-        std::runtime_error);
+        ExceptionParserError);
 }
 
 // ============================================================
@@ -112,7 +113,7 @@ TEST(ConfigParser, ClientMaxBodySizeInvalidThrows)
 {
     EXPECT_THROW(
         parseConf("server { listen 127.0.0.1:80; client_max_body_size abc; location / { root /x; } }\n"),
-        std::runtime_error);
+        ExceptionParserError);
 }
 
 // ============================================================
@@ -141,7 +142,7 @@ TEST(ConfigParser, UnknownErrorCodeThrows)
 {
     EXPECT_THROW(
         parseConf("server { listen 127.0.0.1:80; error_page 999 /x.html; location / { root /x; } }\n"),
-        std::runtime_error);
+        ExceptionParserError);
 }
 
 // ============================================================
@@ -216,7 +217,7 @@ TEST(ConfigParser, AutoindexInvalidValueThrows)
 {
     EXPECT_THROW(
         parseConf("server { listen 127.0.0.1:80; location / { autoindex maybe; } }\n"),
-        std::runtime_error);
+        ExceptionParserError);
 }
 
 // ============================================================
@@ -232,6 +233,7 @@ TEST(ConfigParser, AllowedMethodsGetPostDelete)
         "    location /api {\n"
         "        root /var/www/api;\n"
         "        allowed_methods GET POST DELETE;\n"
+        "        upload_store /var/www/upload;\n"
         "    }\n"
         "}\n");
     const std::vector<Location::AllowedMethods>& m =
@@ -260,7 +262,7 @@ TEST(ConfigParser, UnknownMethodThrows)
 {
     EXPECT_THROW(
         parseConf("server { listen 127.0.0.1:80; location / { allowed_methods PATCH; } }\n"),
-        std::runtime_error);
+        ExceptionParserError);
 }
 
 // ============================================================
@@ -366,7 +368,7 @@ TEST(ConfigParser, MultipleLocationsInOneServer)
         "server {\n"
         "    listen 127.0.0.1:8080;\n"
         "    location / { root /var/www; }\n"
-        "    location /api { root /var/api; allowed_methods GET POST; }\n"
+        "    location /api { root /var/api; allowed_methods GET POST; cgi_pass .php /usr/bin/php-cgi; }\n"
         "    location /upload { root /var/up; upload_store /var/up; }\n"
         "}\n");
     EXPECT_EQ(cfg.getVirtualHosts()[0].getLocations().size(), static_cast<size_t>(3));
@@ -415,25 +417,25 @@ TEST(ConfigParser, UnknownLocationDirectiveSkipped)
 
 TEST(ConfigParser, EmptyFileThrows)
 {
-    EXPECT_THROW(parseConf(""), std::runtime_error);
+    EXPECT_THROW(parseConf(""), ExceptionParserError);
 }
 
 TEST(ConfigParser, NoServerBlockThrows)
 {
-    EXPECT_THROW(parseConf("# just a comment\n"), std::runtime_error);
+    EXPECT_THROW(parseConf("# just a comment\n"), ExceptionParserError);
 }
 
 TEST(ConfigParser, NonExistentFileThrows)
 {
     EXPECT_THROW(ConfigParser("/tmp/does_not_exist_12345.conf").parse(),
-                 std::runtime_error);
+                 ExceptionParserError);
 }
 
 TEST(ConfigParser, UnclosedServerBlockThrows)
 {
     EXPECT_THROW(
         parseConf("server { listen 127.0.0.1:80; location / { root /x; }\n"),
-        std::runtime_error);
+        ExceptionParserError);
 }
 
 TEST(ConfigParser, DefaultConfFileParsesSuccessfully)
@@ -454,4 +456,48 @@ TEST(ConfigParser, RedirectWithCode302Parsed)
     const Location& loc = cfg.getVirtualHosts()[0].getLocations()[0];
     EXPECT_EQ(loc.getRedirectionCode(), "302");
     EXPECT_EQ(loc.getRedirectionPath(), "/");
+}
+
+// ============================================================
+// Paradoxical State Validation (POST without handler)
+// ============================================================
+
+TEST(ConfigParser, PostAllowedWithoutCgiOrUploadThrows)
+{
+    EXPECT_THROW(
+        parseConf(
+            "server {\n"
+            "    listen 127.0.0.1:8080;\n"
+            "    location / {\n"
+            "        root /var/www/alt;\n"
+            "        allowed_methods GET POST;\n"
+            "    }\n"
+            "}\n"),
+        ExceptionParserError);
+}
+
+TEST(ConfigParser, PostAllowedWithCgiPassIsValid)
+{
+    EXPECT_NO_THROW(
+        parseConf(
+            "server {\n"
+            "    listen 127.0.0.1:8080;\n"
+            "    location / {\n"
+            "        allowed_methods POST;\n"
+            "        cgi_pass .php /usr/bin/php-cgi;\n"
+            "    }\n"
+            "}\n"));
+}
+
+TEST(ConfigParser, PostAllowedWithUploadStoreIsValid)
+{
+    EXPECT_NO_THROW(
+        parseConf(
+            "server {\n"
+            "    listen 127.0.0.1:8080;\n"
+            "    location / {\n"
+            "        allowed_methods POST;\n"
+            "        upload_store /tmp;\n"
+            "    }\n"
+            "}\n"));
 }

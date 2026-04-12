@@ -1,4 +1,5 @@
 #include "../include/ConfigParser.hpp"
+#include "../include/Exceptions.hpp"
 #include <cstdlib>
 #include <iostream>
 #include <cctype>
@@ -16,7 +17,7 @@ void ConfigParser::readFile()
 {
     std::ifstream file(filepath_.c_str());
     if (!file.is_open())
-        throw std::runtime_error("ConfigParser: cannot open file: " + filepath_);
+        throw ExceptionParserError("ConfigParser: cannot open file: " + filepath_);
     std::stringstream ss;
     ss << file.rdbuf();
     content_ = ss.str();
@@ -87,7 +88,7 @@ void ConfigParser::expect(const std::string& expected)
         std::stringstream ss;
         ss << "ConfigParser: expected '" << expected
            << "' but got '" << tok << "' at position " << pos_;
-        throw std::runtime_error(ss.str());
+        throw ExceptionParserError(ss.str());
     }
 }
 
@@ -151,7 +152,7 @@ void ConfigParser::parseClientMaxBodySize(size_t& size)
 	errno = 0;
     long val = std::strtol(size_str.c_str(), &endptr, 10);
     if (errno == ERANGE || *endptr != '\0' || val < 0)
-        throw std::runtime_error("ConfigParser: invalid client_max_body_size: " + size_str);
+        throw ExceptionParserError("ConfigParser: invalid client_max_body_size: " + size_str);
     size = static_cast<size_t>(val);
     expect(";");
 }
@@ -174,7 +175,7 @@ void ConfigParser::parseAutoindex(bool& dir_listing)
     else if (val == "off")
         dir_listing = false;
     else
-        throw std::runtime_error("ConfigParser: autoindex must be 'on' or 'off', got: " + val);
+        throw ExceptionParserError("ConfigParser: autoindex must be 'on' or 'off', got: " + val);
     expect(";");
 }
 
@@ -184,7 +185,7 @@ void ConfigParser::parseAllowedMethods(std::vector<Location::AllowedMethods>& me
         methods.push_back(Location::methodFromString(nextToken()));
     expect(";");
     if (methods.empty())
-        throw std::runtime_error("ConfigParser: allowed_methods requires at least one method");
+        throw ExceptionParserError("ConfigParser: allowed_methods requires at least one method");
 }
 
 void ConfigParser::parseReturn(std::string& code, std::string& path)
@@ -228,13 +229,13 @@ Config ConfigParser::parse()
             std::stringstream ss;
             ss << "ConfigParser: expected 'server' but got '" << tok
                << "' at position " << pos_;
-            throw std::runtime_error(ss.str());
+            throw ExceptionParserError(ss.str());
         }
         virtual_hosts.push_back(parseServerBlock());
         skipWhitespaceAndComments();
     }
     if (virtual_hosts.empty())
-        throw std::runtime_error("ConfigParser: no server blocks found in " + filepath_);
+        throw ExceptionParserError("ConfigParser: no server blocks found in " + filepath_);
     return Config(virtual_hosts);
 }
 
@@ -251,7 +252,7 @@ VirtualHost ConfigParser::parseServerBlock()
 
     for (std::string tok = peekToken(); tok != "}"; tok = peekToken()) {
         if (tok.empty())
-            throw std::runtime_error("ConfigParser: unexpected end of file inside server block");
+            throw ExceptionParserError("ConfigParser: unexpected end of file inside server block");
         tok = nextToken();
         if (tok == "listen")
             parseListen(hostname, port);
@@ -267,12 +268,12 @@ VirtualHost ConfigParser::parseServerBlock()
     nextToken(); // consume '}'
 
     if (hostname.empty() || port.empty())
-        throw std::runtime_error("ConfigParser: server block missing 'listen' directive");
+        throw ExceptionParserError("ConfigParser: server block missing 'listen' directive");
 
     char* endptr;
     long port_num = std::strtol(port.c_str(), &endptr, 10);
     if (*endptr != '\0' || port_num < 1 || port_num > 65535)
-        throw std::runtime_error("ConfigParser: invalid port number: " + port);
+        throw ExceptionParserError("ConfigParser: invalid port number: " + port);
 
     return VirtualHost(hostname, port, client_max_body_size, error_pages, locations);
 }
@@ -283,7 +284,7 @@ Location ConfigParser::parseLocationBlock()
 {
     std::string path = nextToken();
     if (path.empty() || path == "{")
-        throw std::runtime_error("ConfigParser: location missing path");
+        throw ExceptionParserError("ConfigParser: location missing path");
     expect("{");
 
     std::string root;
@@ -297,7 +298,7 @@ Location ConfigParser::parseLocationBlock()
 
     for (std::string tok = peekToken(); tok != "}"; tok = peekToken()) {
         if (tok.empty())
-            throw std::runtime_error("ConfigParser: unexpected end of file inside location block");
+            throw ExceptionParserError("ConfigParser: unexpected end of file inside location block");
         tok = nextToken();
         if (tok == "root")
             { root = nextToken(); expect(";"); }
@@ -321,6 +322,14 @@ Location ConfigParser::parseLocationBlock()
 	// If no allowed_methods specified, default to GET
     if (methods.empty())
         methods.push_back(Location::GET);
-
+    // If POST is allowed, either cgi_pass or upload_store must be present
+    for (size_t i = 0; i < methods.size(); ++i) {
+        if (methods[i] == Location::POST) {
+            if (cgi_map.empty() && upload_store.empty()) {
+                throw ExceptionParserError("ConfigParser: location with POST method must have 'cgi_pass' or 'upload_store'");
+            }
+            break;
+        }
+    }
     return Location(path, methods, redirection_code, redirection_path, root, default_file, dir_listing, upload_store, cgi_map);
 }
