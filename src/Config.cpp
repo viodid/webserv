@@ -41,7 +41,7 @@ Location::ErrorPages Location::errorPageFromCode(const std::string& code)
     long value = std::strtol(code.c_str(), &end, 10);
     
     if (end == code.c_str() || *end != '\0') {
-        throw std::runtime_error("Invalid error code: " + code);
+        throw ExceptionParserError("Unsupported error code: " + code);
     }
     
     static const int VALID_CODES[] = {ERROR_PAGES(COLLECT_CODE)};
