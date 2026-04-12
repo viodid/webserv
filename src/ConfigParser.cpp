@@ -157,7 +157,7 @@ void ConfigParser::parseClientMaxBodySize(size_t& size)
     expect(";");
 }
 
-void ConfigParser::parseErrorPage(std::vector<std::pair<Location::ErrorPages, std::string> >& pages)
+void ConfigParser::parseErrorPage(std::vector<std::pair<Location::StatusCodes, std::string> >& pages)
 {
     std::string code = nextToken();
     std::string path = nextToken();
@@ -247,7 +247,7 @@ VirtualHost ConfigParser::parseServerBlock()
     std::string hostname;
     std::string port;
     size_t      client_max_body_size = 1048576; // 1 MiB default
-    std::vector<std::pair<Location::ErrorPages, std::string> > error_pages;
+    std::vector<std::pair<Location::StatusCodes, std::string> > error_pages;
     std::vector<Location> locations;
 
     for (std::string tok = peekToken(); tok != "}"; tok = peekToken()) {

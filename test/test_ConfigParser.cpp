@@ -129,12 +129,12 @@ TEST(ConfigParser, ErrorPageParsed)
         "    error_page 500 /errors/500.html;\n"
         "    location / { root /var/www; }\n"
         "}\n");
-    const std::vector<std::pair<Location::ErrorPages, std::string> >& ep =
+    const std::vector<std::pair<Location::StatusCodes, std::string> >& ep =
         cfg.getVirtualHosts()[0].getErrorPages();
     ASSERT_EQ(ep.size(), static_cast<size_t>(2));
-    EXPECT_EQ(ep[0].first,  Location::E_404);
+    EXPECT_EQ(ep[0].first,  Location::S_404);
     EXPECT_EQ(ep[0].second, "/errors/404.html");
-    EXPECT_EQ(ep[1].first,  Location::E_500);
+    EXPECT_EQ(ep[1].first,  Location::S_500);
     EXPECT_EQ(ep[1].second, "/errors/500.html");
 }
 
