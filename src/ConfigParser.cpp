@@ -321,6 +321,14 @@ Location ConfigParser::parseLocationBlock()
 	// If no allowed_methods specified, default to GET
     if (methods.empty())
         methods.push_back(Location::GET);
-
+    // If POST is allowed, either cgi_pass or upload_store must be present
+    for (size_t i = 0; i < methods.size(); ++i) {
+        if (methods[i] == Location::POST) {
+            if (cgi_map.empty() && upload_store.empty()) {
+                throw std::runtime_error("ConfigParser: location with POST method must have 'cgi_pass' or 'upload_store'");
+            }
+            break;
+        }
+    }
     return Location(path, methods, redirection_code, redirection_path, root, default_file, dir_listing, upload_store, cgi_map);
 }

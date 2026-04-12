@@ -232,6 +232,7 @@ TEST(ConfigParser, AllowedMethodsGetPostDelete)
         "    location /api {\n"
         "        root /var/www/api;\n"
         "        allowed_methods GET POST DELETE;\n"
+        "        upload_store /var/www/upload;\n"
         "    }\n"
         "}\n");
     const std::vector<Location::AllowedMethods>& m =
@@ -366,7 +367,7 @@ TEST(ConfigParser, MultipleLocationsInOneServer)
         "server {\n"
         "    listen 127.0.0.1:8080;\n"
         "    location / { root /var/www; }\n"
-        "    location /api { root /var/api; allowed_methods GET POST; }\n"
+        "    location /api { root /var/api; allowed_methods GET POST; cgi_pass .php /usr/bin/php-cgi; }\n"
         "    location /upload { root /var/up; upload_store /var/up; }\n"
         "}\n");
     EXPECT_EQ(cfg.getVirtualHosts()[0].getLocations().size(), static_cast<size_t>(3));
@@ -454,4 +455,48 @@ TEST(ConfigParser, RedirectWithCode302Parsed)
     const Location& loc = cfg.getVirtualHosts()[0].getLocations()[0];
     EXPECT_EQ(loc.getRedirectionCode(), "302");
     EXPECT_EQ(loc.getRedirectionPath(), "/");
+}
+
+// ============================================================
+// Paradoxical State Validation (POST without handler)
+// ============================================================
+
+TEST(ConfigParser, PostAllowedWithoutCgiOrUploadThrows)
+{
+    EXPECT_THROW(
+        parseConf(
+            "server {\n"
+            "    listen 127.0.0.1:8080;\n"
+            "    location / {\n"
+            "        root /var/www/alt;\n"
+            "        allowed_methods GET POST;\n"
+            "    }\n"
+            "}\n"),
+        std::runtime_error);
+}
+
+TEST(ConfigParser, PostAllowedWithCgiPassIsValid)
+{
+    EXPECT_NO_THROW(
+        parseConf(
+            "server {\n"
+            "    listen 127.0.0.1:8080;\n"
+            "    location / {\n"
+            "        allowed_methods POST;\n"
+            "        cgi_pass .php /usr/bin/php-cgi;\n"
+            "    }\n"
+            "}\n"));
+}
+
+TEST(ConfigParser, PostAllowedWithUploadStoreIsValid)
+{
+    EXPECT_NO_THROW(
+        parseConf(
+            "server {\n"
+            "    listen 127.0.0.1:8080;\n"
+            "    location / {\n"
+            "        allowed_methods POST;\n"
+            "        upload_store /tmp;\n"
+            "    }\n"
+            "}\n"));
 }
