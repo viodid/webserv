@@ -98,5 +98,5 @@ public:
     virtual ~ExceptionParserError() throw();
     const char* what() const throw();
 private:
-    std::string msg_;
+    const std::string msg_;
 };
