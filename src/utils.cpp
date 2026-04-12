@@ -2,11 +2,7 @@
 #include <cstring>
 #include <fcntl.h>
 #include <stdexcept>
-#include <sys/socket.h>
 #include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <cerrno>
 
 // Converts all characters in str to lowercase
 std::string toLower(const std::string& str)
@@ -35,18 +31,4 @@ size_t currTimeMs()
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return (static_cast<unsigned long>(tv.tv_sec) * 1000) + (tv.tv_usec / 1000);
-}
-
-size_t readFile(char* buffer, size_t len, const std::string& path)
-{
-    int fd = open(path.c_str(), O_RDONLY);
-    if (fd == -1)
-        throw std::runtime_error(std::strerror(errno));
-
-    size_t bytes = read(fd, buffer, len);
-    if (fd == -1)
-        throw std::runtime_error(std::strerror(errno));
-    close(fd);
-
-    return bytes;
 }
