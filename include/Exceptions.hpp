@@ -80,3 +80,12 @@ public:
 private:
     const std::string msg_;
 };
+
+class ExceptionParserError : public std::exception {
+public:
+    ExceptionParserError(const std::string& msg);
+    virtual ~ExceptionParserError() throw();
+    const char* what() const throw();
+private:
+    const std::string msg_;
+};

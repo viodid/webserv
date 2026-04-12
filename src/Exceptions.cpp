@@ -69,3 +69,12 @@ const char* ExceptionErrorConnectionSocket::what() const throw()
 {
     return msg_.c_str();
 }
+
+ExceptionParserError::ExceptionParserError(const std::string& msg)
+    : msg_(msg) {}
+
+ExceptionParserError::~ExceptionParserError() throw() {}
+
+const char* ExceptionParserError::what() const throw() {
+    return msg_.c_str();
+}

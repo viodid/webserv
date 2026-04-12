@@ -12,32 +12,38 @@
     X(PUT)              \
     X(DELETE)
 
-#define ERROR_PAGES(X) \
-    X(400)             \
-    X(403)             \
-    X(404)             \
-    X(405)             \
-    X(408)             \
-    X(413)             \
-    X(414)             \
-    X(500)             \
-    X(501)
+#define STATUS_CODES(X) \
+    X(200) \
+    X(201) \
+    X(301) \
+    X(400) \
+    X(403) \
+    X(404) \
+    X(405) \
+    X(408) \
+    X(413) \
+    X(414) \
+    X(500) \
+    X(501) \
+    X(502) \
+    X(503) \
+    X(504)
 
 #define MAKE_ENUM(m) m,
 #define MAKE_STRING(m) #m,
-#define MAKE_ENUM_CODE(code) E_##code = code,
+#define MAKE_ENUM_CODE(code) S_##code = code,
 #define COLLECT_CODE(code) code,
 
 class Location {
 public:
     enum AllowedMethods {
         HTTP_METHODS(MAKE_ENUM)
-            _COUNT
+        _COUNT // trailing comma c++98
     };
 
-    enum ErrorPages {
-        ERROR_PAGES(MAKE_ENUM_CODE)
-            _ERROR_COUNT
+    enum StatusCodes {
+        STATUS_CODES(MAKE_ENUM_CODE)
+        _STATUS_COUNT // trailing comma c++98
     };
     Location(std::string, std::vector<AllowedMethods>,
         std::string, std::string, std::string, std::string, bool,
@@ -45,7 +51,7 @@ public:
         const std::map<std::string, std::string>& = std::map<std::string, std::string>());
 
     static AllowedMethods methodFromString(const std::string& method);
-    static ErrorPages errorPageFromCode(const std::string& code);
+    static StatusCodes       errorPageFromCode(const std::string& code);
 
     const std::string& getPath() const;
     const std::vector<AllowedMethods>& getAllowedMethods() const;
@@ -72,20 +78,20 @@ private:
 class VirtualHost {
 public:
     VirtualHost(const std::string, const std::string, size_t,
-        const std::vector<std::pair<Location::ErrorPages, std::string> >,
+        const std::vector<std::pair<Location::StatusCodes, std::string> >,
         const std::vector<Location>);
 
     const std::string& getHostname() const;
     const std::string& getPort() const;
     size_t getSocketSize() const;
-    const std::vector<std::pair<Location::ErrorPages, std::string> >& getErrorPages() const;
+    const std::vector<std::pair<Location::StatusCodes, std::string> >& getErrorPages() const;
     const std::vector<Location>& getLocations() const;
 
 private:
     std::string hostname_;
     std::string port_;
     size_t socket_size_;
-    std::vector<std::pair<Location::ErrorPages, std::string> > error_pages_;
+    std::vector<std::pair<Location::StatusCodes, std::string> > error_pages_;
     std::vector<Location> locations_;
 };
 
@@ -106,6 +112,6 @@ private:
  *
  * Second -> Error description, i.e "The server could not understand the request due to invalid syntax."
  */
-std::pair<std::string, std::string> generateDefaultErrorMsg(Location::ErrorPages status_code);
+std::pair<std::string, std::string> generateDefaultErrorMsg(Location::StatusCodes status_code);
 
 const Config create_mock_config();
