@@ -19,7 +19,7 @@
  */
 class FieldLines {
 public:
-    FieldLines() { };
+    FieldLines();
     FieldLines(const std::map<std::string, std::string>& field_lines);
 
     const std::string& get(const std::string&) const;

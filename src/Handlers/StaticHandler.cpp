@@ -6,7 +6,6 @@ StaticHandler::StaticHandler(const Location& conf, const ErrorRenderer& error_re
 {
 }
 
-// TODO: implement format HttpResponse and test current implementation
 HttpResponse StaticHandler::handle(const HttpRequest& request)
 {
     if (!isMethodAllowed(request, conf_))
@@ -24,7 +23,7 @@ HttpResponse StaticHandler::handle(const HttpRequest& request)
     return constructHttpOKResponse_(request, absolute_path);
 }
 
-HttpResponse StaticHandler::constructHttpOKResponse_(const HttpRequest& request,
+HttpResponse constructHttpOKResponse_(const HttpRequest& request,
     const std::string& path)
 {
     FieldLines field_lines;

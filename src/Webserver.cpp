@@ -101,8 +101,11 @@ void Webserver::handleClientData_(EventManager& notifier, Connection& connection
         ErrorRenderer error_renderer(connection.getConfig().getErrorPages());
         StaticHandler handler(connection.getConfig().getLocations()[0], error_renderer);
         HttpResponse response = handler.handle(request);
-        std::cout << "format:\n"
-                  << response.format() << '\n';
+        if (response.format().size() < 100)
+            std::cout << "format:\n"
+                      << response.format() << '\n';
+        else
+            std::cout << "skip format output\n";
         connection.sendMsg(response.format());
         // connection.sendMsg("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: keep-alive\r\n\r\nHello World!");
         /*

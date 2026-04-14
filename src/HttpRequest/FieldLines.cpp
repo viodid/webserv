@@ -2,6 +2,8 @@
 
 static bool isToken(const std::string& str);
 
+FieldLines::FieldLines() { }
+
 FieldLines::FieldLines(const std::map<std::string, std::string>& field_lines)
     : field_lines_(field_lines)
 {
