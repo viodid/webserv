@@ -117,7 +117,7 @@ TEST(ConfigParser, ClientMaxBodySizeInvalidThrows)
 }
 
 // ============================================================
-// error_page (subject: "Set up default error pages")
+// error_page (subject: "Set up custom status code pages")
 // ============================================================
 
 TEST(ConfigParser, StatusCodeParsed)
@@ -129,13 +129,13 @@ TEST(ConfigParser, StatusCodeParsed)
         "    error_page 500 /errors/500.html;\n"
         "    location / { root /var/www; }\n"
         "}\n");
-    const std::vector<std::pair<Location::StatusCodes, std::string> >& ep =
+    const std::vector<std::pair<Location::StatusCodes, std::string> >& status_codes =
         cfg.getVirtualHosts()[0].getStatusCodes();
-    ASSERT_EQ(ep.size(), static_cast<size_t>(2));
-    EXPECT_EQ(ep[0].first,  Location::S_404);
-    EXPECT_EQ(ep[0].second, "/errors/404.html");
-    EXPECT_EQ(ep[1].first,  Location::S_500);
-    EXPECT_EQ(ep[1].second, "/errors/500.html");
+    ASSERT_EQ(status_codes.size(), static_cast<size_t>(2));
+    EXPECT_EQ(status_codes[0].first,  Location::S_404);
+    EXPECT_EQ(status_codes[0].second, "/errors/404.html");
+    EXPECT_EQ(status_codes[1].first,  Location::S_500);
+    EXPECT_EQ(status_codes[1].second, "/errors/500.html");
 }
 
 TEST(ConfigParser, StatusCode2xxParsed)
@@ -146,11 +146,11 @@ TEST(ConfigParser, StatusCode2xxParsed)
         "    error_page 200 /success.html;\n"
         "    location / { root /var/www; }\n"
         "}\n");
-    const std::vector<std::pair<Location::StatusCodes, std::string> >& ep =
+    const std::vector<std::pair<Location::StatusCodes, std::string> >& status_codes =
         cfg.getVirtualHosts()[0].getStatusCodes();
-    ASSERT_EQ(ep.size(), static_cast<size_t>(1));
-    EXPECT_EQ(ep[0].first,  Location::S_200);
-    EXPECT_EQ(ep[0].second, "/success.html");
+    ASSERT_EQ(status_codes.size(), static_cast<size_t>(1));
+    EXPECT_EQ(status_codes[0].first,  Location::S_200);
+    EXPECT_EQ(status_codes[0].second, "/success.html");
 }
 
 TEST(ConfigParser, StatusCode3xxParsed)
@@ -162,13 +162,13 @@ TEST(ConfigParser, StatusCode3xxParsed)
         "    error_page 302 /redirect.html;\n"
         "    location / { root /var/www; }\n"
         "}\n");
-    const std::vector<std::pair<Location::StatusCodes, std::string> >& ep =
+    const std::vector<std::pair<Location::StatusCodes, std::string> >& status_codes =
         cfg.getVirtualHosts()[0].getStatusCodes();
-    ASSERT_EQ(ep.size(), static_cast<size_t>(2));
-    EXPECT_EQ(ep[0].first,  Location::S_301);
-    EXPECT_EQ(ep[0].second, "/moved.html");
-    EXPECT_EQ(ep[1].first,  Location::S_302);
-    EXPECT_EQ(ep[1].second, "/redirect.html");
+    ASSERT_EQ(status_codes.size(), static_cast<size_t>(2));
+    EXPECT_EQ(status_codes[0].first,  Location::S_301);
+    EXPECT_EQ(status_codes[0].second, "/moved.html");
+    EXPECT_EQ(status_codes[1].first,  Location::S_302);
+    EXPECT_EQ(status_codes[1].second, "/redirect.html");
 }
 
 TEST(ConfigParser, StatusCode201Created)
@@ -179,11 +179,11 @@ TEST(ConfigParser, StatusCode201Created)
         "    error_page 201 /created.html;\n"
         "    location / { root /var/www; }\n"
         "}\n");
-    const std::vector<std::pair<Location::StatusCodes, std::string> >& ep =
+    const std::vector<std::pair<Location::StatusCodes, std::string> >& status_codes =
         cfg.getVirtualHosts()[0].getStatusCodes();
-    ASSERT_EQ(ep.size(), static_cast<size_t>(1));
-    EXPECT_EQ(ep[0].first,  Location::S_201);
-    EXPECT_EQ(ep[0].second, "/created.html");
+    ASSERT_EQ(status_codes.size(), static_cast<size_t>(1));
+    EXPECT_EQ(status_codes[0].first,  Location::S_201);
+    EXPECT_EQ(status_codes[0].second, "/created.html");
 }
 
 TEST(ConfigParser, UnknownStatusCodeThrows)
