@@ -297,6 +297,25 @@ TEST(ConfigParser, ReturnWithCodeParsed)
     EXPECT_EQ(loc.getRedirectionPath(), "/new");
 }
 
+TEST(ConfigParser, ReturnMissingPath)
+{
+    EXPECT_THROW(parseConf(
+        "server {\n"
+        "    listen 127.0.0.1:8080;\n"
+        "    location /redirect1 {\n"
+        "        return;\n"
+        "    }\n"
+        "}\n"), ExceptionParserError);
+
+    EXPECT_THROW(parseConf(
+        "server {\n"
+        "    listen 127.0.0.1:8080;\n"
+        "    location /redirect2 {\n"
+        "        return 302;\n"
+        "    }\n"
+        "}\n"), ExceptionParserError);
+}
+
 // ============================================================
 // location — upload_store (subject: "Uploading files from the
 // clients to the server is authorized, and storage location
