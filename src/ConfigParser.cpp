@@ -188,6 +188,12 @@ void ConfigParser::parseAllowedMethods(std::vector<Location::AllowedMethods>& me
         throw ExceptionParserError("ConfigParser: allowed_methods requires at least one method");
 }
 
+static void validateReturnPath(const std::string& path)
+{
+    if (path.empty() || path == ";" || path == "}")
+        throw ExceptionParserError("ConfigParser: 'return' directive requires at least a path");
+}
+
 void ConfigParser::parseReturn(std::string& code, std::string& path)
 {
     std::string first = nextToken();
@@ -200,12 +206,12 @@ void ConfigParser::parseReturn(std::string& code, std::string& path)
 	if (is_numeric) {
         code = first;
         path = nextToken();
+        validateReturnPath(path);
     } else {
         path = first;
+        validateReturnPath(path);
     }
     expect(";");
-    if (path.empty())
-        throw ExceptionParserError("ConfigParser: 'return' directive requires at least a path");
 }
 
 void ConfigParser::parseCgiPass(std::map<std::string, std::string>& cgi_map)
