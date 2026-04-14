@@ -6,6 +6,7 @@ StaticHandler::StaticHandler(const Location& conf, const ErrorRenderer& error_re
 {
 }
 
+// TODO: implement format HttpResponse and test current implementation
 HttpResponse StaticHandler::handle(const HttpRequest& request)
 {
     if (!isMethodAllowed(request, conf_))

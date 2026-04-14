@@ -9,3 +9,10 @@ HttpResponse::HttpResponse(const StatusLine& status_line,
 {
 }
 
+std::string HttpResponse::format() const
+{
+    std::stringstream ss;
+    ss << status_line_.format() << field_lines_.format()
+       << Settings::LINE_DELIMETER << body_.format();
+    return ss.str();
+}

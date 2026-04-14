@@ -35,6 +35,16 @@ void FieldLines::forEach(void (*f)(const std::string&, const std::string&)) cons
         f(it->first, it->second);
 }
 
+std::string FieldLines::format() const
+{
+    std::stringstream ss;
+    for (std::map<std::string, std::string>::const_iterator it = field_lines_.begin();
+        it != field_lines_.end();
+        it++)
+        ss << it->first << ": " << it->second << Settings::LINE_DELIMETER;
+    return ss.str();
+}
+
 /*
  * field-line   = field-name ":" OWS field-value OWS
  *

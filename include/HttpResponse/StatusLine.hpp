@@ -1,5 +1,6 @@
 #pragma once
 #include "../Config.hpp"
+#include "../Settings.hpp"
 
 /*
  * https://www.rfc-editor.org/rfc/rfc9112#name-status-line

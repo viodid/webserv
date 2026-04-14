@@ -2,6 +2,7 @@
 #include "../Exceptions.hpp"
 #include <algorithm>
 #include <cstdlib>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 

@@ -2,6 +2,7 @@
 #include "../HttpRequest/Body.hpp"
 #include "../HttpRequest/FieldLines.hpp"
 #include "StatusLine.hpp"
+#include <sstream>
 #include <stdexcept>
 
 class HttpResponse {
@@ -15,4 +16,3 @@ private:
     const FieldLines field_lines_;
     const Body body_;
 };
-
