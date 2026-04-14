@@ -459,8 +459,33 @@ TEST(ConfigParser, RedirectWithCode302Parsed)
 }
 
 // ============================================================
-// Paradoxical State Validation (POST without handler)
+// Paradoxical State Validation
 // ============================================================
+
+TEST(ConfigParser, LocationMissingRoot)
+{
+    EXPECT_THROW(parseConf(
+        "server {\n"
+        "    listen 127.0.0.1:8080;\n"
+        "    location /static {\n"
+        "        index index.html;\n"
+        "    }\n"
+        "}\n"), ExceptionParserError);
+}
+
+TEST(ConfigParser, RedirectWithOtherDirectivesThrows)
+{
+    EXPECT_THROW(parseConf(
+        "server {\n"
+        "    listen 0.0.0.0:9090;\n"
+        "    location /redirect {\n"
+        "        root /var/www/alt;\n"
+        "        allowed_methods GET POST;\n"
+        "        upload_store /var/www/upload;\n"
+        "        return /new-path;\n"
+        "    }\n"
+        "}\n"), ExceptionParserError);
+}
 
 TEST(ConfigParser, PostAllowedWithoutCgiOrUploadThrows)
 {
@@ -483,6 +508,7 @@ TEST(ConfigParser, PostAllowedWithCgiPassIsValid)
             "server {\n"
             "    listen 127.0.0.1:8080;\n"
             "    location / {\n"
+            "        root /var/www;\n"
             "        allowed_methods POST;\n"
             "        cgi_pass .php /usr/bin/php-cgi;\n"
             "    }\n"
@@ -496,6 +522,7 @@ TEST(ConfigParser, PostAllowedWithUploadStoreIsValid)
             "server {\n"
             "    listen 127.0.0.1:8080;\n"
             "    location / {\n"
+            "        root /tmp;\n"
             "        allowed_methods POST;\n"
             "        upload_store /tmp;\n"
             "    }\n"

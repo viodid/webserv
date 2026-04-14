@@ -204,6 +204,8 @@ void ConfigParser::parseReturn(std::string& code, std::string& path)
         path = first;
     }
     expect(";");
+    if (path.empty())
+        throw ExceptionParserError("ConfigParser: 'return' directive requires at least a path");
 }
 
 void ConfigParser::parseCgiPass(std::map<std::string, std::string>& cgi_map)
@@ -319,9 +321,36 @@ Location ConfigParser::parseLocationBlock()
     }
     nextToken(); // consume '}'
 
-	// If no allowed_methods specified, default to GET
-    if (methods.empty())
+    // Validation: if return is used, no other directives are allowed
+    if (!redirection_path.empty()) {
+        bool other_directives_present = !root.empty() || !default_file.empty() ||
+                                        dir_listing || !upload_store.empty() ||
+                                        !cgi_map.empty() || !methods.empty();
+        if (other_directives_present) {
+            throw ExceptionParserError(
+                "ConfigParser: location with 'return' cannot have other directives");
+        }
+    }
+
+    // If no allowed_methods specified, default to GET
+    if (methods.empty() && redirection_path.empty())
         methods.push_back(Location::GET);
+
+    // Validation: all handler types need a root
+    bool needs_root = !default_file.empty() || dir_listing || !upload_store.empty() || !cgi_map.empty();
+    if (!needs_root) {
+        for (size_t i = 0; i < methods.size(); ++i) {
+            if (methods[i] == Location::GET) {
+                needs_root = true;
+                break;
+            }
+        }
+    }
+    if (needs_root && root.empty()) {
+        throw ExceptionParserError(
+            "ConfigParser: location with a handler must declare a 'root' directive");
+    }
+
     // If POST is allowed, either cgi_pass or upload_store must be present
     for (size_t i = 0; i < methods.size(); ++i) {
         if (methods[i] == Location::POST) {
