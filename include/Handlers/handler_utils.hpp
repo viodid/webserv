@@ -18,10 +18,7 @@
 
 class ErrorRenderer;
 
-std::size_t readFile(char* buffer, size_t len, const std::string& path);
 HttpResponse constructHttpErrorResponse(const HttpRequest& request,
     const ErrorRenderer& error_renderer,
     Location::StatusCodes error_no);
 bool isMethodAllowed(const HttpRequest& request, const Location& location);
-std::string constructPath(const HttpRequest& request, const Location& location);
-bool isFileReadable(const std::string& path);

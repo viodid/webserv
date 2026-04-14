@@ -86,6 +86,17 @@ public:
     ExceptionParserError(const std::string& msg);
     virtual ~ExceptionParserError() throw();
     const char* what() const throw();
+
+private:
+    const std::string msg_;
+};
+
+class ExceptionUnsupportedFileType : public std::exception {
+public:
+    ExceptionUnsupportedFileType(const std::string& msg);
+    virtual ~ExceptionUnsupportedFileType() throw();
+    const char* what() const throw();
+
 private:
     const std::string msg_;
 };

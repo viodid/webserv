@@ -22,19 +22,13 @@ std::string ErrorRenderer::render(Location::StatusCodes status_code) const
     const std::string placeholder_code = "{CODE}";
     const std::string placeholder_phrase = "{PHRASE}";
     const std::string placeholder_desc = "{DESCRIPTION}";
-    const std::string path = Settings::ERROR_PAGE_PATH;
+    File file(Settings::ERROR_PAGE_PATH);
 
     std::stringstream ss;
     ss << status_code;
     std::string codeStr = ss.str();
     std::pair<std::string, std::string> error_msg = generateDefaultStatusMsg(status_code);
-
-    char buf[Settings::PARSER_MAX_BUFFER_SIZE];
-    ssize_t bytes = readFile(buf, Settings::PARSER_MAX_BUFFER_SIZE, path.c_str());
-    if (bytes < Settings::PARSER_MAX_BUFFER_SIZE)
-        buf[bytes + 1] = '\0';
-
-    std::string templ(buf);
+    std::string templ = file.readFile();
     // CODE
     templ.replace(templ.find(placeholder_code), placeholder_code.size(), codeStr);
     templ.replace(templ.find(placeholder_code), placeholder_code.size(), codeStr);

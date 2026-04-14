@@ -2,6 +2,7 @@
 #include "../HttpRequest/HttpRequest.hpp"
 #include "../Interfaces/IRequestHandler.hpp"
 #include "ErrorRenderer.hpp"
+#include "File.hpp"
 #include "handler_utils.hpp"
 
 class StaticHandler : public IRequestHandler {
@@ -14,6 +15,5 @@ private:
     const Location conf_;
     const ErrorRenderer error_renderer_;
 
-    HttpResponse constructHttpOKResponse_(const HttpRequest& request,
-        const std::string& path);
+    HttpResponse constructHttpOKResponse_(const HttpRequest& request, File& file);
 };
