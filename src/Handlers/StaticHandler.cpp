@@ -18,8 +18,7 @@ HttpResponse StaticHandler::handle(const HttpRequest& request)
     //// if index is set -> render index file and return
     //// if autoindex is false -> return HttpError
     //// else render directory listing and return
-    std::cout << "here\n";
-    return constructHttpOKResponse_(request, file);
+    return constructHttpErrorResponse(request, error_renderer_, Location::S_404);
 }
 
 HttpResponse StaticHandler::constructHttpOKResponse_(const HttpRequest& request, File& file)
@@ -33,6 +32,9 @@ HttpResponse StaticHandler::constructHttpOKResponse_(const HttpRequest& request,
     std::stringstream ss;
     ss << file.readFile().size();
     field_lines.set("Content-Length", ss.str());
+    std::cout << "FILE: \n"
+              << "- type: " << file.getTypeFormat() << '\n'
+              << "- path: " << file.getPath() << '\n';
     return HttpResponse(
         StatusLine(request.getRequestLine().getHttpVersion(), Location::S_200),
         field_lines,

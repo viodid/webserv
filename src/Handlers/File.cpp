@@ -19,6 +19,15 @@ File::File(const HttpRequest& request, const Location& location)
 #endif
 }
 
+const std::string& File::getPath() const
+{
+    return path_;
+}
+const File::Type& File::getType() const
+{
+    return type_;
+}
+
 std::string File::getTypeFormat() const
 {
     switch (type_) {
@@ -37,6 +46,7 @@ std::string File::getTypeFormat() const
     }
 }
 
+// TODO: use stat to get file size - chunk the response if size > 32KiB (change buffer size settings)
 const std::string& File::readFile()
 {
 #if DEBUG
@@ -50,12 +60,12 @@ const std::string& File::readFile()
         if (fd == -1)
             throw std::runtime_error(std::strerror(errno));
 
-        char buffer[Settings::PARSER_MAX_BUFFER_SIZE];
-        size_t bytes = read(fd, buffer, Settings::PARSER_MAX_BUFFER_SIZE);
+        char buffer[Settings::RESPONSE_BUFFER_SIZE];
+        size_t bytes = read(fd, buffer, Settings::RESPONSE_BUFFER_SIZE);
         if (fd == -1)
             throw std::runtime_error(std::strerror(errno));
-        if (bytes < Settings::PARSER_MAX_BUFFER_SIZE)
-            buffer[bytes] = '\n';
+        if (bytes < Settings::RESPONSE_BUFFER_SIZE)
+            buffer[bytes] = '\0';
         close(fd);
         content_ = std::string(buffer);
     }
@@ -96,7 +106,7 @@ static File::Type mapFileType(const std::string& path)
         return File::TEXT_HTML;
     if (extension == "css")
         return File::TEXT_CSS;
-    if (extension == "js")
+    if (extension == "json")
         return File::TEXT_JS;
     if (extension == "png")
         return File::IMAGE_PNG;
