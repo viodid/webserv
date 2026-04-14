@@ -120,7 +120,7 @@ TEST(ConfigParser, ClientMaxBodySizeInvalidThrows)
 // error_page (subject: "Set up default error pages")
 // ============================================================
 
-TEST(ConfigParser, ErrorPageParsed)
+TEST(ConfigParser, StatusCodeParsed)
 {
     Config cfg = parseConf(
         "server {\n"
@@ -130,7 +130,7 @@ TEST(ConfigParser, ErrorPageParsed)
         "    location / { root /var/www; }\n"
         "}\n");
     const std::vector<std::pair<Location::StatusCodes, std::string> >& ep =
-        cfg.getVirtualHosts()[0].getErrorPages();
+        cfg.getVirtualHosts()[0].getStatusCodes();
     ASSERT_EQ(ep.size(), static_cast<size_t>(2));
     EXPECT_EQ(ep[0].first,  Location::S_404);
     EXPECT_EQ(ep[0].second, "/errors/404.html");
@@ -138,7 +138,55 @@ TEST(ConfigParser, ErrorPageParsed)
     EXPECT_EQ(ep[1].second, "/errors/500.html");
 }
 
-TEST(ConfigParser, UnknownErrorCodeThrows)
+TEST(ConfigParser, StatusCode2xxParsed)
+{
+    Config cfg = parseConf(
+        "server {\n"
+        "    listen 127.0.0.1:8080;\n"
+        "    error_page 200 /success.html;\n"
+        "    location / { root /var/www; }\n"
+        "}\n");
+    const std::vector<std::pair<Location::StatusCodes, std::string> >& ep =
+        cfg.getVirtualHosts()[0].getStatusCodes();
+    ASSERT_EQ(ep.size(), static_cast<size_t>(1));
+    EXPECT_EQ(ep[0].first,  Location::S_200);
+    EXPECT_EQ(ep[0].second, "/success.html");
+}
+
+TEST(ConfigParser, StatusCode3xxParsed)
+{
+    Config cfg = parseConf(
+        "server {\n"
+        "    listen 127.0.0.1:8080;\n"
+        "    error_page 301 /moved.html;\n"
+        "    error_page 302 /redirect.html;\n"
+        "    location / { root /var/www; }\n"
+        "}\n");
+    const std::vector<std::pair<Location::StatusCodes, std::string> >& ep =
+        cfg.getVirtualHosts()[0].getStatusCodes();
+    ASSERT_EQ(ep.size(), static_cast<size_t>(2));
+    EXPECT_EQ(ep[0].first,  Location::S_301);
+    EXPECT_EQ(ep[0].second, "/moved.html");
+    EXPECT_EQ(ep[1].first,  Location::S_302);
+    EXPECT_EQ(ep[1].second, "/redirect.html");
+}
+
+TEST(ConfigParser, StatusCode201Created)
+{
+    Config cfg = parseConf(
+        "server {\n"
+        "    listen 127.0.0.1:8080;\n"
+        "    error_page 201 /created.html;\n"
+        "    location / { root /var/www; }\n"
+        "}\n");
+    const std::vector<std::pair<Location::StatusCodes, std::string> >& ep =
+        cfg.getVirtualHosts()[0].getStatusCodes();
+    ASSERT_EQ(ep.size(), static_cast<size_t>(1));
+    EXPECT_EQ(ep[0].first,  Location::S_201);
+    EXPECT_EQ(ep[0].second, "/created.html");
+}
+
+TEST(ConfigParser, UnknownStatusCodeThrows)
 {
     EXPECT_THROW(
         parseConf("server { listen 127.0.0.1:80; error_page 999 /x.html; location / { root /x; } }\n"),

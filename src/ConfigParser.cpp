@@ -157,11 +157,11 @@ void ConfigParser::parseClientMaxBodySize(size_t& size)
     expect(";");
 }
 
-void ConfigParser::parseErrorPage(std::vector<std::pair<Location::StatusCodes, std::string> >& pages)
+void ConfigParser::parseStatusCode(std::vector<std::pair<Location::StatusCodes, std::string> >& pages)
 {
     std::string code = nextToken();
     std::string path = nextToken();
-    pages.push_back(std::make_pair(Location::errorPageFromCode(code), path));
+    pages.push_back(std::make_pair(Location::statusCodeFromCode(code), path));
     expect(";");
 }
 
@@ -247,7 +247,7 @@ VirtualHost ConfigParser::parseServerBlock()
     std::string hostname;
     std::string port;
     size_t      client_max_body_size = 1048576; // 1 MiB default
-    std::vector<std::pair<Location::StatusCodes, std::string> > error_pages;
+    std::vector<std::pair<Location::StatusCodes, std::string> > status_codes;
     std::vector<Location> locations;
 
     for (std::string tok = peekToken(); tok != "}"; tok = peekToken()) {
@@ -259,7 +259,7 @@ VirtualHost ConfigParser::parseServerBlock()
         else if (tok == "client_max_body_size")
             parseClientMaxBodySize(client_max_body_size);
         else if (tok == "error_page")
-            parseErrorPage(error_pages);
+            parseStatusCode(status_codes);
         else if (tok == "location")
             locations.push_back(parseLocationBlock());
         else
@@ -275,7 +275,7 @@ VirtualHost ConfigParser::parseServerBlock()
     if (*endptr != '\0' || port_num < 1 || port_num > 65535)
         throw ExceptionParserError("ConfigParser: invalid port number: " + port);
 
-    return VirtualHost(hostname, port, client_max_body_size, error_pages, locations);
+    return VirtualHost(hostname, port, client_max_body_size, status_codes, locations);
 }
 
 // ==================== Location block ====================
