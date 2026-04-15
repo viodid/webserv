@@ -16,6 +16,7 @@
     X(200) \
     X(201) \
     X(301) \
+    X(302) \
     X(400) \
     X(403) \
     X(404) \
@@ -51,7 +52,7 @@ public:
         const std::map<std::string, std::string>& = std::map<std::string, std::string>());
 
     static AllowedMethods methodFromString(const std::string& method);
-    static StatusCodes       errorPageFromCode(const std::string& code);
+    static StatusCodes       statusCodeFromCode(const std::string& code);
 
     const std::string& getPath() const;
     const std::vector<AllowedMethods>& getAllowedMethods() const;
@@ -84,14 +85,14 @@ public:
     const std::string& getHostname() const;
     const std::string& getPort() const;
     size_t getSocketSize() const;
-    const std::vector<std::pair<Location::StatusCodes, std::string> >& getErrorPages() const;
+    const std::vector<std::pair<Location::StatusCodes, std::string> >& getStatusCodes() const;
     const std::vector<Location>& getLocations() const;
 
 private:
     std::string hostname_;
     std::string port_;
     size_t socket_size_;
-    std::vector<std::pair<Location::StatusCodes, std::string> > error_pages_;
+    std::vector<std::pair<Location::StatusCodes, std::string> > status_codes_;
     std::vector<Location> locations_;
 };
 
