@@ -35,7 +35,7 @@ Location::AllowedMethods Location::methodFromString(const std::string& method)
     throw ExceptionParserError("Unsupported HTTP method: " + method);
 }
 
-Location::StatusCodes Location::errorPageFromCode(const std::string& code)
+Location::StatusCodes Location::statusCodeFromCode(const std::string& code)
 {
     char* end;
     long value = std::strtol(code.c_str(), &end, 10);
@@ -96,12 +96,12 @@ VirtualHost::VirtualHost(
     const std::string hostname,
     const std::string port,
     size_t socket_size,
-    const std::vector<std::pair<Location::StatusCodes, std::string> > error_pages,
+    const std::vector<std::pair<Location::StatusCodes, std::string> > status_codes,
     const std::vector<Location> locations)
     : hostname_(hostname)
     , port_(port)
     , socket_size_(socket_size)
-    , error_pages_(error_pages)
+    , status_codes_(status_codes)
     , locations_(locations)
 {
 }
@@ -118,9 +118,9 @@ size_t VirtualHost::getSocketSize() const
 {
     return socket_size_;
 }
-const std::vector<std::pair<Location::StatusCodes, std::string> >& VirtualHost::getErrorPages() const
+const std::vector<std::pair<Location::StatusCodes, std::string> >& VirtualHost::getStatusCodes() const
 {
-    return error_pages_;
+    return status_codes_;
 }
 const std::vector<Location>& VirtualHost::getLocations() const
 {

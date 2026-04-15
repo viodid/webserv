@@ -98,7 +98,7 @@ void Webserver::handleClientData_(EventManager& notifier, Connection& connection
     }
 
     if (request.isDone()) {
-        ErrorRenderer error_renderer(connection.getConfig().getErrorPages());
+        ErrorRenderer error_renderer(connection.getConfig().getStatusCodes());
         StaticHandler handler(connection.getConfig().getLocations()[0], error_renderer);
         HttpResponse response = handler.handle(request);
         if (response.format().size() < 100)

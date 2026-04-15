@@ -1,7 +1,5 @@
 #include "../include/ConfigParser.hpp"
 #include "../include/Exceptions.hpp"
-#include <gtest/gtest.h>
-#include <unistd.h>
 #include <cstdio>
 #include <cstdlib>
 #include <gtest/gtest.h>
@@ -120,10 +118,10 @@ TEST(ConfigParser, ClientMaxBodySizeInvalidThrows)
 }
 
 // ============================================================
-// error_page (subject: "Set up default error pages")
+// error_page (subject: "Set up custom status code pages")
 // ============================================================
 
-TEST(ConfigParser, ErrorPageParsed)
+TEST(ConfigParser, StatusCodeParsed)
 {
     Config cfg = parseConf(
         "server {\n"
@@ -132,16 +130,60 @@ TEST(ConfigParser, ErrorPageParsed)
         "    error_page 500 /errors/500.html;\n"
         "    location / { root /var/www; }\n"
         "}\n");
-    const std::vector<std::pair<Location::StatusCodes, std::string> >& ep =
-        cfg.getVirtualHosts()[0].getErrorPages();
-    ASSERT_EQ(ep.size(), static_cast<size_t>(2));
-    EXPECT_EQ(ep[0].first,  Location::S_404);
-    EXPECT_EQ(ep[0].second, "/errors/404.html");
-    EXPECT_EQ(ep[1].first,  Location::S_500);
-    EXPECT_EQ(ep[1].second, "/errors/500.html");
+    const std::vector<std::pair<Location::StatusCodes, std::string>>& status_codes = cfg.getVirtualHosts()[0].getStatusCodes();
+    ASSERT_EQ(status_codes.size(), static_cast<size_t>(2));
+    EXPECT_EQ(status_codes[0].first, Location::S_404);
+    EXPECT_EQ(status_codes[0].second, "/errors/404.html");
+    EXPECT_EQ(status_codes[1].first, Location::S_500);
+    EXPECT_EQ(status_codes[1].second, "/errors/500.html");
 }
 
-TEST(ConfigParser, UnknownErrorCodeThrows)
+TEST(ConfigParser, StatusCode2xxParsed)
+{
+    Config cfg = parseConf(
+        "server {\n"
+        "    listen 127.0.0.1:8080;\n"
+        "    error_page 200 /success.html;\n"
+        "    location / { root /var/www; }\n"
+        "}\n");
+    const std::vector<std::pair<Location::StatusCodes, std::string>>& status_codes = cfg.getVirtualHosts()[0].getStatusCodes();
+    ASSERT_EQ(status_codes.size(), static_cast<size_t>(1));
+    EXPECT_EQ(status_codes[0].first, Location::S_200);
+    EXPECT_EQ(status_codes[0].second, "/success.html");
+}
+
+TEST(ConfigParser, StatusCode3xxParsed)
+{
+    Config cfg = parseConf(
+        "server {\n"
+        "    listen 127.0.0.1:8080;\n"
+        "    error_page 301 /moved.html;\n"
+        "    error_page 302 /redirect.html;\n"
+        "    location / { root /var/www; }\n"
+        "}\n");
+    const std::vector<std::pair<Location::StatusCodes, std::string>>& status_codes = cfg.getVirtualHosts()[0].getStatusCodes();
+    ASSERT_EQ(status_codes.size(), static_cast<size_t>(2));
+    EXPECT_EQ(status_codes[0].first, Location::S_301);
+    EXPECT_EQ(status_codes[0].second, "/moved.html");
+    EXPECT_EQ(status_codes[1].first, Location::S_302);
+    EXPECT_EQ(status_codes[1].second, "/redirect.html");
+}
+
+TEST(ConfigParser, StatusCode201Created)
+{
+    Config cfg = parseConf(
+        "server {\n"
+        "    listen 127.0.0.1:8080;\n"
+        "    error_page 201 /created.html;\n"
+        "    location / { root /var/www; }\n"
+        "}\n");
+    const std::vector<std::pair<Location::StatusCodes, std::string>>& status_codes = cfg.getVirtualHosts()[0].getStatusCodes();
+    ASSERT_EQ(status_codes.size(), static_cast<size_t>(1));
+    EXPECT_EQ(status_codes[0].first, Location::S_201);
+    EXPECT_EQ(status_codes[0].second, "/created.html");
+}
+
+TEST(ConfigParser, UnknownStatusCodeThrows)
 {
     EXPECT_THROW(
         parseConf("server { listen 127.0.0.1:80; error_page 999 /x.html; location / { root /x; } }\n"),
@@ -166,18 +208,6 @@ TEST(ConfigParser, LocationRootParsed)
     EXPECT_EQ(loc.getPath(), "/static");
     EXPECT_EQ(loc.getRoot(), "/var/www/static");
 }
-
-TEST(ConfigParser, LocationMissingRoot)
-{
-    EXPECT_THROW(parseConf(
-        "server {\n"
-        "    listen 127.0.0.1:8080;\n"
-        "    location /static {\n"
-        "        index index.html;\n"
-        "    }\n"
-        "}\n"), std::runtime_error);
-}
-
 
 // ============================================================
 // location — index (subject: "default file to serve when the
@@ -322,20 +352,26 @@ TEST(ConfigParser, ReturnWithCodeParsed)
     EXPECT_EQ(loc.getRedirectionPath(), "/new");
 }
 
-TEST(ConfigParser, RedirectionFailWithMultipleConfigurations)
+TEST(ConfigParser, ReturnMissingPath)
 {
     EXPECT_THROW(parseConf(
-        "server {\n"
-        "    listen 127.0.0.1:8080;\n"
-        "    location /old {\n"
-        "        root /var/www/upload;\n"
-        "        allowed_methods GET POST DELETE;\n"
-        "        upload_store /var/www/upload;\n"
-        "        return /new;\n"
-        "    }\n"
-        "}\n"), std::runtime_error);
-}
+                     "server {\n"
+                     "    listen 127.0.0.1:8080;\n"
+                     "    location /redirect1 {\n"
+                     "        return;\n"
+                     "    }\n"
+                     "}\n"),
+        ExceptionParserError);
 
+    EXPECT_THROW(parseConf(
+                     "server {\n"
+                     "    listen 127.0.0.1:8080;\n"
+                     "    location /redirect2 {\n"
+                     "        return 302;\n"
+                     "    }\n"
+                     "}\n"),
+        ExceptionParserError);
+}
 
 // ============================================================
 // location — upload_store (subject: "Uploading files from the
@@ -467,7 +503,7 @@ TEST(ConfigParser, NoServerBlockThrows)
 TEST(ConfigParser, NonExistentFileThrows)
 {
     EXPECT_THROW(ConfigParser("/tmp/does_not_exist_12345.conf").parse(),
-                 ExceptionParserError);
+        ExceptionParserError);
 }
 
 TEST(ConfigParser, UnclosedServerBlockThrows)
@@ -498,8 +534,35 @@ TEST(ConfigParser, RedirectWithCode302Parsed)
 }
 
 // ============================================================
-// Paradoxical State Validation (POST without handler)
+// Paradoxical State Validation
 // ============================================================
+
+TEST(ConfigParser, LocationMissingRoot)
+{
+    EXPECT_THROW(parseConf(
+                     "server {\n"
+                     "    listen 127.0.0.1:8080;\n"
+                     "    location /static {\n"
+                     "        index index.html;\n"
+                     "    }\n"
+                     "}\n"),
+        ExceptionParserError);
+}
+
+TEST(ConfigParser, RedirectWithOtherDirectivesThrows)
+{
+    EXPECT_THROW(parseConf(
+                     "server {\n"
+                     "    listen 0.0.0.0:9090;\n"
+                     "    location /redirect {\n"
+                     "        root /var/www/alt;\n"
+                     "        allowed_methods GET POST;\n"
+                     "        upload_store /var/www/upload;\n"
+                     "        return /new-path;\n"
+                     "    }\n"
+                     "}\n"),
+        ExceptionParserError);
+}
 
 TEST(ConfigParser, PostAllowedWithoutCgiOrUploadThrows)
 {
@@ -522,6 +585,7 @@ TEST(ConfigParser, PostAllowedWithCgiPassIsValid)
             "server {\n"
             "    listen 127.0.0.1:8080;\n"
             "    location / {\n"
+            "        root /var/www;\n"
             "        allowed_methods POST;\n"
             "        cgi_pass .php /usr/bin/php-cgi;\n"
             "    }\n"
@@ -535,6 +599,7 @@ TEST(ConfigParser, PostAllowedWithUploadStoreIsValid)
             "server {\n"
             "    listen 127.0.0.1:8080;\n"
             "    location / {\n"
+            "        root /tmp;\n"
             "        allowed_methods POST;\n"
             "        upload_store /tmp;\n"
             "    }\n"

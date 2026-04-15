@@ -9,9 +9,6 @@ HttpRequest::HttpRequest()
 }
 HttpRequest::~HttpRequest()
 {
-#if DEBUG
-    std::cout << "HttpRequest destructor called\n";
-#endif
 }
 const RequestLine& HttpRequest::getRequestLine() const
 {
