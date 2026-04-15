@@ -8,6 +8,8 @@
 class StaticHandler : public IRequestHandler {
 public:
     StaticHandler(const Location& conf, const ErrorRenderer& error_renderer);
+    // TODO: rm
+    ~StaticHandler() {std::cout << "StaticHandler destructor called\n";};
 
     virtual HttpResponse handle(const HttpRequest& request);
 

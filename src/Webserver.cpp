@@ -99,13 +99,9 @@ void Webserver::handleClientData_(EventManager& notifier, Connection& connection
 
     if (request.isDone()) {
         ErrorRenderer error_renderer(connection.getConfig().getStatusCodes());
-        StaticHandler handler(connection.getConfig().getLocations()[0], error_renderer);
-        HttpResponse response = handler.handle(request);
-        if (response.format().size() < 100)
-            std::cout << "format:\n"
-                      << response.format() << '\n';
-        else
-            std::cout << "skip format output\n";
+        IRequestHandler* handler = new StaticHandler(connection.getConfig().getLocations()[0], error_renderer);
+        // TODO: iterate until handler is done (chunked response)
+        HttpResponse response = handler->handle(request);
         connection.sendMsg(response.format());
         // connection.sendMsg("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: keep-alive\r\n\r\nHello World!");
         /*
@@ -113,6 +109,7 @@ void Webserver::handleClientData_(EventManager& notifier, Connection& connection
          * Based on the requests, returns the corresponding handler (Static, CGI...)
          *  - The request handler implements the interface (IRequestHandler)
          */
+        delete handler;
     }
     handleClosedConn_(notifier, connection);
 }
