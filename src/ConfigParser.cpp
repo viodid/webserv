@@ -188,6 +188,12 @@ void ConfigParser::parseAllowedMethods(std::vector<Location::AllowedMethods>& me
         throw ExceptionParserError("ConfigParser: allowed_methods requires at least one method");
 }
 
+static void validateReturnPath(const std::string& path)
+{
+    if (path.empty() || path == ";" || path == "}")
+        throw ExceptionParserError("ConfigParser: 'return' directive requires at least a path");
+}
+
 void ConfigParser::parseReturn(std::string& code, std::string& path)
 {
     std::string first = nextToken();
@@ -200,8 +206,10 @@ void ConfigParser::parseReturn(std::string& code, std::string& path)
 	if (is_numeric) {
         code = first;
         path = nextToken();
+        validateReturnPath(path);
     } else {
         path = first;
+        validateReturnPath(path);
     }
     expect(";");
 }
@@ -296,36 +304,81 @@ Location ConfigParser::parseLocationBlock()
     std::map<std::string, std::string> cgi_map;
     std::vector<Location::AllowedMethods> methods;
 
+    bool root_set = false;
+    bool index_set = false;
+    bool autoindex_set = false;
+    bool methods_set = false;
+    bool upload_store_set = false;
+    bool cgi_map_set = false;
+    bool return_set = false;
+
     for (std::string tok = peekToken(); tok != "}"; tok = peekToken()) {
         if (tok.empty())
             throw ExceptionParserError("ConfigParser: unexpected end of file inside location block");
         tok = nextToken();
-        if (tok == "root")
-            { root = nextToken(); expect(";"); }
-        else if (tok == "index")
-            { default_file = nextToken(); expect(";"); }
-        else if (tok == "autoindex")
+        if (tok == "root") {
+            root = nextToken();
+            expect(";");
+            root_set = true;
+        }
+        else if (tok == "index") {
+            default_file = nextToken();
+            expect(";");
+            index_set = true;
+        }
+        else if (tok == "autoindex") {
             parseAutoindex(dir_listing);
-        else if (tok == "allowed_methods")
+            autoindex_set = true;
+        }
+        else if (tok == "allowed_methods") {
             parseAllowedMethods(methods);
-        else if (tok == "return")
+            methods_set = true;
+        }
+        else if (tok == "return") {
             parseReturn(redirection_code, redirection_path);
-        else if (tok == "upload_store")
-            { upload_store = nextToken(); expect(";"); }
-        else if (tok == "cgi_pass")
+            return_set = true;
+        }
+        else if (tok == "upload_store") {
+            upload_store = nextToken();
+            expect(";");
+            upload_store_set = true;
+        }
+        else if (tok == "cgi_pass") {
             parseCgiPass(cgi_map);
+            cgi_map_set = true;
+        }
         else
             skipUnknownDirective(tok, "location");
     }
     nextToken(); // consume '}'
 
-	// If no allowed_methods specified, default to GET
-    if (methods.empty())
+    if (return_set) {
+        if (root_set || index_set || autoindex_set || methods_set || upload_store_set || cgi_map_set) {
+            throw ExceptionParserError(
+                "ConfigParser: location with 'return' cannot have other directives");
+        }
+    }
+
+    if (!methods_set && !return_set)
         methods.push_back(Location::GET);
-    // If POST is allowed, either cgi_pass or upload_store must be present
+
+    bool needs_root = index_set || autoindex_set || upload_store_set || cgi_map_set;
+    if (!needs_root && methods_set) {
+        for (size_t i = 0; i < methods.size(); ++i) {
+            if (methods[i] == Location::GET) {
+                needs_root = true;
+                break;
+            }
+        }
+    }
+    if (needs_root && !root_set) {
+        throw ExceptionParserError(
+            "ConfigParser: location with a handler must declare a 'root' directive");
+    }
+
     for (size_t i = 0; i < methods.size(); ++i) {
         if (methods[i] == Location::POST) {
-            if (cgi_map.empty() && upload_store.empty()) {
+            if (!cgi_map_set && !upload_store_set) {
                 throw ExceptionParserError("ConfigParser: location with POST method must have 'cgi_pass' or 'upload_store'");
             }
             break;
