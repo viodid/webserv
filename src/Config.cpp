@@ -201,6 +201,10 @@ std::pair<std::string, std::string> generateDefaultStatusMsg(Location::StatusCod
         phrase = "URI Too Long";
         description = "The URI provided was too long for the server to process.";
         break;
+    case Location::S_415:
+        phrase = "Unsupported Media Type";
+        description = "The content format is not supported.";
+        break;
     case Location::S_500:
         phrase = "Internal Server Error";
         description = "The server encountered an unexpected condition.";
@@ -208,6 +212,18 @@ std::pair<std::string, std::string> generateDefaultStatusMsg(Location::StatusCod
     case Location::S_501:
         phrase = "Not Implemented";
         description = "The server does not support the functionality required to fulfill the request.";
+        break;
+    case Location::S_502:
+        phrase = "Bad Gateway";
+        description = "The server received an invalid response from the upstream server.";
+        break;
+    case Location::S_503:
+        phrase = "Service Unavailable";
+        description = "The server is not ready to handle the request.";
+        break;
+    case Location::S_504:
+        phrase = "Gateway Timeout";
+        description = "The server did not get a response in time from the upstream server.";
         break;
     default:
         throw std::runtime_error("unhandled status code msg generation\n");

@@ -10,14 +10,18 @@ HttpResponse StaticHandler::handle(const HttpRequest& request)
 {
     if (!isMethodAllowed(request, conf_))
         return constructHttpErrorResponse(request, error_renderer_, Location::S_405);
-    File file(request, conf_);
-    // if path is a file -> render and return
-    if (file.isReadable())
-        return constructHttpOKResponse_(request, file);
-    // if path is a directory
-    //// if index is set -> render index file and return
-    //// if autoindex is false -> return HttpError
-    //// else render directory listing and return
+    try {
+        File file(request, conf_);
+        // if path is a file -> render and return
+        if (file.isReadable())
+            return constructHttpOKResponse_(request, file);
+        // if path is a directory
+        //// if index is set -> render index file and return
+        //// if autoindex is false -> return HttpError
+        //// else render directory listing and return
+    } catch (const ExceptionUnsupportedFileType& e) {
+        return constructHttpErrorResponse(request, error_renderer_, Location::S_415);
+    }
     return constructHttpErrorResponse(request, error_renderer_, Location::S_404);
 }
 

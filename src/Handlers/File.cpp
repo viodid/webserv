@@ -106,7 +106,7 @@ static File::Type mapFileType(const std::string& path)
         return File::TEXT_HTML;
     if (extension == "css")
         return File::TEXT_CSS;
-    if (extension == "json")
+    if (extension == "json" || extension == "js")
         return File::TEXT_JS;
     if (extension == "png")
         return File::IMAGE_PNG;
