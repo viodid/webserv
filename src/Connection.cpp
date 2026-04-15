@@ -49,6 +49,6 @@ int Connection::read(char buffer[], int len)
     if (read_n == -1)
         throw ExceptionErrorConnectionSocket(std::strerror(errno));
     if (read_n == 0)
-        throw ExceptionClientCloseConn("");
+        throw ExceptionClientCloseConn("client connection closed");
     return read_n;
 }

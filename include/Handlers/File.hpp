@@ -13,8 +13,10 @@ public:
         TEXT_HTML,
         TEXT_CSS,
         TEXT_JS,
+        APP_JSON,
         IMAGE_JPEG,
-        IMAGE_PNG
+        IMAGE_PNG,
+        IMAGE_ICO
     };
     File(const std::string& path);
     File(const HttpRequest& request, const Location& location);

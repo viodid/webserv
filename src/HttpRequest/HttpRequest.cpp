@@ -44,7 +44,7 @@ void HttpRequest::setBody(const std::string& body)
 void HttpRequest::parseFromReader(IReader& reader)
 {
     if (currTimeMs() - start_time_ > Settings::TIMEOUT_REQUEST_MS)
-        throw ExceptionRequestTimeout("");
+        throw ExceptionRequestTimeout("request timeout");
 
     if (buffer_.size() > Settings::PARSER_MAX_BUFFER_SIZE)
         throw ExceptionConnLenExceeded("overrun MAX_BUFFER_SIZE");

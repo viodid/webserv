@@ -92,8 +92,8 @@ void Webserver::handleClientData_(EventManager& notifier, Connection& connection
                   << request.getBody().get() << "\n";
 
 #endif
-    } catch (std::exception& e) {
-        std::cerr << e.what() << "\n";
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
         return handleClosedConn_(notifier, connection);
     }
 
@@ -114,4 +114,5 @@ void Webserver::handleClientData_(EventManager& notifier, Connection& connection
          *  - The request handler implements the interface (IRequestHandler)
          */
     }
+    handleClosedConn_(notifier, connection);
 }

@@ -36,12 +36,17 @@ std::string File::getTypeFormat() const
     case TEXT_CSS:
         return "text/css";
     case TEXT_JS:
-        return "text/js";
+        return "text/javascript";
+    case APP_JSON:
+        return "application/json";
     case IMAGE_PNG:
         return "image/png";
     case IMAGE_JPEG:
         return "image/jpeg";
+    case IMAGE_ICO:
+        return "image/vnd.microsoft.icon";
     default:
+        std::cerr << "fallthrough default file format 'text/plan'\n";
         return "text/plain";
     }
 }
@@ -75,7 +80,7 @@ const std::string& File::readFile()
 bool File::isReadable() const
 {
     if (access(path_.c_str(), R_OK) != 0) {
-        std::cerr << std::strerror(errno) << "\n";
+        std::cerr << std::strerror(errno) << " - " << path_ <<'\n';
         return false;
     }
     return true;
@@ -102,15 +107,19 @@ static File::Type mapFileType(const std::string& path)
 {
     std::string extension = path.substr(path.rfind('.', path.size() - 1) + 1);
     std::cout << "extension: " << extension << '\n';
-    if (extension == "html")
+    if (extension == "html" || extension == "htm")
         return File::TEXT_HTML;
     if (extension == "css")
         return File::TEXT_CSS;
-    if (extension == "json" || extension == "js")
+    if (extension == "js" || extension == "mjs")
         return File::TEXT_JS;
+    if (extension == "json")
+        return File::APP_JSON;
     if (extension == "png")
         return File::IMAGE_PNG;
     if (extension == "jpg" || extension == "jpeg")
         return File::IMAGE_PNG;
+    if (extension == "ico")
+        return File::IMAGE_ICO;
     throw ExceptionUnsupportedFileType(extension);
 }
