@@ -10,19 +10,30 @@ HttpResponse StaticHandler::handle(const HttpRequest& request)
 {
     if (!isMethodAllowed(request, conf_))
         return constructHttpErrorResponse(request, error_renderer_, Location::S_405);
+    std::string path = constructPath(request, conf_);
+    Location::StatusCodes status_code = Location::S_200;
     try {
-        File file(request, conf_);
+        if (isDirectory(path)) {
+            if (!conf_.getDefaultFile().empty())
+                path.append("/" + conf_.getDefaultFile());
+            // if autoindex is false -> return HttpError
+            else if (conf_.isDirectoryListing())
+                return constructHTTP
+            // else render directory listing and return
+        }
+        File file(path);
         // if path is a file -> render and return
         if (file.isReadable())
             return constructHttpOKResponse_(request, file);
-        // if path is a directory
-        //// if index is set -> render index file and return
-        //// if autoindex is false -> return HttpError
-        //// else render directory listing and return
     } catch (const ExceptionUnsupportedFileType& e) {
-        return constructHttpErrorResponse(request, error_renderer_, Location::S_415);
+        std::cerr << e.what() << '\n';
+        status_code = Location::S_415;
     }
-    return constructHttpErrorResponse(request, error_renderer_, Location::S_404);
+    status_code = Location::S_404;
+    return constructHttpErrorResponse(request, error_renderer_, status_code);
+}
+HttpResponse StaticHandler::constructHttpOKResponse_(const HttpRequest& request, const std::string& content)
+{
 }
 
 HttpResponse StaticHandler::constructHttpOKResponse_(const HttpRequest& request, File& file)

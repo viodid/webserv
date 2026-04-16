@@ -22,3 +22,5 @@ HttpResponse constructHttpErrorResponse(const HttpRequest& request,
     const ErrorRenderer& error_renderer,
     Location::StatusCodes error_no);
 bool isMethodAllowed(const HttpRequest& request, const Location& location);
+bool isDirectory(const std::string& path);
+std::string constructPath(const HttpRequest& request, const Location& location);
