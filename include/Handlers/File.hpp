@@ -19,7 +19,6 @@ public:
         IMAGE_ICO
     };
     File(const std::string& path);
-    File(const HttpRequest& request, const Location& location);
 
     const std::string& getPath() const;
     const Type& getType() const;

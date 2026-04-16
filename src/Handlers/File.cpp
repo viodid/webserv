@@ -1,22 +1,12 @@
 #include "../../include/Handlers/File.hpp"
 #include <unistd.h>
 
-static std::string constructPath(const HttpRequest& request, const Location& location);
 static File::Type mapFileType(const std::string& path);
 
 File::File(const std::string& path)
     : path_(path)
     , type_(mapFileType(path))
 {
-}
-
-File::File(const HttpRequest& request, const Location& location)
-    : path_(constructPath(request, location))
-    , type_(mapFileType(path_))
-{
-#if DEBUG
-    std::cout << "File path_: " << path_ << "\n";
-#endif
 }
 
 const std::string& File::getPath() const
@@ -80,27 +70,10 @@ const std::string& File::readFile()
 bool File::isReadable() const
 {
     if (access(path_.c_str(), R_OK) != 0) {
-        std::cerr << std::strerror(errno) << " - " << path_ <<'\n';
+        std::cerr << std::strerror(errno) << " - " << path_ << '\n';
         return false;
     }
     return true;
-}
-
-static std::string constructPath(const HttpRequest& request, const Location& location)
-{
-    if (location.getRoot().empty() || location.getPath().empty())
-        throw std::runtime_error("location.root or location.path cannot be empty");
-    // "/" "/main.js" "/var/www" -> "/var/www/main.js"
-    // "/statics" "/statics/main.css" "/var/www" -> "/var/www/main.css"
-    // "/" "/statics/main.css" "/var/www" -> "/var/www/statics/main.css"
-    std::string alias = location.getRoot();
-    std::string request_target = request.getRequestLine().getRequestTarget();
-    std::string route = location.getPath();
-    if (route.size() > 1) // location route is not "/"
-        request_target.erase(0, route.size());
-    alias.append(request_target);
-
-    return alias;
 }
 
 static File::Type mapFileType(const std::string& path)
