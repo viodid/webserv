@@ -7,12 +7,15 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
+#include <dirent.h>
 #include <fcntl.h>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -22,5 +25,5 @@ HttpResponse constructHttpErrorResponse(const HttpRequest& request,
     const ErrorRenderer& error_renderer,
     Location::StatusCodes error_no);
 bool isMethodAllowed(const HttpRequest& request, const Location& location);
-bool isDirectory(const std::string& path);
 std::string constructPath(const HttpRequest& request, const Location& location);
+std::string renderDirListing(const std::string& path);
