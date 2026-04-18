@@ -49,4 +49,5 @@ latex/
 # miscellaneous
 en.subject.pdf
 resources/www/
+!resources/html/
 err.txt

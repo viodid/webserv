@@ -14,7 +14,6 @@
             --meta-color: #6a737d;
         }
 
-        /* Dark mode support for modern browsers */
         @media (prefers-color-scheme: dark) {
             :root {
                 --text-color: #c9d1d9;
@@ -79,7 +78,6 @@
             background-color: var(--hover-bg);
         }
 
-        /* Column sizing and formatting */
         .col-name { width: 50%; }
         .col-date { width: 30%; color: var(--meta-color); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.9em; }
         .col-size { width: 20%; color: var(--meta-color); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.9em; text-align: right; }
@@ -97,7 +95,6 @@
             font-style: italic;
         }
 
-        /* Mobile responsiveness */
         @media (max-width: 600px) {
             body { padding: 15px; }
             .col-date { display: none; } /* Hide date on small screens */
@@ -109,8 +106,7 @@
 <body>
 
     <main>
-        <!-- The title should be dynamically injected by your server -->
-        <h1 id="path-header">Index of /var/www/public/</h1>
+        <h1 id="path-header">Index of {PATH}</h1>
         <hr>
 
         <table>
@@ -122,30 +118,11 @@
                 </tr>
             </thead>
             <tbody id="directory-list">
-                
-                <!-- SERVER TEMPLATE EXAMPLE: 
-                If you are using a server-side language, you would loop through your files here.
-                Example (Pseudo-code):
-                
-                <tr>
-                    <td class="col-name"><a href="../"><span class="icon">📁</span>../ (Parent Directory)</a></td>
-                    <td class="col-date">-</td>
-                    <td class="col-size">-</td>
-                </tr>
-                {{ range .Files }}
-                <tr>
-                    <td class="col-name"><a href="{{ .URL }}"><span class="icon">{{ if .IsDir }}📁{{ else }}📄{{ end }}</span>{{ .Name }}</a></td>
-                    <td class="col-date">{{ .ModTime }}</td>
-                    <td class="col-size">{{ .Size }}</td>
-                </tr>
-                {{ end }} 
-                -->
-
+                {LISTING}
             </tbody>
         </table>
         <hr>
-        <!-- Replace with your actual server name/version -->
-        <div class="footer">my-custom-webserver/1.0.0</div>
+        <div class="footer">42webserv/0.1.0</div>
     </main>
 
     <!-- =================================================================== -->
@@ -154,9 +131,9 @@
     <!-- =================================================================== -->
     <script>
         const mockFiles = [
-            { name: "../ (Parent Directory)", url: "../", isDir: true, date: "-", size: "-" },
-            { name: "css/", url: "css/", isDir: true, date: "2023-10-24 14:32:10", size: "-" },
-            { name: "images/", url: "images/", isDir: true, date: "2023-10-24 14:32:15", size: "-" },
+            { name: "..", url: "../", isDir: true, date: "-", size: "-" },
+            { name: "css", url: "css/", isDir: true, date: "2023-10-24 14:32:10", size: "-" },
+            { name: "images", url: "images/", isDir: true, date: "2023-10-24 14:32:15", size: "-" },
             { name: "index.html", url: "index.html", isDir: false, date: "2023-10-25 09:12:44", size: "1.2 KB" },
             { name: "script.js", url: "script.js", isDir: false, date: "2023-10-25 09:15:22", size: "4.5 KB" },
             { name: "very_large_video_file_test_render.mp4", url: "#", isDir: false, date: "2023-10-21 18:01:02", size: "1.4 GB" },
