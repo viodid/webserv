@@ -13,15 +13,15 @@ HttpResponse StaticHandler::handle(const HttpRequest& request)
     std::string path = constructPath(request, conf_);
     Location::StatusCodes status_code = Location::S_200;
     try {
-        if (isDirectory(path)) {
+        File file(path);
+        if (file.getType() == File::DIRECTORY) {
             if (!conf_.getDefaultFile().empty())
                 path.append("/" + conf_.getDefaultFile());
             // if autoindex is false -> return HttpError
             else if (conf_.isDirectoryListing())
-                return constructHTTP
+                return renderDirListing(path);
             // else render directory listing and return
         }
-        File file(path);
         // if path is a file -> render and return
         if (file.isReadable())
             return constructHttpOKResponse_(request, file);
@@ -31,9 +31,6 @@ HttpResponse StaticHandler::handle(const HttpRequest& request)
     }
     status_code = Location::S_404;
     return constructHttpErrorResponse(request, error_renderer_, status_code);
-}
-HttpResponse StaticHandler::constructHttpOKResponse_(const HttpRequest& request, const std::string& content)
-{
 }
 
 HttpResponse StaticHandler::constructHttpOKResponse_(const HttpRequest& request, File& file)

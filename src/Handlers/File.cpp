@@ -1,5 +1,9 @@
 #include "../../include/Handlers/File.hpp"
+#include <cstring>
+#include <dirent.h>
+#include <stdexcept>
 #include <unistd.h>
+#include <vector>
 
 static File::Type mapFileType(const std::string& path);
 
@@ -20,6 +24,8 @@ const File::Type& File::getType() const
 
 std::string File::getTypeFormat() const
 {
+    if (type_ == DIRECTORY)
+        throw std::runtime_error("directory does not have a file format");
     switch (type_) {
     case TEXT_HTML:
         return "text/html";
@@ -44,6 +50,8 @@ std::string File::getTypeFormat() const
 // TODO: use stat to get file size - chunk the response if size > 32KiB (change buffer size settings)
 const std::string& File::readFile()
 {
+    if (type_ == DIRECTORY)
+        throw std::runtime_error("cannot read a directory");
 #if DEBUG
     std::cout << "File.read()\n";
 #endif
@@ -76,8 +84,39 @@ bool File::isReadable() const
     return true;
 }
 
+bool File::isWritable() const
+{
+    if (access(path_.c_str(), W_OK) != 0) {
+        std::cerr << std::strerror(errno) << " - " << path_ << '\n';
+        return false;
+    }
+    return true;
+}
+
+bool File::isExecutable() const
+{
+    if (access(path_.c_str(), X_OK) != 0) {
+        std::cerr << std::strerror(errno) << " - " << path_ << '\n';
+        return false;
+    }
+    return true;
+}
+
+static bool isDirectory(const std::string& path)
+{
+    struct stat s;
+    if (stat(path.c_str(), &s) != 0)
+        throw std::runtime_error(std::strerror(errno));
+    if (S_ISDIR(s.st_mode))
+        return true;
+    return false;
+}
+
 static File::Type mapFileType(const std::string& path)
 {
+    if (isDirectory(path))
+        return File::DIRECTORY;
+
     std::string extension = path.substr(path.rfind('.', path.size() - 1) + 1);
     std::cout << "extension: " << extension << '\n';
     if (extension == "html" || extension == "htm")
@@ -96,3 +135,4 @@ static File::Type mapFileType(const std::string& path)
         return File::IMAGE_ICO;
     throw ExceptionUnsupportedFileType(extension);
 }
+
