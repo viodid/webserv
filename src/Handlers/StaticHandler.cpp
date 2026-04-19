@@ -10,21 +10,26 @@ HttpResponse StaticHandler::handle(const HttpRequest& request)
 {
     if (!isMethodAllowed(request, conf_))
         return constructHttpErrorResponse(request, error_renderer_, Location::S_405);
+
     std::string path = constructPath(request, conf_);
+    if (!File::fileExists(path))
+        return constructHttpErrorResponse(request, error_renderer_, Location::S_404);
+
     Location::StatusCodes status_code = Location::S_200;
     try {
         File file(path);
         if (file.getType() == File::DIRECTORY) {
             if (!conf_.getDefaultFile().empty())
-                path.append("/" + conf_.getDefaultFile());
-            // if autoindex is false -> return HttpError
+                file = File(path.append(conf_.getDefaultFile()));
+            // return here?
+            // if autoindex isn't false -> return dir listing
             else if (conf_.isDirectoryListing())
-                return renderDirListing(path);
-            // else render directory listing and return
+                return constructHttpOKResponse_(request, "text/html", renderDirListing(path));
+            // else return HttpError
         }
         // if path is a file -> render and return
         if (file.isReadable())
-            return constructHttpOKResponse_(request, file);
+            return constructHttpOKResponse_(request, file.getTypeFormat(), file.readFile());
     } catch (const ExceptionUnsupportedFileType& e) {
         std::cerr << e.what() << '\n';
         status_code = Location::S_415;
@@ -33,22 +38,23 @@ HttpResponse StaticHandler::handle(const HttpRequest& request)
     return constructHttpErrorResponse(request, error_renderer_, status_code);
 }
 
-HttpResponse StaticHandler::constructHttpOKResponse_(const HttpRequest& request, File& file)
+HttpResponse StaticHandler::constructHttpOKResponse_(const HttpRequest& request,
+    const std::string& file_format,
+    const std::string& file_content)
 {
     FieldLines field_lines;
     field_lines.set("Server", "42webserv/0.1.0");
-    std::string file_type = file.getTypeFormat();
+    std::string file_type = file_format;
     file_type.append("; charset=utf-8");
     field_lines.set("Content-Type", file_type);
 
     std::stringstream ss;
-    ss << file.readFile().size();
+    ss << file_content.size();
     field_lines.set("Content-Length", ss.str());
     std::cout << "FILE: \n"
-              << "- type: " << file.getTypeFormat() << '\n'
-              << "- path: " << file.getPath() << '\n';
+              << "- type: " << file_format << '\n';
     return HttpResponse(
         StatusLine(request.getRequestLine().getHttpVersion(), Location::S_200),
         field_lines,
-        Body(file.readFile()));
+        Body(file_content));
 }

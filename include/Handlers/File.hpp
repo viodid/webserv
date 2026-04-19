@@ -1,14 +1,14 @@
 #pragma once
 #include "../Config.hpp"
 #include "../HttpRequest/HttpRequest.hpp"
-#include <sys/types.h>
+#include <cstring>
 #include <dirent.h>
+#include <fcntl.h>
+#include <iostream>
+#include <stdexcept>
+#include <string>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <fcntl.h>
-#include <dirent.h>
-#include <iostream>
-#include <string>
 #include <unistd.h>
 
 class File {
@@ -35,8 +35,13 @@ public:
     bool isWritable() const;
     bool isExecutable() const;
 
+    static bool fileExists(const std::string& path);
+
 private:
-    const std::string path_;
-    const Type type_;
+    std::string path_;
+    Type type_;
     std::string content_;
+
+    bool isDirectory_() const;
+    File::Type mapFileType_() const;
 };

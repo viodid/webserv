@@ -1,16 +1,9 @@
 #include "../../include/Handlers/File.hpp"
-#include <cstring>
-#include <dirent.h>
-#include <stdexcept>
-#include <unistd.h>
-#include <vector>
-
-static File::Type mapFileType(const std::string& path);
 
 File::File(const std::string& path)
-    : path_(path)
-    , type_(mapFileType(path))
 {
+    path_ = path;
+    type_ = mapFileType_();
 }
 
 const std::string& File::getPath() const
@@ -52,9 +45,6 @@ const std::string& File::readFile()
 {
     if (type_ == DIRECTORY)
         throw std::runtime_error("cannot read a directory");
-#if DEBUG
-    std::cout << "File.read()\n";
-#endif
     if (content_.empty()) {
 #if DEBUG
         std::cout << "File.read() cache miss\n";
@@ -71,6 +61,9 @@ const std::string& File::readFile()
             buffer[bytes] = '\0';
         close(fd);
         content_ = std::string(buffer);
+    } else {
+        // TODO: rm
+        std::cout << "File.read() cache hit\n";
     }
     return content_;
 }
@@ -102,22 +95,32 @@ bool File::isExecutable() const
     return true;
 }
 
-static bool isDirectory(const std::string& path)
+bool File::fileExists(const std::string& path)
+{
+    if (access(path.c_str(), F_OK) != 0) {
+        std::cerr << std::strerror(errno) << " - " << path << '\n';
+        return false;
+    }
+    return true;
+}
+
+bool File::isDirectory_() const
 {
     struct stat s;
-    if (stat(path.c_str(), &s) != 0)
+    if (stat(path_.c_str(), &s) != 0)
         throw std::runtime_error(std::strerror(errno));
     if (S_ISDIR(s.st_mode))
         return true;
     return false;
 }
 
-static File::Type mapFileType(const std::string& path)
+File::Type File::mapFileType_() const
 {
-    if (isDirectory(path))
+
+    if (isDirectory_())
         return File::DIRECTORY;
 
-    std::string extension = path.substr(path.rfind('.', path.size() - 1) + 1);
+    std::string extension = path_.substr(path_.rfind('.', path_.size() - 1) + 1);
     std::cout << "extension: " << extension << '\n';
     if (extension == "html" || extension == "htm")
         return File::TEXT_HTML;
@@ -135,4 +138,3 @@ static File::Type mapFileType(const std::string& path)
         return File::IMAGE_ICO;
     throw ExceptionUnsupportedFileType(extension);
 }
-
