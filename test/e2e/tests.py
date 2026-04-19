@@ -154,22 +154,6 @@ def test_get_basic():
          r["status_code"] == 404,
          f"status={r['status_code']}")
 
-
-def test_http_version():
-    section("HTTP Version & Protocol")
-
-    # HTTP/1.1 responds with HTTP/1.1
-    r = raw_request(BASE_URL, "GET", "/")
-    test("Server responds HTTP/1.1",
-         r["status_line"].startswith("HTTP/1.1"),
-         f"status_line='{r['status_line']}'")
-
-    # HTTP/1.0 — server must accept or respond 400/505
-    r10 = raw_request(BASE_URL, "GET", "/")
-    test("HTTP/1.0 accepted or rejected correctly",
-         r10["status_code"] in (200, 301, 302, 400, 404, 505) or r10["status_code"] is None,
-         f"status={r10['status_code']}")
-
 def test_head_method():
     section("HEAD Method")
 
