@@ -63,7 +63,8 @@ std::string renderDirListing(const std::string& path)
     if (!directory)
         throw std::runtime_error(std::strerror(errno));
 
-    std::vector<std::string> table_rows;
+    std::set<std::string> table_rows_dir;
+    std::set<std::string> table_rows_file;
     struct dirent* p_dir;
     while ((p_dir = readdir(directory))) {
         struct stat f_stat;
@@ -74,35 +75,44 @@ std::string renderDirListing(const std::string& path)
         std::string name = std::string(p_dir->d_name);
         std::string url = path + name;
         // std::string date = std::to_string(std::localtime(&f_stat.st_mtim.tv_sec));
-        std::string date = std::to_string(f_stat.st_mtim.tv_sec);
+        std::stringstream ss;
+        ss << f_stat.st_mtim.tv_sec;
+        std::string date = ss.str();
         std::string size = "-";
         std::string icon = "📄";
         if (DT_DIR & p_dir->d_type) {
             icon = "📁";
         } else {
-            size = std::to_string(f_stat.st_size);
+            std::stringstream ss;
+            ss << f_stat.st_size;
+            size = ss.str();
         }
         std::string tr_template = table_row.readFile();
         // FILE NAME
-        tr_template.replace(tr_template.find(placeholder_file_name), tr_template.size(), name);
-        tr_template.replace(tr_template.find(placeholder_file_name), tr_template.size(), name);
+        tr_template.replace(tr_template.find(placeholder_file_name), placeholder_file_name.size(), name);
+        tr_template.replace(tr_template.find(placeholder_file_name), placeholder_file_name.size(), name);
         // FILE URL
-        tr_template.replace(tr_template.find(placeholder_file_url), tr_template.size(), url);
+        tr_template.replace(tr_template.find(placeholder_file_url), placeholder_file_url.size(), url);
         // FILE LAST UPDATED DATE
-        tr_template.replace(tr_template.find(placeholder_file_date), tr_template.size(), date);
+        tr_template.replace(tr_template.find(placeholder_file_date), placeholder_file_date.size(), date);
         // FILE SIZE
-        tr_template.replace(tr_template.find(placeholder_file_size), tr_template.size(), size);
+        tr_template.replace(tr_template.find(placeholder_file_size), placeholder_file_size.size(), size);
         // FILE ICON
-        tr_template.replace(tr_template.find(placeholder_file_icon), tr_template.size(), icon);
+        tr_template.replace(tr_template.find(placeholder_file_icon), placeholder_file_icon.size(), icon);
 
-        table_rows.push_back(tr_template);
+        if (DT_DIR & p_dir->d_type)
+            table_rows_dir.insert(tr_template);
+        else
+            table_rows_file.insert(tr_template);
     }
     std::string main_template = main_templ.readFile();
-    main_template.replace(main_template.find(placeholder_path), main_template.size(), path);
+    main_template.replace(main_template.find(placeholder_path), placeholder_path.size(), path);
     std::string table_rows_str;
-    for (std::vector<std::string>::const_iterator it = table_rows.begin(); it != table_rows.end(); it++)
-        table_rows_str.append(*it);
-    main_template.replace(main_template.find(placeholder_listing), main_template.size(), table_rows_str);
+    for (std::set<std::string>::const_iterator it = table_rows_dir.begin(); it != table_rows_dir.end(); it++)
+        table_rows_str.append("<tr>" + *it + "</tr>");
+    for (std::set<std::string>::const_iterator it = table_rows_file.begin(); it != table_rows_file.end(); it++)
+        table_rows_str.append("<tr>" + *it + "</tr>");
+    main_template.replace(main_template.find(placeholder_listing), placeholder_listing.size(), table_rows_str);
 
     return main_template;
 }

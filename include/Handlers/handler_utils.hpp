@@ -11,6 +11,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <iostream>
+#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>

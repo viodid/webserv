@@ -124,42 +124,5 @@
         <hr>
         <div class="footer">42webserv/0.1.0</div>
     </main>
-
-    <!-- =================================================================== -->
-    <!-- TEST SCRIPT: DELETE THIS SCRIPT TAG WHEN INTEGRATING INTO SERVER    -->
-    <!-- This is just to show you what the populated table looks like.       -->
-    <!-- =================================================================== -->
-    <script>
-        const mockFiles = [
-            { name: "..", url: "../", isDir: true, date: "-", size: "-" },
-            { name: "css", url: "css/", isDir: true, date: "2023-10-24 14:32:10", size: "-" },
-            { name: "images", url: "images/", isDir: true, date: "2023-10-24 14:32:15", size: "-" },
-            { name: "index.html", url: "index.html", isDir: false, date: "2023-10-25 09:12:44", size: "1.2 KB" },
-            { name: "script.js", url: "script.js", isDir: false, date: "2023-10-25 09:15:22", size: "4.5 KB" },
-            { name: "very_large_video_file_test_render.mp4", url: "#", isDir: false, date: "2023-10-21 18:01:02", size: "1.4 GB" },
-            { name: ".hidden_config", url: "#", isDir: false, date: "2023-10-20 11:11:11", size: "244 B" }
-        ];
-
-        const tbody = document.getElementById('directory-list');
-
-        mockFiles.forEach(file => {
-            const tr = document.createElement('tr');
-            
-            // Icon logic
-            const icon = file.isDir ? '📁' : '📄';
-            
-            // Row HTML
-            tr.innerHTML = `
-                <td class="col-name">
-                    <a href="${file.url}" title="${file.name}">
-                        <span class="icon">${icon}</span>${file.name}
-                    </a>
-                </td>
-                <td class="col-date">${file.date}</td>
-                <td class="col-size">${file.size}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    </script>
 </body>
 </html>
