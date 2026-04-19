@@ -1,4 +1,7 @@
 #include "../../include/Handlers/handler_utils.hpp"
+#include <sstream>
+#include <string>
+#include <vector>
 
 HttpResponse constructHttpErrorResponse(const HttpRequest& request,
     const ErrorRenderer& error_renderer,
@@ -42,7 +45,32 @@ std::string constructPath(const HttpRequest& request, const Location& location)
     return alias;
 }
 
-std::string renderDirListing(const std::string& path)
+std::string normalizeURI(const std::string& uri)
+{
+    std::vector<std::string> segments;
+    std::stringstream ss(uri);
+    std::string segment;
+    while (std::getline(ss, segment, '/')) {
+        if (segment == "." || segment.empty())
+            continue;
+        if (segment == "..") {
+            if (segments.empty())
+                throw ExceptionParentRootDirectory("parent root directory reached");
+            segments.pop_back();
+            continue;
+        }
+        segments.push_back(segment);
+    }
+
+    std::string normalize_uri;
+    for (std::vector<std::string>::const_iterator it = segments.begin();
+        it != segments.end();
+        it++)
+        normalize_uri.append("/" + *it);
+    return normalize_uri;
+}
+
+std::string renderDirListing(const std::string& path, const std::string& requested_path)
 {
     if (File(path).getType() != File::DIRECTORY)
         throw std::runtime_error("cannot dir list anything but a dir");
@@ -73,7 +101,7 @@ std::string renderDirListing(const std::string& path)
 
         File table_row(Settings::TABLE_ROW_PATH);
         std::string name = std::string(p_dir->d_name);
-        std::string url = path + name;
+        std::string url = requested_path + name;
         // std::string date = std::to_string(std::localtime(&f_stat.st_mtim.tv_sec));
         std::stringstream ss;
         ss << f_stat.st_mtim.tv_sec;
@@ -82,6 +110,7 @@ std::string renderDirListing(const std::string& path)
         std::string icon = "📄";
         if (DT_DIR & p_dir->d_type) {
             icon = "📁";
+            url += '/';
         } else {
             std::stringstream ss;
             ss << f_stat.st_size;
@@ -106,7 +135,8 @@ std::string renderDirListing(const std::string& path)
             table_rows_file.insert(tr_template);
     }
     std::string main_template = main_templ.readFile();
-    main_template.replace(main_template.find(placeholder_path), placeholder_path.size(), path);
+    main_template.replace(main_template.find(placeholder_path), placeholder_path.size(), requested_path);
+    main_template.replace(main_template.find(placeholder_path), placeholder_path.size(), requested_path);
     std::string table_rows_str;
     for (std::set<std::string>::const_iterator it = table_rows_dir.begin(); it != table_rows_dir.end(); it++)
         table_rows_str.append("<tr>" + *it + "</tr>");

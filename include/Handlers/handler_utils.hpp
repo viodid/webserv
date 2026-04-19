@@ -27,4 +27,4 @@ HttpResponse constructHttpErrorResponse(const HttpRequest& request,
     Location::StatusCodes error_no);
 bool isMethodAllowed(const HttpRequest& request, const Location& location);
 std::string constructPath(const HttpRequest& request, const Location& location);
-std::string renderDirListing(const std::string& path);
+std::string renderDirListing(const std::string& path, const std::string& requested_path);

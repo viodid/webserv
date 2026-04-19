@@ -100,3 +100,13 @@ public:
 private:
     const std::string msg_;
 };
+
+class ExceptionParentRootDirectory : public std::exception {
+public:
+    ExceptionParentRootDirectory(const std::string& msg);
+    virtual ~ExceptionParentRootDirectory() throw();
+    const char* what() const throw();
+
+private:
+    const std::string msg_;
+};

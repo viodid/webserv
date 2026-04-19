@@ -93,3 +93,15 @@ const char* ExceptionUnsupportedFileType::what() const throw()
 {
     return msg_.c_str();
 }
+
+ExceptionParentRootDirectory::ExceptionParentRootDirectory(const std::string& msg)
+    : msg_(msg)
+{
+}
+
+ExceptionParentRootDirectory::~ExceptionParentRootDirectory() throw() { }
+
+const char* ExceptionParentRootDirectory::what() const throw()
+{
+    return msg_.c_str();
+}

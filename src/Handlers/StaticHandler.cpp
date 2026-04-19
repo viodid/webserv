@@ -23,8 +23,10 @@ HttpResponse StaticHandler::handle(const HttpRequest& request)
                 file = File(path.append(conf_.getDefaultFile()));
             // return here?
             // if autoindex isn't false -> return dir listing
-            else if (conf_.isDirectoryListing())
-                return constructHttpOKResponse_(request, "text/html", renderDirListing(path));
+            else if (conf_.isDirectoryListing()) {
+                std::string dir_list = renderDirListing(path, request.getRequestLine().getRequestTarget());
+                return constructHttpOKResponse_(request, "text/html", dir_list);
+            }
             // else return HttpError
         }
         // if path is a file -> render and return
