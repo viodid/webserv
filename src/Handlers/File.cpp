@@ -121,7 +121,6 @@ File::Type File::mapFileType_() const
         return File::DIRECTORY;
 
     std::string extension = path_.substr(path_.rfind('.', path_.size() - 1) + 1);
-    std::cout << "extension: " << extension << '\n';
     if (extension == "html" || extension == "htm")
         return File::TEXT_HTML;
     if (extension == "css")
@@ -133,7 +132,7 @@ File::Type File::mapFileType_() const
     if (extension == "png")
         return File::IMAGE_PNG;
     if (extension == "jpg" || extension == "jpeg")
-        return File::IMAGE_PNG;
+        return File::IMAGE_JPEG;
     if (extension == "ico")
         return File::IMAGE_ICO;
     throw ExceptionUnsupportedFileType(extension);

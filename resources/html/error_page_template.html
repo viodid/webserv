@@ -11,6 +11,17 @@
         p { line-height: 1.6; color: #7f8c8d; }
         hr { border: 0; border-top: 1px solid #eee; margin: 30px 0; }
         .footer { font-size: 12px; color: #bdc3c7; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            body { background-color: #121212; color: #e0e0e0; }
+            .container { background: #1e1e1e; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+            h1 { color: #ff6b5b; } /* Slightly brighter red for better contrast on dark */
+            h2 { color: #ecf0f1; } /* Light slate */
+            p { color: #aab7b8; }  /* Lighter grey for readability */
+            hr { border-top: 1px solid #333; } /* Darker divider */
+            .footer { color: #555; } /* Muted grey so it recedes into the background */
+        }
     </style>
 </head>
 <body>

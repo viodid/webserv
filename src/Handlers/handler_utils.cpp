@@ -1,5 +1,8 @@
 #include "../../include/Handlers/handler_utils.hpp"
+#include <cstring>
+#include <dirent.h>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -11,6 +14,7 @@ HttpResponse constructHttpErrorResponse(const HttpRequest& request,
     FieldLines field_lines;
     field_lines.set("Server", "42webserv/0.1.0");
     field_lines.set("Content-Type", "text/html; charset=utf-8");
+    field_lines.set("Connection", "close");
     std::stringstream ss;
     ss << body_html.size();
     field_lines.set("Content-Length", ss.str());
@@ -108,7 +112,7 @@ std::string renderDirListing(const std::string& path, const std::string& request
         std::string date = ss.str();
         std::string size = "-";
         std::string icon = "📄";
-        if (DT_DIR & p_dir->d_type) {
+        if (p_dir->d_type == DT_DIR) {
             icon = "📁";
             url += '/';
         } else {
@@ -129,11 +133,14 @@ std::string renderDirListing(const std::string& path, const std::string& request
         // FILE ICON
         tr_template.replace(tr_template.find(placeholder_file_icon), placeholder_file_icon.size(), icon);
 
-        if (DT_DIR & p_dir->d_type)
+        if (p_dir->d_type == DT_DIR)
             table_rows_dir.insert(tr_template);
         else
             table_rows_file.insert(tr_template);
     }
+    if (closedir(directory) == -1)
+        throw std::runtime_error(std::strerror(errno));
+
     std::string main_template = main_templ.readFile();
     main_template.replace(main_template.find(placeholder_path), placeholder_path.size(), requested_path);
     main_template.replace(main_template.find(placeholder_path), placeholder_path.size(), requested_path);

@@ -43,8 +43,8 @@ Location::StatusCodes Location::statusCodeFromCode(const std::string& code)
     if (end == code.c_str() || *end != '\0') {
         throw ExceptionParserError("Unsupported error code: " + code);
     }
-    
-    static const int VALID_CODES[] = {STATUS_CODES(COLLECT_CODE)};
+
+    static const int VALID_CODES[] = { STATUS_CODES(COLLECT_CODE) };
     static const size_t VALID_CODES_COUNT = sizeof(VALID_CODES) / sizeof(VALID_CODES[0]);
 
     for (size_t i = 0; i < VALID_CODES_COUNT; ++i) {
@@ -172,6 +172,9 @@ std::pair<std::string, std::string> generateDefaultStatusMsg(Location::StatusCod
         break;
     case Location::S_301:
         phrase = "Moved Permanently";
+        break;
+    case Location::S_302:
+        phrase = "Found";
         break;
     case Location::S_400:
         phrase = "Bad Request";

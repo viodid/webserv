@@ -8,9 +8,7 @@ StaticHandler::StaticHandler(const Location& conf, const ErrorRenderer& error_re
 
 HttpResponse StaticHandler::handle(const HttpRequest& request)
 {
-
     try {
-
         std::string path = constructPath(request, conf_);
 
         if (!File::fileExists(path))
@@ -51,12 +49,11 @@ HttpResponse StaticHandler::constructHttpOKResponse_(const HttpRequest& request,
     std::string file_type = file_format;
     file_type.append("; charset=utf-8");
     field_lines.set("Content-Type", file_type);
+    field_lines.set("Connection", "close");
 
     std::stringstream ss;
     ss << file_content.size();
     field_lines.set("Content-Length", ss.str());
-    std::cout << "FILE: \n"
-              << "- type: " << file_format << '\n';
     return HttpResponse(
         StatusLine(request.getRequestLine().getHttpVersion(), Location::S_200),
         field_lines,
