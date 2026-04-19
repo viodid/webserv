@@ -8,36 +8,38 @@ StaticHandler::StaticHandler(const Location& conf, const ErrorRenderer& error_re
 
 HttpResponse StaticHandler::handle(const HttpRequest& request)
 {
-    if (!isMethodAllowed(request, conf_))
-        return constructHttpErrorResponse(request, error_renderer_, Location::S_405);
 
-    std::string path = constructPath(request, conf_);
-    if (!File::fileExists(path))
-        return constructHttpErrorResponse(request, error_renderer_, Location::S_404);
-
-    Location::StatusCodes status_code = Location::S_200;
     try {
+
+        std::string path = constructPath(request, conf_);
+
+        if (!File::fileExists(path))
+            return constructHttpErrorResponse(request, error_renderer_, Location::S_404);
+        if (!isMethodAllowed(request, conf_))
+            return constructHttpErrorResponse(request, error_renderer_, Location::S_405);
+
         File file(path);
+        if (!file.isReadable())
+            return constructHttpErrorResponse(request, error_renderer_, Location::S_403);
         if (file.getType() == File::DIRECTORY) {
             if (!conf_.getDefaultFile().empty())
                 file = File(path.append(conf_.getDefaultFile()));
-            // return here?
-            // if autoindex isn't false -> return dir listing
             else if (conf_.isDirectoryListing()) {
                 std::string dir_list = renderDirListing(path, request.getRequestLine().getRequestTarget());
                 return constructHttpOKResponse_(request, "text/html", dir_list);
-            }
-            // else return HttpError
+            } else
+                return constructHttpErrorResponse(request, error_renderer_, Location::S_500);
         }
-        // if path is a file -> render and return
         if (file.isReadable())
             return constructHttpOKResponse_(request, file.getTypeFormat(), file.readFile());
     } catch (const ExceptionUnsupportedFileType& e) {
         std::cerr << e.what() << '\n';
-        status_code = Location::S_415;
+        return constructHttpErrorResponse(request, error_renderer_, Location::S_415);
+    } catch (const ExceptionParentRootDirectory& e) {
+        std::cerr << e.what() << '\n';
+        return constructHttpErrorResponse(request, error_renderer_, Location::S_403);
     }
-    status_code = Location::S_404;
-    return constructHttpErrorResponse(request, error_renderer_, status_code);
+    return constructHttpErrorResponse(request, error_renderer_, Location::S_404);
 }
 
 HttpResponse StaticHandler::constructHttpOKResponse_(const HttpRequest& request,

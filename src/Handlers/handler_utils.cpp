@@ -35,8 +35,8 @@ std::string constructPath(const HttpRequest& request, const Location& location)
 {
     if (location.getRoot().empty() || location.getPath().empty())
         throw std::runtime_error("location.root or location.path cannot be empty");
+    std::string request_target = normalizeURI(request.getRequestLine().getRequestTarget());
     std::string alias = location.getRoot();
-    std::string request_target = request.getRequestLine().getRequestTarget();
     std::string route = location.getPath();
     if (route.size() > 1) // location route != "/"
         request_target.erase(0, route.size());
