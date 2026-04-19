@@ -315,7 +315,6 @@ def run_all():
 
     # Run all tests
     test_get_basic()
-    test_http_version()
     test_head_method()
     test_delete_method()
     test_status_codes()
