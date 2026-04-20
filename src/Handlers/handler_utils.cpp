@@ -49,6 +49,21 @@ std::string constructPath(const HttpRequest& request, const Location& location)
     return alias;
 }
 
+/*
+ * Mutates the input string if a query URL is found.
+ * Returns the query URL
+ */
+std::string stripQueryURI(std::string& uri)
+{
+    size_t query_idx = uri.find('?');
+    std::string query;
+    if (query_idx != std::string::npos) {
+        query = uri.substr(query_idx);
+        uri.erase(query_idx);
+    }
+    return query;
+}
+
 std::string normalizeURI(const std::string& uri)
 {
     std::vector<std::string> segments;
@@ -99,13 +114,15 @@ std::string renderDirListing(const std::string& path, const std::string& request
     std::set<std::string> table_rows_file;
     struct dirent* p_dir;
     while ((p_dir = readdir(directory))) {
-        struct stat f_stat;
-        if (stat(path.c_str(), &f_stat) == -1)
-            throw std::runtime_error(std::strerror(errno));
-
         File table_row(Settings::TABLE_ROW_PATH);
         std::string name = std::string(p_dir->d_name);
         std::string url = requested_path + name;
+
+        struct stat f_stat;
+        std::string local_path = path + "/" + name;
+        if (stat(local_path.c_str(), &f_stat) == -1)
+            throw std::runtime_error(std::strerror(errno));
+
         // std::string date = std::to_string(std::localtime(&f_stat.st_mtim.tv_sec));
         std::stringstream ss;
         ss << f_stat.st_mtim.tv_sec;

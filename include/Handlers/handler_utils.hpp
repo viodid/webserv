@@ -29,3 +29,4 @@ bool isMethodAllowed(const HttpRequest& request, const Location& location);
 std::string constructPath(const HttpRequest& request, const Location& location);
 std::string renderDirListing(const std::string& path, const std::string& requested_path);
 std::string normalizeURI(const std::string& uri);
+std::string stripQueryURI(std::string& uri);

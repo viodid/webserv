@@ -10,6 +10,7 @@ HttpResponse StaticHandler::handle(const HttpRequest& request)
 {
     try {
         std::string path = constructPath(request, conf_);
+        stripQueryURI(path);
 
         if (!File::fileExists(path))
             return constructHttpErrorResponse(request, error_renderer_, Location::S_404);
@@ -22,11 +23,10 @@ HttpResponse StaticHandler::handle(const HttpRequest& request)
 
         if (file.getType() == File::DIRECTORY) {
             if (!conf_.getDefaultFile().empty()) {
-                if (!path.empty() && path[path.size()-1] != '/') 
+                if (!path.empty() && path[path.size() - 1] != '/')
                     path.append("/");
                 file = File(path.append(conf_.getDefaultFile()));
-            }
-            else if (conf_.isDirectoryListing()) {
+            } else if (conf_.isDirectoryListing()) {
                 std::string dir_list = renderDirListing(path, request.getRequestLine().getRequestTarget());
                 return constructHttpOKResponse_(request, "text/html", dir_list);
             } else
