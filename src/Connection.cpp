@@ -1,7 +1,4 @@
 #include "../include/Connection.hpp"
-#include <cstring>
-#include <iostream>
-#include <stdexcept>
 
 Connection::Connection(Type type, Socket* socket, const VirtualHost& vh)
     : type_(type)
@@ -52,6 +49,6 @@ int Connection::read(char buffer[], int len)
     if (read_n == -1)
         throw ExceptionErrorConnectionSocket(std::strerror(errno));
     if (read_n == 0)
-        throw ExceptionClientCloseConn("");
+        throw ExceptionClientCloseConn("client connection closed");
     return read_n;
 }

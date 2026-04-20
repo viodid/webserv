@@ -2,7 +2,7 @@
 #include "Config.hpp"
 #include "Exceptions.hpp"
 #include "HttpRequest/HttpRequest.hpp"
-#include "IReader.hpp"
+#include "Interfaces/IReader.hpp"
 #include "Settings.hpp"
 #include "Socket.hpp"
 #include <cstring>
@@ -40,14 +40,12 @@ public:
      * returns the connection Config
      */
     const VirtualHost& getConfig() const;
-
     /*
      * Send a message to the socket.
      *
      * It returns the number of bytes sent.
      */
     ssize_t sendMsg(const std::string& msg) const;
-
     /*
      * Reads from a socket and copies over the given input buffer
      *

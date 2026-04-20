@@ -40,16 +40,6 @@ const char* ExceptionClientCloseConn::what() const throw()
     return msg_.c_str();
 }
 
-ExceptionClientErrConn::ExceptionClientErrConn(const std::string& str)
-    : msg_(str)
-{
-}
-
-const char* ExceptionClientErrConn::what() const throw()
-{
-    return msg_.c_str();
-}
-
 ExceptionConnLenExceeded::ExceptionConnLenExceeded(const std::string& str)
     : msg_(str)
 {
@@ -81,10 +71,37 @@ const char* ExceptionErrorConnectionSocket::what() const throw()
 }
 
 ExceptionParserError::ExceptionParserError(const std::string& msg)
-    : msg_(msg) {}
+    : msg_(msg)
+{
+}
 
-ExceptionParserError::~ExceptionParserError() throw() {}
+ExceptionParserError::~ExceptionParserError() throw() { }
 
-const char* ExceptionParserError::what() const throw() {
+const char* ExceptionParserError::what() const throw()
+{
+    return msg_.c_str();
+}
+
+ExceptionUnsupportedFileType::ExceptionUnsupportedFileType(const std::string& msg)
+    : msg_(msg)
+{
+}
+
+ExceptionUnsupportedFileType::~ExceptionUnsupportedFileType() throw() { }
+
+const char* ExceptionUnsupportedFileType::what() const throw()
+{
+    return msg_.c_str();
+}
+
+ExceptionParentRootDirectory::ExceptionParentRootDirectory(const std::string& msg)
+    : msg_(msg)
+{
+}
+
+ExceptionParentRootDirectory::~ExceptionParentRootDirectory() throw() { }
+
+const char* ExceptionParentRootDirectory::what() const throw()
+{
     return msg_.c_str();
 }

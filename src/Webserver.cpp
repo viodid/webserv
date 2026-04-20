@@ -46,7 +46,7 @@ void Webserver::run()
 void Webserver::handleNewConnection_(EventManager& notifier, const Connection& connection)
 {
     int cfd = connection.acceptNewConnection();
-    notifier.addPollFds(cfd);
+    notifier.addFd(cfd);
     Socket* socket_ptr = new Socket(cfd);
     Connection* connection_ptr = new Connection(Connection::CLIENT, socket_ptr, connection.getConfig());
     connections_.push_back(connection_ptr);
@@ -55,7 +55,7 @@ void Webserver::handleNewConnection_(EventManager& notifier, const Connection& c
 
 void Webserver::handleClosedConn_(EventManager& manager, const Connection& connection)
 {
-    manager.removePollFds(connection.getFd());
+    manager.removeFd(connection.getFd());
     std::cout << "closed conn fd: " << connection.getFd() << std::endl;
     for (size_t i = 0; i < connections_.size(); i++) {
         if (connections_[i] == &connection) {
@@ -92,17 +92,24 @@ void Webserver::handleClientData_(EventManager& notifier, Connection& connection
                   << request.getBody().get() << "\n";
 
 #endif
-
-    } catch (ExceptionClientCloseConn& e) {
-        std::cerr << e.what();
-        return handleClosedConn_(notifier, connection);
-    } catch (ExceptionErrorConnectionSocket& e) { // TODO: check if this exc can be raised here
-        std::cerr << e.what();
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
         return handleClosedConn_(notifier, connection);
     }
 
-    // once the request has been complete; Done state
     if (request.isDone()) {
-        connection.sendMsg("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: keep-alive\r\n\r\nHello World!");
+        ErrorRenderer error_renderer(connection.getConfig().getStatusCodes());
+        IRequestHandler* handler = new StaticHandler(connection.getConfig().getLocations()[0], error_renderer);
+        // TODO: iterate until handler is done (chunked response)
+        HttpResponse response = handler->handle(request);
+        connection.sendMsg(response.format());
+        // connection.sendMsg("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: keep-alive\r\n\r\nHello World!");
+        /*
+         * 1. Event handler factory:
+         * Based on the requests, returns the corresponding handler (Static, CGI...)
+         *  - The request handler implements the interface (IRequestHandler)
+         */
+        delete handler;
     }
+    handleClosedConn_(notifier, connection);
 }

@@ -4,7 +4,7 @@ EventManager::EventManager(std::vector<Connection*>& connections)
     : connections_(connections)
 {
     for (size_t i = 0; i < connections_.size(); ++i)
-        addPollFds(connections_[i]->getFd());
+        addFd(connections_[i]->getFd());
 }
 
 int EventManager::manage()
@@ -26,13 +26,13 @@ const std::vector<pollfd>& EventManager::getPollFds() const
     return fds_;
 }
 
-void EventManager::addPollFds(int fd)
+void EventManager::addFd(int fd)
 {
     pollfd pfd = { fd, POLLIN, 0 };
     fds_.push_back(pfd);
 }
 
-void EventManager::removePollFds(int fd)
+void EventManager::removeFd(int fd)
 {
     for (size_t i = 0; i < connections_.size(); ++i) {
         if (connections_[i]->getFd() == fd) {

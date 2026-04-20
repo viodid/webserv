@@ -1,10 +1,16 @@
 #include "../../include/HttpRequest/Body.hpp"
-#include <iostream>
 
 Body::Body()
     : content_length_(0)
 {
 }
+
+Body::Body(const std::string& body)
+    : body_(body)
+    , content_length_(0)
+{
+}
+
 const std::string& Body::get() const
 {
     return body_;
@@ -13,6 +19,11 @@ const std::string& Body::get() const
 void Body::set(const std::string& body)
 {
     body_ = body;
+}
+
+std::string Body::format() const
+{
+    return body_;
 }
 
 int Body::parse(const char* buffer, size_t buf_len, const std::string& content_len)

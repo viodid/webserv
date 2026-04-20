@@ -3,6 +3,8 @@
 #include "Connection.hpp"
 #include "EventManager.hpp"
 #include "HttpRequest/HttpRequest.hpp"
+#include "Handlers/ErrorRenderer.hpp"
+#include "Handlers/StaticHandler.hpp"
 
 class Webserver {
 public:

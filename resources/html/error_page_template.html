@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Error {CODE}: {PHRASE}</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f7f9fb; color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { text-align: center; padding: 40px; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 500px; }
+        h1 { font-size: 72px; margin: 0; color: #f74c3c; }
+        h2 { font-size: 24px; margin: 10px 0 20px; color: #2c3e50; }
+        p { line-height: 1.6; color: #7f8c8d; }
+        hr { border: 0; border-top: 1px solid #eee; margin: 30px 0; }
+        .footer { font-size: 12px; color: #bdc3c7; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            body { background-color: #121212; color: #e0e0e0; }
+            .container { background: #1e1e1e; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+            h1 { color: #ff6b5b; } /* Slightly brighter red for better contrast on dark */
+            h2 { color: #ecf0f1; } /* Light slate */
+            p { color: #aab7b8; }  /* Lighter grey for readability */
+            hr { border-top: 1px solid #333; } /* Darker divider */
+            .footer { color: #555; } /* Muted grey so it recedes into the background */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{CODE}</h1>
+        <h2>{PHRASE}</h2>
+        <p>{DESCRIPTION}</p>
+        <hr>
+        <div class="footer">42webserv</div>
+    </div>
+</body>
+</html>

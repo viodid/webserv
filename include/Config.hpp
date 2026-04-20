@@ -6,10 +6,10 @@
 #include <vector>
 
 #define HTTP_METHODS(X) \
-    X(GET) \
-    X(HEAD) \
-    X(POST) \
-    X(PUT) \
+    X(GET)              \
+    X(HEAD)             \
+    X(POST)             \
+    X(PUT)              \
     X(DELETE)
 
 #define STATUS_CODES(X) \
@@ -24,6 +24,7 @@
     X(408) \
     X(413) \
     X(414) \
+    X(415) \
     X(500) \
     X(501) \
     X(502) \
@@ -105,5 +106,14 @@ public:
 private:
     std::vector<VirtualHost> virtual_hosts_;
 };
+
+/*
+ * Returns a pair of:
+ *
+ * First -> Error phrase, i.e "Bad Request"
+ *
+ * Second -> Error description, i.e "The server could not understand the request due to invalid syntax."
+ */
+std::pair<std::string, std::string> generateDefaultStatusMsg(Location::StatusCodes status_code);
 
 const Config create_mock_config();
