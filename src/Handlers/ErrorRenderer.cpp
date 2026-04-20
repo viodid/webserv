@@ -22,7 +22,7 @@ std::string ErrorRenderer::render(Location::StatusCodes status_code) const
     const std::string placeholder_code = "{CODE}";
     const std::string placeholder_phrase = "{PHRASE}";
     const std::string placeholder_desc = "{DESCRIPTION}";
-    File file(Settings::ERROR_PAGE_PATH);
+    File file(error_path_.at(status_code));
 
     std::stringstream ss;
     ss << status_code;
@@ -30,13 +30,14 @@ std::string ErrorRenderer::render(Location::StatusCodes status_code) const
     std::pair<std::string, std::string> error_msg = generateDefaultStatusMsg(status_code);
     std::string templ = file.readFile();
     // CODE
-    templ.replace(templ.find(placeholder_code), placeholder_code.size(), codeStr);
-    templ.replace(templ.find(placeholder_code), placeholder_code.size(), codeStr);
+    while (templ.find(placeholder_code) != std::string::npos)
+        templ.replace(templ.find(placeholder_code), placeholder_code.size(), codeStr);
     // PHRASE
-    templ.replace(templ.find(placeholder_phrase), placeholder_phrase.size(), error_msg.first);
-    templ.replace(templ.find(placeholder_phrase), placeholder_phrase.size(), error_msg.first);
+    while (templ.find(placeholder_phrase) != std::string::npos)
+        templ.replace(templ.find(placeholder_phrase), placeholder_phrase.size(), error_msg.first);
     // DESCRIPTION
-    templ.replace(templ.find(placeholder_desc), placeholder_desc.size(), error_msg.second);
+    while (templ.find(placeholder_desc) != std::string::npos)
+        templ.replace(templ.find(placeholder_desc), placeholder_desc.size(), error_msg.second);
 
     return templ;
 }
