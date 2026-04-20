@@ -38,12 +38,12 @@ public:
      * @brief Mutate the state of pollfd vector member viariable.
      * It adds one new pollfd struct to the vector initialized with POLLIN.
      */
-    void addPollFds(int fd);
+    void addFd(int fd);
     /**
      * @brief Mutate the state of pollfd vector member viariable.
      * It removes a pollfd struct instance from the vector given a FD.
      */
-    void removePollFds(int fd);
+    void removeFd(int fd);
 
 private:
     const std::vector<Connection*>& connections_;

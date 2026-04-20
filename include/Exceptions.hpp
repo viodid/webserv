@@ -48,17 +48,6 @@ private:
     const std::string msg_;
 };
 
-class ExceptionClientErrConn : public std::exception {
-public:
-    ExceptionClientErrConn(const std::string&);
-    virtual ~ExceptionClientErrConn() throw() { };
-
-    const char* what() const throw();
-
-private:
-    const std::string msg_;
-};
-
 class ExceptionConnLenExceeded : public std::exception {
 public:
     ExceptionConnLenExceeded(const std::string&);
@@ -86,6 +75,36 @@ public:
     ExceptionErrorConnectionSocket(const std::string&);
     virtual ~ExceptionErrorConnectionSocket() throw() { };
 
+    const char* what() const throw();
+
+private:
+    const std::string msg_;
+};
+
+class ExceptionParserError : public std::exception {
+public:
+    ExceptionParserError(const std::string& msg);
+    virtual ~ExceptionParserError() throw();
+    const char* what() const throw();
+
+private:
+    const std::string msg_;
+};
+
+class ExceptionUnsupportedFileType : public std::exception {
+public:
+    ExceptionUnsupportedFileType(const std::string& msg);
+    virtual ~ExceptionUnsupportedFileType() throw();
+    const char* what() const throw();
+
+private:
+    const std::string msg_;
+};
+
+class ExceptionParentRootDirectory : public std::exception {
+public:
+    ExceptionParentRootDirectory(const std::string& msg);
+    virtual ~ExceptionParentRootDirectory() throw();
     const char* what() const throw();
 
 private:

@@ -1,7 +1,13 @@
 #include "../../include/HttpRequest/FieldLines.hpp"
-#include <cctype>
 
 static bool isToken(const std::string& str);
+
+FieldLines::FieldLines() { }
+
+FieldLines::FieldLines(const std::map<std::string, std::string>& field_lines)
+    : field_lines_(field_lines)
+{
+}
 
 const std::string& FieldLines::get(const std::string& field_name) const
 {
@@ -12,7 +18,6 @@ const std::string& FieldLines::get(const std::string& field_name) const
     return it->second;
 }
 
-// TODO: is token and to lower
 void FieldLines::set(const std::string& field_name, const std::string& field_value)
 {
     if (!isToken(field_name))
@@ -30,6 +35,16 @@ void FieldLines::forEach(void (*f)(const std::string&, const std::string&)) cons
         it != field_lines_.end();
         it++)
         f(it->first, it->second);
+}
+
+std::string FieldLines::format() const
+{
+    std::stringstream ss;
+    for (std::map<std::string, std::string>::const_iterator it = field_lines_.begin();
+        it != field_lines_.end();
+        it++)
+        ss << it->first << ": " << it->second << Settings::LINE_DELIMETER;
+    return ss.str();
 }
 
 /*

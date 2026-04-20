@@ -1,4 +1,8 @@
 #include "../include/Utils.hpp"
+#include <cstring>
+#include <fcntl.h>
+#include <stdexcept>
+#include <sys/time.h>
 
 // Converts all characters in str to lowercase
 std::string toLower(const std::string& str)
@@ -21,6 +25,7 @@ std::string trim(const std::string& str)
     return str.substr(start, end - start);
 }
 
+// Gets the current time as ms since epoch
 size_t currTimeMs()
 {
     struct timeval tv;

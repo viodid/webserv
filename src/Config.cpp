@@ -1,4 +1,5 @@
 #include "../include/Config.hpp"
+#include "../include/Exceptions.hpp"
 #include <cstdlib>
 #include <map>
 #include <stdexcept>
@@ -26,32 +27,32 @@ Location::Location(const std::string path,
 
 Location::AllowedMethods Location::methodFromString(const std::string& method)
 {
-    static const char* METHODS[] = {HTTP_METHODS(MAKE_STRING)};
+    static const char* METHODS[] = { HTTP_METHODS(MAKE_STRING) };
     for (size_t i = 0; i < sizeof(METHODS) / sizeof(METHODS[0]); ++i) {
         if (method == METHODS[i])
             return static_cast<AllowedMethods>(i);
     }
-    throw std::runtime_error("Unsupported HTTP method: " + method);
+    throw ExceptionParserError("Unsupported HTTP method: " + method);
 }
 
-Location::ErrorPages Location::errorPageFromCode(const std::string& code)
+Location::StatusCodes Location::statusCodeFromCode(const std::string& code)
 {
     char* end;
     long value = std::strtol(code.c_str(), &end, 10);
-    
+
     if (end == code.c_str() || *end != '\0') {
-        throw std::runtime_error("Invalid error code: " + code);
+        throw ExceptionParserError("Unsupported error code: " + code);
     }
-    
-    static const int VALID_CODES[] = {ERROR_PAGES(COLLECT_CODE)};
+
+    static const int VALID_CODES[] = { STATUS_CODES(COLLECT_CODE) };
     static const size_t VALID_CODES_COUNT = sizeof(VALID_CODES) / sizeof(VALID_CODES[0]);
-    
+
     for (size_t i = 0; i < VALID_CODES_COUNT; ++i) {
         if (VALID_CODES[i] == value) {
-            return static_cast<Location::ErrorPages>(value);
+            return static_cast<Location::StatusCodes>(value);
         }
     }
-    throw std::runtime_error("Unsupported error code: " + code);
+    throw ExceptionParserError("Unsupported error code: " + code);
 }
 
 const std::string& Location::getPath() const
@@ -95,12 +96,12 @@ VirtualHost::VirtualHost(
     const std::string hostname,
     const std::string port,
     size_t socket_size,
-    const std::vector<std::pair<Location::ErrorPages, std::string> > error_pages,
+    const std::vector<std::pair<Location::StatusCodes, std::string> > status_codes,
     const std::vector<Location> locations)
     : hostname_(hostname)
     , port_(port)
     , socket_size_(socket_size)
-    , error_pages_(error_pages)
+    , status_codes_(status_codes)
     , locations_(locations)
 {
 }
@@ -117,9 +118,9 @@ size_t VirtualHost::getSocketSize() const
 {
     return socket_size_;
 }
-const std::vector<std::pair<Location::ErrorPages, std::string> >& VirtualHost::getErrorPages() const
+const std::vector<std::pair<Location::StatusCodes, std::string> >& VirtualHost::getStatusCodes() const
 {
-    return error_pages_;
+    return status_codes_;
 }
 const std::vector<Location>& VirtualHost::getLocations() const
 {
@@ -145,14 +146,91 @@ const Config create_mock_config()
     methods1.push_back(Location::GET);
     std::vector<Location> l1;
     l1.push_back(Location("/", methods1, "", "", "/var/www/html", "/var/www/html/403.html", false));
-    vh.push_back(VirtualHost("127.0.0.1", "5555", 100000, std::vector<std::pair<Location::ErrorPages, std::string> >(), l1));
+    vh.push_back(VirtualHost("127.0.0.1", "5555", 100000, std::vector<std::pair<Location::StatusCodes, std::string> >(), l1));
     // vh2
     std::vector<Location::AllowedMethods> methods2;
     methods2.push_back(Location::GET);
     methods2.push_back(Location::POST);
     std::vector<Location> l2;
     l2.push_back(Location("/", methods2, "", "", "/var/www/html", "/var/www/html/403.html", false));
-    vh.push_back(VirtualHost("localhost", "42069", 100000, std::vector<std::pair<Location::ErrorPages, std::string> >(), l2));
+    vh.push_back(VirtualHost("localhost", "42069", 100000, std::vector<std::pair<Location::StatusCodes, std::string> >(), l2));
 
     return Config(vh);
+}
+
+std::pair<std::string, std::string> generateDefaultStatusMsg(Location::StatusCodes status_code)
+{
+    std::string phrase;
+    std::string description;
+
+    switch (status_code) {
+    case Location::S_200:
+        phrase = "OK";
+        break;
+    case Location::S_201:
+        phrase = "Created";
+        break;
+    case Location::S_301:
+        phrase = "Moved Permanently";
+        break;
+    case Location::S_302:
+        phrase = "Found";
+        break;
+    case Location::S_400:
+        phrase = "Bad Request";
+        description = "The server could not understand the request due to invalid syntax.";
+        break;
+    case Location::S_403:
+        phrase = "Forbidden";
+        description = "You do not have permission to access this resource.";
+        break;
+    case Location::S_404:
+        phrase = "Not Found";
+        description = "The requested resource could not be found on this server.";
+        break;
+    case Location::S_405:
+        phrase = "Method Not Allowed";
+        description = "The specified HTTP method is not allowed for this resource.";
+        break;
+    case Location::S_408:
+        phrase = "Request Timeout";
+        description = "The server timed out waiting for the request.";
+        break;
+    case Location::S_413:
+        phrase = "Content Too Large";
+        description = "The request entity is larger than limits defined by server configuration.";
+        break;
+    case Location::S_414:
+        phrase = "URI Too Long";
+        description = "The URI provided was too long for the server to process.";
+        break;
+    case Location::S_415:
+        phrase = "Unsupported Media Type";
+        description = "The content format is not supported.";
+        break;
+    case Location::S_500:
+        phrase = "Internal Server Error";
+        description = "The server encountered an unexpected condition.";
+        break;
+    case Location::S_501:
+        phrase = "Not Implemented";
+        description = "The server does not support the functionality required to fulfill the request.";
+        break;
+    case Location::S_502:
+        phrase = "Bad Gateway";
+        description = "The server received an invalid response from the upstream server.";
+        break;
+    case Location::S_503:
+        phrase = "Service Unavailable";
+        description = "The server is not ready to handle the request.";
+        break;
+    case Location::S_504:
+        phrase = "Gateway Timeout";
+        description = "The server did not get a response in time from the upstream server.";
+        break;
+    default:
+        throw std::runtime_error("unhandled status code msg generation\n");
+    }
+
+    return std::pair<std::string, std::string>(phrase, description);
 }

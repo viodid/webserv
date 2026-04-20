@@ -1,9 +1,13 @@
 #pragma once
 #include "Config.hpp"
 #include "Exceptions.hpp"
-#include "IReader.hpp"
+#include "HttpRequest/HttpRequest.hpp"
+#include "Interfaces/IReader.hpp"
 #include "Settings.hpp"
 #include "Socket.hpp"
+#include <cstring>
+#include <iostream>
+#include <stdexcept>
 #include <vector>
 
 /**
@@ -36,14 +40,12 @@ public:
      * returns the connection Config
      */
     const VirtualHost& getConfig() const;
-
     /*
      * Send a message to the socket.
      *
      * It returns the number of bytes sent.
      */
     ssize_t sendMsg(const std::string& msg) const;
-
     /*
      * Reads from a socket and copies over the given input buffer
      *
@@ -54,5 +56,5 @@ public:
 private:
     Type type_;
     Socket* socket_;
-    VirtualHost config_;
+    const VirtualHost config_;
 };

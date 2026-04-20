@@ -25,7 +25,7 @@ private:
 
     void        parseListen(std::string& hostname, std::string& port);
     void        parseClientMaxBodySize(size_t& size);
-    void        parseErrorPage(std::vector<std::pair<Location::ErrorPages, std::string> >& pages);
+    void        parseStatusCode(std::vector<std::pair<Location::StatusCodes, std::string> >& pages);
     void        parseAutoindex(bool& dir_listing);
     void        parseAllowedMethods(std::vector<Location::AllowedMethods>& methods);
     void        parseReturn(std::string& code, std::string& path);

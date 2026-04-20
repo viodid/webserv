@@ -5,6 +5,7 @@
 #include <cctype>
 #include <iostream>
 #include <map>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -18,7 +19,8 @@
  */
 class FieldLines {
 public:
-    FieldLines() { };
+    FieldLines();
+    FieldLines(const std::map<std::string, std::string>& field_lines);
 
     const std::string& get(const std::string&) const;
 
@@ -27,8 +29,8 @@ public:
     int parse(const char* buffer, int length);
     void forEach(void (*f)(const std::string&, const std::string&)) const;
 
+    std::string format() const;
+
 private:
     std::map<std::string, std::string> field_lines_;
-
-    int parseFieldLine_(const char* buffer, int length);
 };

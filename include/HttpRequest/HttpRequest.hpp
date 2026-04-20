@@ -1,5 +1,5 @@
 #pragma once
-#include "../IReader.hpp"
+#include "../Interfaces/IReader.hpp"
 #include "../Utils.hpp"
 #include "Body.hpp"
 #include "FieldLines.hpp"
@@ -8,7 +8,7 @@
 #include <stdexcept>
 #include <string>
 
-enum HttpRequestState {
+enum HttpRequestParseState {
     RequestLineState,
     FieldLinesState,
     BodyState,
@@ -25,6 +25,7 @@ enum HttpRequestState {
 class HttpRequest {
 public:
     HttpRequest();
+    ~HttpRequest();
 
     const RequestLine& getRequestLine() const;
     const FieldLines& getFieldLines() const;
@@ -36,12 +37,19 @@ public:
 
     void parseFromReader(IReader& reader);
 
-private:
-    HttpRequestState curr_state_;
+    bool isDone() const;
 
+private:
+    // Request state
     RequestLine request_line_;
     FieldLines field_lines_;
     Body body_;
+
+    // Parsing state
+    const size_t start_time_;
+    HttpRequestParseState curr_state_;
+    size_t cursor_;
+    std::vector<char> buffer_;
 
     int parse_(const char* buffer, int length);
 };
