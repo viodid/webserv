@@ -19,17 +19,20 @@ HttpResponse StaticHandler::handle(const HttpRequest& request)
         File file(path);
         if (!file.isReadable())
             return constructHttpErrorResponse(request, error_renderer_, Location::S_403);
+
         if (file.getType() == File::DIRECTORY) {
-            if (!conf_.getDefaultFile().empty())
+            if (!conf_.getDefaultFile().empty()) {
+                if (!path.empty() && path[path.size()-1] != '/') 
+                    path.append("/");
                 file = File(path.append(conf_.getDefaultFile()));
+            }
             else if (conf_.isDirectoryListing()) {
                 std::string dir_list = renderDirListing(path, request.getRequestLine().getRequestTarget());
                 return constructHttpOKResponse_(request, "text/html", dir_list);
             } else
                 return constructHttpErrorResponse(request, error_renderer_, Location::S_500);
         }
-        if (file.isReadable())
-            return constructHttpOKResponse_(request, file.getTypeFormat(), file.readFile());
+        return constructHttpOKResponse_(request, file.getTypeFormat(), file.readFile());
     } catch (const ExceptionUnsupportedFileType& e) {
         std::cerr << e.what() << '\n';
         return constructHttpErrorResponse(request, error_renderer_, Location::S_415);

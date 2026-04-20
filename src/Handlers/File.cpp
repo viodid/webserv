@@ -54,9 +54,11 @@ const std::string& File::readFile()
             throw std::runtime_error(std::strerror(errno));
 
         char buffer[Settings::RESPONSE_BUFFER_SIZE];
-        size_t bytes = read(fd, buffer, Settings::RESPONSE_BUFFER_SIZE);
-        if (fd == -1)
+        int bytes = read(fd, buffer, sizeof(buffer));
+        if (bytes == -1) {
+            close(fd);
             throw std::runtime_error(std::strerror(errno));
+        }
         if (bytes < Settings::RESPONSE_BUFFER_SIZE)
             buffer[bytes] = '\0';
         close(fd);
