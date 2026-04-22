@@ -12,10 +12,6 @@ BASE_URL = "https://www.w3.org/Protocols/HTTP/Performance/microscape/"
 
 TIMEOUT = 5  # timeout seconds per connection
 
-# ── Test Routes ──────────────────────────────
-REDIRECT_ROUTE = "/redirect"
-CGI_ROUTE = "/cgi-bin/test.cgi"
-
 # ── ANSI Colors ──────────────────────────────
 GREEN  = "\033[92m"
 RED    = "\033[91m"
