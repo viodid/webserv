@@ -35,12 +35,13 @@ test_log = []
 # ═══════════════════════════════════════════════
 
 def parse_url(url: str):
-    """Parses BASE_URL and returns (host, port, use_ssl)."""
+    """Parses BASE_URL and returns (host, port, use_ssl, base_path)."""
     p = urlparse(url)
     host = p.hostname
     use_ssl = p.scheme == "https"
     port = p.port or (443 if use_ssl else 80)
-    return host, port, use_ssl
+    base_path = p.path if p.path else "/"
+    return host, port, use_ssl, base_path
 
 
 def raw_request(base_url: str, method: str, path: str, headers: dict = None,
@@ -50,7 +51,10 @@ def raw_request(base_url: str, method: str, path: str, headers: dict = None,
       status_code, status_line, headers (dict), body (str), raw (bytes)
     """
     try:
-        host, port, use_ssl = parse_url(base_url)
+        host, port, use_ssl, base_path = parse_url(base_url)
+        
+        # Join base path with request path
+        full_path = base_path.rstrip("/") + "/" + path.lstrip("/")
         
         # Create connection
         if use_ssl:
@@ -66,7 +70,7 @@ def raw_request(base_url: str, method: str, path: str, headers: dict = None,
             req_headers["Content-Length"] = str(len(body))
         
         # Send request
-        conn.request(method, path, body=body, headers=req_headers)
+        conn.request(method, full_path, body=body, headers=req_headers)
         
         # Get response
         response = conn.getresponse()
@@ -260,7 +264,7 @@ def test_post_with_body():
 
 def check_server_available():
     """Checks that the server is active before running tests."""
-    host, port, _ = parse_url(BASE_URL)
+    host, port, _, _ = parse_url(BASE_URL)
     try:
         sock = socket.create_connection((host, port), timeout=3)
         sock.close()
