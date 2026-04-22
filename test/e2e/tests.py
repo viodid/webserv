@@ -77,7 +77,8 @@ def raw_request(base_url: str, method: str, path: str, headers: dict = None,
         status_code = response.status
         status_line = f"HTTP/1.1 {response.status} {response.reason}"
         resp_headers = {k.lower(): v for k, v in response.getheaders()}
-        resp_body = response.read().decode(errors="replace")
+        resp_raw = response.read()
+        resp_body = resp_raw.decode(errors="replace")
         
         conn.close()
         
@@ -86,7 +87,7 @@ def raw_request(base_url: str, method: str, path: str, headers: dict = None,
             "status_line": status_line,
             "headers": resp_headers,
             "body": resp_body,
-            "raw": resp_body.encode(),
+            "raw": resp_raw,
             "error": None,
         }
     except socket.timeout:
