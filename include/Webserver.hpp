@@ -2,9 +2,9 @@
 #include "Config.hpp"
 #include "Connection.hpp"
 #include "EventManager.hpp"
-#include "HttpRequest/HttpRequest.hpp"
 #include "Handlers/ErrorRenderer.hpp"
 #include "Handlers/StaticHandler.hpp"
+#include "HttpRequest/HttpRequest.hpp"
 
 class Webserver {
 public:
@@ -17,9 +17,9 @@ public:
 private:
     const std::vector<VirtualHost>& config_;
     std::vector<Connection*> connections_;
-    std::vector<HttpRequest*> requests_;
 
+    void handleRead_(EventManager& notifier, Connection& c);
+    void handleWrite_(EventManager& notifier, Connection& c);
     void handleNewConnection_(EventManager& manager, const Connection& conn);
-    void handleClientData_(EventManager& notifier, Connection& connection, HttpRequest& request);
     void handleClosedConn_(EventManager& manager, const Connection& conn);
 };

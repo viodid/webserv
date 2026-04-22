@@ -21,7 +21,6 @@ void Webserver::init()
         Socket* socket_ptr = new Socket(it->getHostname(), it->getPort());
         Connection* connection_ptr = new Connection(Connection::LISTENER, socket_ptr, *it);
         connections_.push_back(connection_ptr);
-        requests_.push_back(NULL);
     }
 }
 
@@ -32,77 +31,89 @@ void Webserver::run()
         notifier.manage();
         const std::vector<pollfd>& pollfds = notifier.getPollFds();
         for (size_t i = 0; i < connections_.size(); i++) {
+            Connection* c = notifier.getConnectionFor(pollfds[i].fd);
             if (pollfds[i].revents & POLLIN) {
-                if (connections_[i]->getType() == Connection::LISTENER)
-                    handleNewConnection_(notifier, *connections_[i]);
-                else
-                    handleClientData_(notifier, *connections_[i], *requests_[i]);
-                break;
+                std::cout << "POLLIN - connection: " << i << " - fd: " << c->getFd() << '\n';
+                handleRead_(notifier, *c);
+            }
+            if (pollfds[i].revents & POLLOUT) {
+                std::cout << "POLLOUT - connection: " << i << " - fd: " << c->getFd() << '\n';
+                handleWrite_(notifier, *c);
+            }
+            if (pollfds[i].revents & POLLERR || pollfds[i].revents & POLLHUP) {
+                std::cout << "POLLERR - connection: " << i << " - fd: " << c->getFd() << '\n';
+                handleClosedConn_(notifier, *c);
             }
         }
     }
 }
 
-void Webserver::handleNewConnection_(EventManager& notifier, const Connection& connection)
+void Webserver::handleNewConnection_(EventManager& notifier, const Connection& c)
 {
-    int cfd = connection.acceptNewConnection();
+    int cfd = c.acceptNewConnection();
     notifier.addFd(cfd);
     Socket* socket_ptr = new Socket(cfd);
-    Connection* connection_ptr = new Connection(Connection::CLIENT, socket_ptr, connection.getConfig());
+    Connection* connection_ptr = new Connection(Connection::CLIENT, socket_ptr, c.getConfig());
     connections_.push_back(connection_ptr);
-    requests_.push_back(new HttpRequest);
 }
 
-void Webserver::handleClosedConn_(EventManager& manager, const Connection& connection)
+void Webserver::handleClosedConn_(EventManager& manager, const Connection& c)
 {
-    manager.removeFd(connection.getFd());
-    std::cout << "closed conn fd: " << connection.getFd() << std::endl;
+    manager.removeFd(c.getFd());
+    std::cout << "closed conn fd: " << c.getFd() << std::endl;
     for (size_t i = 0; i < connections_.size(); i++) {
-        if (connections_[i] == &connection) {
+        if (connections_[i] == &c) {
             delete connections_[i];
             connections_.erase(connections_.begin() + i);
-            delete requests_[i];
-            requests_.erase(requests_.begin() + i);
 #if DEBUG
             std::cout << "connection erased from connections_: " << i + 1 << "\n";
-            std::cout << "request erased from requests_: " << i + 1 << "\n";
 #endif
             break;
         }
     }
 }
 
+#if DEBUG
 static void print_field_lines(const std::string& fn, const std::string& fv)
 {
     std::cout << fn << ": " << fv << "\n";
 }
+#endif
 
-void Webserver::handleClientData_(EventManager& notifier, Connection& connection, HttpRequest& request)
+void Webserver::handleRead_(EventManager& notifier, Connection& c)
 {
+    if (c.getType() == Connection::LISTENER) {
+        handleNewConnection_(notifier, c);
+        return;
+    }
+
     try {
-        request.parseFromReader(connection);
+        c.getRequest().parseFromReader(c);
 #if DEBUG
         std::cout << "Request line:\n"
-                  << "- Method: " << request.getRequestLine().getMethod() << "\n"
-                  << "- Target: " << request.getRequestLine().getRequestTarget() << "\n"
-                  << "- Version: " << request.getRequestLine().getHttpVersion() << "\n"
+                  << "- Method: " << c.getRequest().getRequestLine().getMethod() << "\n"
+                  << "- Target: " << c.getRequest().getRequestLine().getRequestTarget() << "\n"
+                  << "- Version: " << c.getRequest().getRequestLine().getHttpVersion() << "\n"
                   << "Field line:\n";
-        request.getFieldLines().forEach(&print_field_lines);
+        c.getRequest().getFieldLines().forEach(&print_field_lines);
         std::cout << "Body:\n"
-                  << request.getBody().get() << "\n";
+                  << c.getRequest().getBody().get() << "\n";
 
 #endif
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
-        return handleClosedConn_(notifier, connection);
+        return handleClosedConn_(notifier, c);
     }
+}
 
-    if (request.isDone()) {
-        ErrorRenderer error_renderer(connection.getConfig().getStatusCodes());
-        IRequestHandler* handler = new StaticHandler(connection.getConfig().getLocations()[0], error_renderer);
+void Webserver::handleWrite_(EventManager& notifier, Connection& c)
+{
+    if (c.getRequest().isDone()) {
+        ErrorRenderer error_renderer(c.getConfig().getStatusCodes());
+        IRequestHandler* handler = new StaticHandler(c.getConfig().getLocations()[0], error_renderer);
         // TODO: iterate until handler is done (chunked response)
-        HttpResponse response = handler->handle(request);
-        connection.sendMsg(response.format());
+        HttpResponse response = handler->handle(c.getRequest());
+        c.sendMsg(response.format());
         // connection.sendMsg("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: keep-alive\r\n\r\nHello World!");
         /*
          * 1. Event handler factory:
@@ -110,6 +121,6 @@ void Webserver::handleClientData_(EventManager& notifier, Connection& connection
          *  - The request handler implements the interface (IRequestHandler)
          */
         delete handler;
+        handleClosedConn_(notifier, c);
     }
-    handleClosedConn_(notifier, connection);
 }
