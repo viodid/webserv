@@ -27,11 +27,18 @@ public:
     Connection(Type, Socket*, const VirtualHost&);
     ~Connection();
 
+    /*
+     * Get the socket type (LISTENER or CLIENT)
+     */
     Type getType() const;
     /*
      * Gets the FD from the connection socket
      */
     int getFd() const;
+    /*
+     * Gets the HttpRequest associated with this connection
+     */
+    HttpRequest& getRequest();
     /*
      * Accepts a new connection and returns its FD (only for LISTENER connections)
      */
@@ -56,5 +63,6 @@ public:
 private:
     Type type_;
     Socket* socket_;
+    HttpRequest request_;
     const VirtualHost config_;
 };

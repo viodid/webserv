@@ -1,4 +1,5 @@
 #include "../include/EventManager.hpp"
+#include <sys/poll.h>
 
 EventManager::EventManager(std::vector<Connection*>& connections)
     : connections_(connections)
@@ -28,7 +29,7 @@ const std::vector<pollfd>& EventManager::getPollFds() const
 
 void EventManager::addFd(int fd)
 {
-    pollfd pfd = { fd, POLLIN, 0 };
+    pollfd pfd = { fd, POLLIN | POLLOUT, 0 };
     fds_.push_back(pfd);
 }
 
@@ -51,4 +52,15 @@ void EventManager::removeFd(int fd)
     std::stringstream s;
     s << "File descriptor '" << fd << "' not found within fds_ vector\n";
     throw std::runtime_error(s.str());
+}
+
+Connection* EventManager::getConnectionFor(int fd) const
+{
+    for (std::vector<Connection*>::const_iterator it = connections_.begin();
+        it != connections_.end();
+        it++) {
+        if ((*it)->getFd() == fd)
+            return *it;
+    }
+    throw std::runtime_error("connection not found");
 }

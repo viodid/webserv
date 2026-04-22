@@ -25,6 +25,11 @@ int Connection::getFd() const
     return socket_->getFd();
 }
 
+HttpRequest& Connection::getRequest()
+{
+    return request_;
+}
+
 int Connection::acceptNewConnection() const
 {
     if (type_ != LISTENER)
