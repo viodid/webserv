@@ -46,10 +46,10 @@ def parse_url(url: str):
 
 def raw_request(base_url: str, method: str, path: str, headers: dict = None,
                 body: str = None, timeout: int = TIMEOUT) -> dict:
-        """
-        Sends an HTTP/1.1 request using http.client and returns a dict with:
-            status_code, status_line, headers (dict), body (str), raw (bytes)
-        """
+    """
+    Sends an HTTP/1.1 request using http.client and returns a dict with:
+        status_code, status_line, headers (dict), body (str), raw (bytes)
+    """
     try:
         host, port, use_ssl, base_path = parse_url(base_url)
         
