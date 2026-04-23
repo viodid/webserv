@@ -37,9 +37,9 @@ int Connection::acceptNewConnection() const
     return socket_->acceptConn();
 }
 
-ssize_t Connection::sendMsg(const std::string& msg) const
+size_t Connection::sendBytes() const
 {
-    return socket_->sendMsg(msg);
+    return socket_->sendBytes(out_buf_);
 }
 
 const VirtualHost& Connection::getConfig() const

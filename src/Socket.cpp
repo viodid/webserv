@@ -43,11 +43,11 @@ int Socket::acceptConn() const
     return cfd;
 }
 
-ssize_t Socket::sendMsg(const std::string& msg) const
+size_t Socket::sendBytes(const std::vector<char>& bytes) const
 {
-    ssize_t total_sent = 0;
-    while (total_sent < static_cast<ssize_t>(msg.size())) {
-        ssize_t send_n = send(fd_, msg.c_str(), msg.size(), MSG_NOSIGNAL);
+    size_t total_sent = 0;
+    while (total_sent < static_cast<size_t>(bytes.size())) {
+        ssize_t send_n = send(fd_, bytes.data(), bytes.size(), MSG_NOSIGNAL);
         if (send_n == -1)
             throw ExceptionErrorConnectionSocket(std::strerror(errno));
         total_sent += send_n;

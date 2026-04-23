@@ -49,11 +49,11 @@ public:
      */
     const VirtualHost& getConfig() const;
     /*
-     * Send a message to the socket.
+     * Send buffered bytes to the socket connection.
      *
      * It returns the number of bytes sent.
      */
-    ssize_t sendMsg(const std::string& msg) const;
+    size_t sendBytes() const;
     /*
      * Reads from a socket and copies over the given input buffer
      *
@@ -68,4 +68,6 @@ private:
     HttpRequest request_;
     HttpResponse response_;
     std::vector<char> out_buf_;
+
+    void flushBuffer_(size_t n);
 };
