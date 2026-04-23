@@ -20,6 +20,6 @@ private:
 
     void handleRead_(EventManager& notifier, Connection& c);
     void handleWrite_(EventManager& notifier, Connection& c);
-    void handleNewConnection_(EventManager& manager, const Connection& conn);
+    void handleNewClient_(EventManager& manager, const Connection& conn);
     void handleClosedConn_(EventManager& manager, const Connection& conn);
 };

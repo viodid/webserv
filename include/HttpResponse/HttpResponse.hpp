@@ -10,6 +10,10 @@ class HttpResponse {
 public:
     ~HttpResponse();
 
+    void setStatusLine(const StatusLine& sl);
+    void setFieldLines(const FieldLines& fl);
+    void setBodySource(IBodySource* bs);
+
     std::string getBytesHeader() const;
 
 private:

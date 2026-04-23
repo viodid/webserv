@@ -66,7 +66,7 @@ private:
     Type type_;
     Socket* socket_;
     HttpRequest request_;
-    HttpResponse response_;
+    HttpResponse* response_;
     std::vector<char> out_buf_;
 
     void flushBuffer_(size_t n);

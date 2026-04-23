@@ -4,12 +4,14 @@ Connection::Connection(Type type, Socket* socket, const VirtualHost& vh)
     : config_(vh)
     , type_(type)
     , socket_(socket)
+    , response_(NULL)
 {
 }
 
 Connection::~Connection()
 {
     delete socket_;
+    delete response_;
 #if DEBUG
     std::cout << "[Debug] Connection destructor called " << std::endl;
 #endif

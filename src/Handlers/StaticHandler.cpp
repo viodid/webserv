@@ -6,8 +6,9 @@ StaticHandler::StaticHandler(const Location& conf, const ErrorRenderer& error_re
 {
 }
 
-HttpResponse StaticHandler::handle(const HttpRequest& request)
+HttpResponse* StaticHandler::handle(const HttpRequest& request)
 {
+    HttpResponse* response = new HttpResponse;
     try {
         std::string path = constructPath(request, conf_);
         stripQueryURI(path);
@@ -42,6 +43,8 @@ HttpResponse StaticHandler::handle(const HttpRequest& request)
     }
     return constructHttpErrorResponse(request, error_renderer_, Location::S_404);
 }
+
+void StaticHandler::buildHeaders_(HttpResponse* response) { }
 
 HttpResponse StaticHandler::constructHttpOKResponse_(const HttpRequest& request,
     const std::string& file_format,

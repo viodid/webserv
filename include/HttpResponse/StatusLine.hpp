@@ -7,6 +7,9 @@
  */
 class StatusLine {
 public:
+    StatusLine();
+    StatusLine(const std::string& http_version, Location::StatusCodes status_code);
+
     std::string format() const;
 
 private:

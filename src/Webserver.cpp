@@ -48,7 +48,7 @@ void Webserver::run()
     }
 }
 
-void Webserver::handleNewConnection_(EventManager& notifier, const Connection& c)
+void Webserver::handleNewClient_(EventManager& notifier, const Connection& c)
 {
     int cfd = c.acceptNewConnection();
     notifier.addFd(cfd);
@@ -83,7 +83,7 @@ static void print_field_lines(const std::string& fn, const std::string& fv)
 void Webserver::handleRead_(EventManager& notifier, Connection& c)
 {
     if (c.getType() == Connection::LISTENER) {
-        handleNewConnection_(notifier, c);
+        handleNewClient_(notifier, c);
         return;
     }
 
