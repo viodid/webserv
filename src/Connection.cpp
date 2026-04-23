@@ -1,9 +1,9 @@
 #include "../include/Connection.hpp"
 
 Connection::Connection(Type type, Socket* socket, const VirtualHost& vh)
-    : type_(type)
+    : config_(vh)
+    , type_(type)
     , socket_(socket)
-    , config_(vh)
 {
 }
 

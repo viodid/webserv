@@ -1,18 +1,19 @@
 #pragma once
 #include "../HttpRequest/Body.hpp"
 #include "../HttpRequest/FieldLines.hpp"
+#include "../Interfaces/IBodySource.hpp"
 #include "StatusLine.hpp"
 #include <sstream>
 #include <stdexcept>
 
 class HttpResponse {
 public:
-    HttpResponse(const StatusLine&, const FieldLines&, const Body&);
+    ~HttpResponse();
 
-    std::string format() const;
+    std::string getBytesHeader() const;
 
 private:
-    const StatusLine status_line_;
-    const FieldLines field_lines_;
-    const Body body_;
+    StatusLine status_line_;
+    FieldLines field_lines_;
+    IBodySource* body_source_;
 };

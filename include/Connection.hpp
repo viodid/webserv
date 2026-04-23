@@ -2,6 +2,7 @@
 #include "Config.hpp"
 #include "Exceptions.hpp"
 #include "HttpRequest/HttpRequest.hpp"
+#include "HttpResponse/HttpResponse.hpp"
 #include "Interfaces/IReader.hpp"
 #include "Settings.hpp"
 #include "Socket.hpp"
@@ -61,8 +62,10 @@ public:
     virtual int read(char buffer[], int len);
 
 private:
+    const VirtualHost config_;
     Type type_;
     Socket* socket_;
     HttpRequest request_;
-    const VirtualHost config_;
+    HttpResponse response_;
+    std::vector<char> out_buf_;
 };
