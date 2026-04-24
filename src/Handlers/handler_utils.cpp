@@ -1,4 +1,5 @@
 #include "../../include/Handlers/handler_utils.hpp"
+#include "../../include/HttpResponse/EmptyBodySource.hpp"
 #include "../../include/HttpResponse/StringBodySource.hpp"
 #include <cstring>
 #include <dirent.h>
@@ -24,6 +25,23 @@ HttpResponse* constructHttpErrorResponse(const HttpRequest& request,
     response->setStatusLine(StatusLine(request.getRequestLine().getHttpVersion(), error_no));
     response->setFieldLines(field_lines);
     response->setBodySource(new StringBodySource(body_html));
+    return response;
+}
+
+HttpResponse* constructHttpRedirectResponse(const HttpRequest& request,
+    const std::string& location,
+    Location::StatusCodes code)
+{
+    FieldLines field_lines;
+    field_lines.set("Server", "42webserv/0.1.0");
+    field_lines.set("Location", location);
+    field_lines.set("Content-Length", "0");
+    field_lines.set("Connection", "close");
+
+    HttpResponse* response = new HttpResponse;
+    response->setStatusLine(StatusLine(request.getRequestLine().getHttpVersion(), code));
+    response->setFieldLines(field_lines);
+    response->setBodySource(new EmptyBodySource);
     return response;
 }
 

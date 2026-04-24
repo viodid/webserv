@@ -12,18 +12,9 @@ public:
 
     virtual HttpResponse* handle(const HttpRequest& request);
 
-    virtual bool isDone() const;
-    virtual bool hasFailed() const;
-
 private:
-    enum State {
-        PENDING,
-        ERROR,
-        DONE
-    };
     const Location conf_;
     const ErrorRenderer error_renderer_;
-    State state_;
 
     HttpResponse* buildOkResponse_(const HttpRequest& request,
         const std::string& mime,
