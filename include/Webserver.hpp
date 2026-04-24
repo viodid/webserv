@@ -3,6 +3,7 @@
 #include "Connection.hpp"
 #include "EventManager.hpp"
 #include "Handlers/ErrorRenderer.hpp"
+#include "Handlers/HandlerFactory.hpp"
 #include "Handlers/StaticHandler.hpp"
 #include "HttpRequest/HttpRequest.hpp"
 

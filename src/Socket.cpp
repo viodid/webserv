@@ -45,14 +45,15 @@ int Socket::acceptConn() const
 
 size_t Socket::sendBytes(const std::vector<char>& bytes) const
 {
-    size_t total_sent = 0;
-    while (total_sent < static_cast<size_t>(bytes.size())) {
-        ssize_t send_n = send(fd_, bytes.data(), bytes.size(), MSG_NOSIGNAL);
-        if (send_n == -1)
-            throw ExceptionErrorConnectionSocket(std::strerror(errno));
-        total_sent += send_n;
+    if (bytes.empty())
+        return 0;
+    ssize_t n = send(fd_, bytes.data(), bytes.size(), MSG_NOSIGNAL);
+    if (n == -1) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+            return 0;
+        throw ExceptionErrorConnectionSocket(std::strerror(errno));
     }
-    return total_sent;
+    return static_cast<size_t>(n);
 }
 
 const char* inet_ntop2(void* addr, char* buf, size_t size)

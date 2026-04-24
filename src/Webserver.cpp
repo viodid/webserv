@@ -100,6 +100,8 @@ void Webserver::handleRead_(EventManager& notifier, Connection& c)
                   << c.getRequest().getBody().get() << "\n";
 
 #endif
+        if (c.getRequest().isDone())
+            notifier.enableWrite(c.getFd());
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
         return handleClosedConn_(notifier, c);
@@ -108,19 +110,27 @@ void Webserver::handleRead_(EventManager& notifier, Connection& c)
 
 void Webserver::handleWrite_(EventManager& notifier, Connection& c)
 {
-    if (c.getRequest().isDone()) {
-        ErrorRenderer error_renderer(c.getConfig().getStatusCodes());
-        IRequestHandler* handler = new StaticHandler(c.getConfig().getLocations()[0], error_renderer);
-        // TODO: iterate until handler is done (chunked response)
-        HttpResponse response = handler->handle(c.getRequest());
-        c.sendMsg(response.format());
-        // connection.sendMsg("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: keep-alive\r\n\r\nHello World!");
-        /*
-         * 1. Event handler factory:
-         * Based on the requests, returns the corresponding handler (Static, CGI...)
-         *  - The request handler implements the interface (IRequestHandler)
-         */
-        delete handler;
+    if (!c.getRequest().isDone())
+        return;
+
+    try {
+        if (!c.hasResponse()) {
+            ErrorRenderer error_renderer(c.getConfig().getStatusCodes());
+            IRequestHandler* handler = createHandler(c.getRequest(), c.getConfig(), error_renderer);
+            HttpResponse* response = handler->handle(c.getRequest());
+            delete handler;
+            c.setResponse(response);
+        }
+
+        if (c.writeBufferSize() == 0)
+            c.pullBodyChunk();
+
+        c.sendBytes();
+
+        if (c.isWriteDone())
+            handleClosedConn_(notifier, c);
+    } catch (const std::exception& e) {
+        std::cerr << "handleWrite_: " << e.what() << '\n';
         handleClosedConn_(notifier, c);
     }
 }

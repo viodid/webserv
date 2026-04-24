@@ -28,37 +28,37 @@ public:
     Connection(Type, Socket*, const VirtualHost&);
     ~Connection();
 
-    /*
-     * Get the socket type (LISTENER or CLIENT)
-     */
     Type getType() const;
-    /*
-     * Gets the FD from the connection socket
-     */
     int getFd() const;
-    /*
-     * Gets the HttpRequest associated with this connection
-     */
     HttpRequest& getRequest();
-    /*
-     * Accepts a new connection and returns its FD (only for LISTENER connections)
-     */
     int acceptNewConnection() const;
-    /*
-     * returns the connection Config
-     */
     const VirtualHost& getConfig() const;
+
     /*
-     * Send buffered bytes to the socket connection.
-     *
-     * It returns the number of bytes sent.
+     * Takes ownership of the response. Replaces any prior response.
+     * Serializes headers into the write buffer immediately.
      */
-    size_t sendBytes() const;
+    void setResponse(HttpResponse* response);
+    bool hasResponse() const;
     /*
-     * Reads from a socket and copies over the given input buffer
-     *
-     * Returns the number of bytes read or raises a ExceptionClientCloseConn
+     * Pulls one body chunk from the response and appends it to the write
+     * buffer. No-op if the body source is exhausted.
      */
+    void pullBodyChunk();
+    /*
+     * Number of bytes currently waiting in the write buffer.
+     */
+    size_t writeBufferSize() const;
+    /*
+     * Returns true once the buffer is empty and the body source is exhausted.
+     */
+    bool isWriteDone() const;
+    /*
+     * Send as many bytes as the kernel accepts; advance the buffer by that
+     * amount. Returns the number of bytes sent.
+     */
+    size_t sendBytes();
+
     virtual int read(char buffer[], int len);
 
 private:
@@ -69,5 +69,8 @@ private:
     HttpResponse* response_;
     std::vector<char> out_buf_;
 
-    void flushBuffer_(size_t n);
+    void appendToBuffer_(const std::string& s);
+
+    Connection(const Connection&);
+    Connection& operator=(const Connection&);
 };

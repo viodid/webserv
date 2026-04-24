@@ -1,4 +1,5 @@
 #include "../../include/Handlers/handler_utils.hpp"
+#include "../../include/HttpResponse/StringBodySource.hpp"
 #include <cstring>
 #include <dirent.h>
 #include <sstream>
@@ -6,7 +7,7 @@
 #include <string>
 #include <vector>
 
-HttpResponse constructHttpErrorResponse(const HttpRequest& request,
+HttpResponse* constructHttpErrorResponse(const HttpRequest& request,
     const ErrorRenderer& error_renderer,
     Location::StatusCodes error_no)
 {
@@ -18,10 +19,12 @@ HttpResponse constructHttpErrorResponse(const HttpRequest& request,
     std::stringstream ss;
     ss << body_html.size();
     field_lines.set("Content-Length", ss.str());
-    return HttpResponse(
-        StatusLine(request.getRequestLine().getHttpVersion(), error_no),
-        field_lines,
-        Body(body_html));
+
+    HttpResponse* response = new HttpResponse;
+    response->setStatusLine(StatusLine(request.getRequestLine().getHttpVersion(), error_no));
+    response->setFieldLines(field_lines);
+    response->setBodySource(new StringBodySource(body_html));
+    return response;
 }
 
 bool isMethodAllowed(const HttpRequest& request, const Location& location)

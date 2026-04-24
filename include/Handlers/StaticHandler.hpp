@@ -8,16 +8,16 @@
 class StaticHandler : public IRequestHandler {
 public:
     StaticHandler(const Location& conf, const ErrorRenderer& error_renderer);
-    // TODO: rm
-    ~StaticHandler() { std::cout << "StaticHandler destructor called\n"; };
+    ~StaticHandler() { }
 
     virtual HttpResponse* handle(const HttpRequest& request);
 
-    bool isDone() const;
-    bool hasFailed() const;
+    virtual bool isDone() const;
+    virtual bool hasFailed() const;
 
 private:
     enum State {
+        PENDING,
         ERROR,
         DONE
     };
@@ -25,10 +25,8 @@ private:
     const ErrorRenderer error_renderer_;
     State state_;
 
-    void buildHeaders_(HttpResponse* response);
-    void buildFileSource(HttpResponse* response);
-
-    HttpResponse constructHttpOKResponse_(const HttpRequest& request,
-        const std::string& file_format,
-        const std::string& file_content);
+    HttpResponse* buildOkResponse_(const HttpRequest& request,
+        const std::string& mime,
+        size_t content_length,
+        IBodySource* body);
 };

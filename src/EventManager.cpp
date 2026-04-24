@@ -29,8 +29,28 @@ const std::vector<pollfd>& EventManager::getPollFds() const
 
 void EventManager::addFd(int fd)
 {
-    pollfd pfd = { fd, POLLIN | POLLOUT, 0 };
+    pollfd pfd = { fd, POLLIN, 0 };
     fds_.push_back(pfd);
+}
+
+void EventManager::enableWrite(int fd)
+{
+    for (size_t i = 0; i < fds_.size(); ++i) {
+        if (fds_[i].fd == fd) {
+            fds_[i].events |= POLLOUT;
+            return;
+        }
+    }
+}
+
+void EventManager::disableWrite(int fd)
+{
+    for (size_t i = 0; i < fds_.size(); ++i) {
+        if (fds_[i].fd == fd) {
+            fds_[i].events &= ~POLLOUT;
+            return;
+        }
+    }
 }
 
 void EventManager::removeFd(int fd)

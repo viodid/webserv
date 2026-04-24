@@ -22,7 +22,7 @@
 
 class ErrorRenderer;
 
-HttpResponse constructHttpErrorResponse(const HttpRequest& request,
+HttpResponse* constructHttpErrorResponse(const HttpRequest& request,
     const ErrorRenderer& error_renderer,
     Location::StatusCodes error_no);
 bool isMethodAllowed(const HttpRequest& request, const Location& location);
