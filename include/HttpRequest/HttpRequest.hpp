@@ -46,7 +46,7 @@ private:
     Body body_;
 
     // Parsing state
-    const size_t start_time_;
+    size_t start_time_;
     HttpRequestParseState curr_state_;
     size_t cursor_;
     std::vector<char> buffer_;

@@ -1,4 +1,5 @@
 #include "../include/Socket.hpp"
+#include <netinet/tcp.h>
 
 Socket::Socket(int fd)
     : fd_(fd)
@@ -7,6 +8,9 @@ Socket::Socket(int fd)
     , addrinf_(NULL)
     , curraddr_(NULL)
 {
+    int yes = 1;
+    if (setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, &yes, sizeof(yes)) == -1)
+        std::cerr << "[Warn] TCP_NODELAY on fd " << fd_ << ": " << std::strerror(errno) << '\n';
 }
 
 Socket::Socket(const std::string& hostname, const std::string& port)
@@ -110,7 +114,7 @@ void Socket::bindAndListen_()
     }
     if (curraddr_ == NULL)
         throw std::runtime_error(std::strerror(errno));
-    if (listen(fd_, 0) == -1) {
+    if (listen(fd_, SOMAXCONN) == -1) {
         close(fd_);
         freeaddrinfo(addrinf_);
         throw std::runtime_error(std::strerror(errno));

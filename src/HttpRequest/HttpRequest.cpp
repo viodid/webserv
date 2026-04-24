@@ -52,6 +52,9 @@ void HttpRequest::parseFromReader(IReader& reader)
     int bytes_read = reader.read(buffer_.data() + cursor_,
         buffer_.size() - cursor_);
 
+    if (bytes_read > 0)
+        start_time_ = currTimeMs();
+
     cursor_ += bytes_read;
 
     if (cursor_ >= buffer_.size())
