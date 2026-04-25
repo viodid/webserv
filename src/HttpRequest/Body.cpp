@@ -1,41 +1,100 @@
 #include "../../include/HttpRequest/Body.hpp"
+#include "../../include/HttpRequest/MemoryBodySink.hpp"
+#include <algorithm>
 
 Body::Body()
-    : content_length_(0)
+    : mode_(NoBody)
+    , content_length_(0)
+    , bytes_received_(0)
+    , sink_(NULL)
+    , complete_(false)
 {
 }
 
-Body::Body(const std::string& body)
-    : body_(body)
-    , content_length_(0)
+Body::~Body()
 {
+    delete sink_;
+}
+
+void Body::setContentLength(size_t n)
+{
+    mode_ = ContentLengthMode;
+    content_length_ = n;
+    if (n == 0)
+        complete_ = true;
+}
+
+void Body::setChunked()
+{
+    mode_ = ChunkedMode;
+}
+
+void Body::installSink(IBodySink* sink)
+{
+    delete sink_;
+    sink_ = sink;
+}
+
+bool Body::hasSink() const
+{
+    return sink_ != NULL;
+}
+
+Body::Mode Body::getMode() const
+{
+    return mode_;
+}
+
+bool Body::isComplete() const
+{
+    return complete_;
+}
+
+int Body::parse(const char* buffer, size_t buf_len)
+{
+    if (complete_ || sink_ == NULL || mode_ == NoBody)
+        return 0;
+
+    if (mode_ == ContentLengthMode) {
+        size_t remaining = content_length_ - bytes_received_;
+        size_t take = std::min(remaining, buf_len);
+        if (take > 0)
+            sink_->write(buffer, take);
+        bytes_received_ += take;
+        if (bytes_received_ == content_length_) {
+            complete_ = true;
+            sink_->finalize();
+        }
+        return static_cast<int>(take);
+    }
+
+    // Chunked mode
+    size_t consumed = chunked_.feed(buffer, buf_len, *sink_);
+    bytes_received_ += consumed;
+    if (chunked_.isDone()) {
+        complete_ = true;
+        sink_->finalize();
+    }
+    return static_cast<int>(consumed);
 }
 
 const std::string& Body::get() const
 {
-    return body_;
+    static const std::string empty;
+    if (sink_ == NULL)
+        return empty;
+    const MemoryBodySink* mem = dynamic_cast<const MemoryBodySink*>(sink_);
+    if (mem == NULL)
+        return empty;
+    return mem->getBody();
 }
 
-void Body::set(const std::string& body)
+const IBodySink* Body::getSink() const
 {
-    body_ = body;
+    return sink_;
 }
 
 std::string Body::format() const
 {
-    return body_;
-}
-
-int Body::parse(const char* buffer, size_t buf_len, const std::string& content_len)
-{
-    if (content_length_ == 0) {
-        char* end = NULL;
-        content_length_ = std::strtoul(content_len.c_str(), &end, 10);
-        if (content_length_ == 0)
-            throw ExceptionBodyLength("malformed 'Content-Length' header");
-    }
-    if (buf_len >= content_length_)
-        body_ = std::string(buffer, std::min(static_cast<size_t>(buf_len), content_length_));
-
-    return body_.size();
+    return get();
 }

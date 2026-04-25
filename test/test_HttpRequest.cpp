@@ -1,4 +1,5 @@
 #include "../include/HttpRequest/HttpRequest.hpp"
+#include "../include/HttpRequest/MemoryBodySink.hpp"
 #include <chrono>
 #include <exception>
 #include <gtest/gtest.h>
@@ -286,4 +287,113 @@ TEST(HttpRequestTest, ParseMalformedContentLength)
     HttpRequest request;
     EXPECT_THROW(while (!request.isDone()) request.parseFromReader(reader),
         ExceptionBodyLength);
+}
+
+/*
+ * CHUNKED ENCODING TESTS
+ */
+TEST(HttpRequestTest, ParseChunkedBodyBigBuffer)
+{
+    ChunkReader reader(
+        "POST /upload HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n"
+        "5\r\nhello\r\n6\r\n world\r\n0\r\n\r\n",
+        1024, 0);
+    HttpRequest request;
+    while (!request.isDone())
+        request.parseFromReader(reader);
+    EXPECT_EQ("hello world", request.getBody().get());
+}
+
+TEST(HttpRequestTest, ParseChunkedBodyByteByByte)
+{
+    ChunkReader reader(
+        "POST /upload HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n"
+        "5\r\nhello\r\n6\r\n world\r\n0\r\n\r\n",
+        1, 0);
+    HttpRequest request;
+    while (!request.isDone())
+        request.parseFromReader(reader);
+    EXPECT_EQ("hello world", request.getBody().get());
+}
+
+TEST(HttpRequestTest, ParseChunkedEmpty)
+{
+    ChunkReader reader(
+        "POST /upload HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n",
+        1, 0);
+    HttpRequest request;
+    while (!request.isDone())
+        request.parseFromReader(reader);
+    EXPECT_EQ("", request.getBody().get());
+}
+
+TEST(HttpRequestTest, RejectsCLPlusTE)
+{
+    ChunkReader reader(
+        "POST /x HTTP/1.1\r\nHost: x\r\nContent-Length: 5\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n",
+        1024, 0);
+    HttpRequest request;
+    EXPECT_THROW(while (!request.isDone()) request.parseFromReader(reader),
+        ExceptionBadFraming);
+}
+
+TEST(HttpRequestTest, RejectsUnsupportedTE)
+{
+    ChunkReader reader(
+        "POST /x HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: gzip\r\n\r\n",
+        1024, 0);
+    HttpRequest request;
+    EXPECT_THROW(while (!request.isDone()) request.parseFromReader(reader),
+        ExceptionBadFraming);
+}
+
+TEST(HttpRequestTest, NeedsBodySinkAfterHeadersWhenBodyExpected)
+{
+    // Send only headers; the parser should pause at HeadersDoneState before
+    // any body byte is consumed.
+    ChunkReader reader(
+        "POST /x HTTP/1.1\r\nHost: x\r\nContent-Length: 3\r\n\r\nABC",
+        1024, 0);
+    HttpRequest request;
+    // First call: parses headers, pauses.
+    request.parseFromReader(reader);
+    EXPECT_TRUE(request.needsBodySink());
+    EXPECT_EQ(HeadersDoneState, request.getState());
+    EXPECT_FALSE(request.isDone());
+
+    // Install a custom-capacity sink (would not be auto-installed).
+    MemoryBodySink* sink = new MemoryBodySink(0);
+    request.installBodySink(sink);
+    EXPECT_FALSE(request.needsBodySink());
+
+    // Drain remaining body from the buffer.
+    request.parseBuffered();
+    while (!request.isDone())
+        request.parseFromReader(reader);
+    EXPECT_EQ("ABC", request.getBody().get());
+}
+
+TEST(HttpRequestTest, NeedsBodySinkFalseWhenNoBody)
+{
+    ChunkReader reader("GET / HTTP/1.1\r\nHost: x\r\n\r\n", 1024, 0);
+    HttpRequest request;
+    while (!request.isDone())
+        request.parseFromReader(reader);
+    EXPECT_FALSE(request.needsBodySink());
+}
+
+TEST(HttpRequestTest, SinkLimitYieldsPayloadTooLarge)
+{
+    ChunkReader reader(
+        "POST /x HTTP/1.1\r\nHost: x\r\nContent-Length: 10\r\n\r\n0123456789",
+        1024, 0);
+    HttpRequest request;
+    request.parseFromReader(reader);
+    request.installBodySink(new MemoryBodySink(3));
+    EXPECT_THROW({
+        request.parseBuffered();
+        while (!request.isDone())
+            request.parseFromReader(reader);
+    },
+        ExceptionPayloadTooLarge);
 }
