@@ -15,7 +15,7 @@ HttpResponse* constructHttpErrorResponse(const HttpRequest& request,
     std::string body_html = error_renderer.render(error_no);
     FieldLines field_lines;
     field_lines.set("Server", "42webserv/0.1.0");
-    field_lines.set("Content-Type", "text/html; charset=utf-8");
+    field_lines.set("Content-Type", "text/html");
     field_lines.set("Connection", "close");
     std::stringstream ss;
     ss << body_html.size();

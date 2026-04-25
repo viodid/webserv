@@ -77,9 +77,7 @@ HttpResponse* StaticHandler::buildOkResponse_(const HttpRequest& request,
 
     FieldLines field_lines;
     field_lines.set("Server", "42webserv/0.1.0");
-    std::string content_type = mime;
-    content_type.append("; charset=utf-8");
-    field_lines.set("Content-Type", content_type);
+    field_lines.set("Content-Type", mime);
     field_lines.set("Connection", "close");
 
     std::stringstream ss;
