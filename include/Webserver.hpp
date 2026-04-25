@@ -23,6 +23,4 @@ private:
     void handleWrite_(EventManager& notifier, Connection& c);
     void handleNewClient_(EventManager& manager, const Connection& conn);
     void handleClosedConn_(EventManager& manager, const Connection& conn);
-    void respondWithError_(EventManager& notifier, Connection& c,
-        Location::StatusCodes code);
 };

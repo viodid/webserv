@@ -1,7 +1,7 @@
 #pragma once
-#include "../Interfaces/IBodySink.hpp"
 #include <cstddef>
 #include <string>
+#include <vector>
 
 // RFC 9112 §7.1 Transfer-Encoding: chunked decoder.
 // Stream-friendly: feed bytes as they arrive across multiple calls.
@@ -9,10 +9,10 @@ class ChunkedDecoder {
 public:
     ChunkedDecoder();
 
-    // Consumes up to `len` bytes from `buf`, writing decoded body bytes to
-    // `sink`. Returns the number of bytes consumed from `buf`. Throws
+    // Consumes up to `len` bytes from `buf`, appending decoded body bytes to
+    // `out`. Returns the number of bytes consumed from `buf`. Throws
     // ExceptionBadFraming on malformed framing.
-    size_t feed(const char* buf, size_t len, IBodySink& sink);
+    size_t feed(const char* buf, size_t len, std::vector<char>& out);
 
     bool isDone() const;
 

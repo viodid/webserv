@@ -15,7 +15,7 @@ bool ChunkedDecoder::isDone() const
     return state_ == Done_;
 }
 
-size_t ChunkedDecoder::feed(const char* buf, size_t len, IBodySink& sink)
+size_t ChunkedDecoder::feed(const char* buf, size_t len, std::vector<char>& out)
 {
     size_t i = 0;
     while (i < len && state_ != Done_) {
@@ -31,7 +31,7 @@ size_t ChunkedDecoder::feed(const char* buf, size_t len, IBodySink& sink)
         case Data: {
             size_t take = std::min(chunk_remaining_, len - i);
             if (take > 0)
-                sink.write(buf + i, take);
+                out.insert(out.end(), buf + i, buf + i + take);
             i += take;
             chunk_remaining_ -= take;
             if (chunk_remaining_ == 0)
@@ -74,7 +74,6 @@ size_t ChunkedDecoder::feed(const char* buf, size_t len, IBodySink& sink)
 
 void ChunkedDecoder::parseSize_()
 {
-    // partial_line_ ends with "\r\n". Strip it.
     std::string line(partial_line_.begin(), partial_line_.end() - 2);
     std::string hex = line;
     size_t semi = line.find(';');

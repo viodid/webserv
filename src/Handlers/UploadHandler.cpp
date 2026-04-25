@@ -10,12 +10,10 @@ UploadHandler::UploadHandler(const Location& conf, const ErrorRenderer& error_re
 
 HttpResponse* UploadHandler::handle(const HttpRequest& request)
 {
-    const IBodySink* sink = request.getBody().getSink();
-    if (sink == NULL || sink->getStoredPath().empty())
+    const std::string& path = request.getBody().getStoredPath();
+    if (path.empty())
         return constructHttpErrorResponse(request, error_renderer_, Location::S_500);
 
-    // Build the public URL of the uploaded resource: <route>/<basename>.
-    const std::string& path = sink->getStoredPath();
     std::string basename = path;
     size_t slash = path.rfind('/');
     if (slash != std::string::npos)

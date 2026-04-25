@@ -1,5 +1,4 @@
 #include "../include/Webserver.hpp"
-#include "../include/Handlers/handler_utils.hpp"
 
 Webserver::Webserver(const std::vector<VirtualHost>& config)
     : config_(config)
@@ -76,21 +75,6 @@ void Webserver::handleClosedConn_(EventManager& manager, const Connection& c)
     }
 }
 
-void Webserver::respondWithError_(EventManager& notifier, Connection& c,
-    Location::StatusCodes code)
-{
-    // The request may have failed before its HTTP version was parsed. Default
-    // to 1.1 so the response line is well-formed.
-    if (c.getRequest().getRequestLine().getHttpVersion().empty())
-        c.getRequest().setRequestLine("GET", "/", "1.1");
-
-    ErrorRenderer error_renderer(c.getConfig().getStatusCodes());
-    HttpResponse* response = constructHttpErrorResponse(c.getRequest(),
-        error_renderer, code);
-    c.setResponse(response);
-    notifier.enableWrite(c.getFd());
-}
-
 void Webserver::handleRead_(EventManager& notifier, Connection& c)
 {
     if (c.getType() == Connection::LISTENER) {
@@ -98,48 +82,26 @@ void Webserver::handleRead_(EventManager& notifier, Connection& c)
         return;
     }
 
-    // An error response is already queued; ignore further reads.
-    if (c.hasResponse())
-        return;
-
     try {
         c.getRequest().parseFromReader(c);
 
-        if (c.getRequest().needsBodySink()) {
-            IBodySink* sink = createBodySink(c.getRequest(), c.getConfig());
-            c.getRequest().installBodySink(sink);
+        if (c.getRequest().needsBodyConfig()) {
+            std::string upload_path = selectUploadPath(c.getRequest(), c.getConfig());
+            c.getRequest().configureBody(upload_path, c.getConfig().getSocketSize());
             c.getRequest().parseBuffered();
         }
 
         if (c.getRequest().isDone())
             notifier.enableWrite(c.getFd());
-    } catch (const ExceptionBadFraming& e) {
-        std::cerr << "400 bad framing: " << e.what() << '\n';
-        respondWithError_(notifier, c, Location::S_400);
-    } catch (const ExceptionPayloadTooLarge& e) {
-        std::cerr << "413 payload too large: " << e.what() << '\n';
-        respondWithError_(notifier, c, Location::S_413);
-    } catch (const ExceptionBodyLength& e) {
-        std::cerr << "400 bad content-length: " << e.what() << '\n';
-        respondWithError_(notifier, c, Location::S_400);
-    } catch (const ExceptionMalformedRequestLine& e) {
-        std::cerr << "400 malformed request line: " << e.what() << '\n';
-        respondWithError_(notifier, c, Location::S_400);
-    } catch (const ExceptionMalformedFieldLine& e) {
-        std::cerr << "400 malformed field line: " << e.what() << '\n';
-        respondWithError_(notifier, c, Location::S_400);
-    } catch (const ExceptionRequestTimeout& e) {
-        std::cerr << "408 request timeout: " << e.what() << '\n';
-        respondWithError_(notifier, c, Location::S_408);
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
-        return handleClosedConn_(notifier, c);
+        handleClosedConn_(notifier, c);
     }
 }
 
 void Webserver::handleWrite_(EventManager& notifier, Connection& c)
 {
-    if (!c.hasResponse() && !c.getRequest().isDone())
+    if (!c.getRequest().isDone())
         return;
 
     try {

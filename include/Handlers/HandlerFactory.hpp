@@ -1,7 +1,6 @@
 #pragma once
 #include "../Config.hpp"
 #include "../HttpRequest/HttpRequest.hpp"
-#include "../Interfaces/IBodySink.hpp"
 #include "../Interfaces/IRequestHandler.hpp"
 #include "ErrorRenderer.hpp"
 
@@ -16,13 +15,11 @@ IRequestHandler* createHandler(const HttpRequest& request,
     const ErrorRenderer& error_renderer);
 
 /*
- * Selects the body sink for a request based on its target/method and the
- * matching location:
- *   - POST to a route with `upload_store` -> FileBodySink under upload_store
- *   - everything else                    -> MemoryBodySink
+ * Returns the absolute file path the request body should be streamed to,
+ * or an empty string if the body should be buffered in memory.
  *
- * Returns a heap-allocated sink; caller takes ownership (or hands it off to
- * HttpRequest::installBodySink). May throw ExceptionBadFraming if the request
- * target attempts path traversal.
+ * Currently selects a destination only for POST to a route with `upload_store`.
+ * Throws ExceptionBadFraming if the request target is rejected (e.g., path
+ * traversal).
  */
-IBodySink* createBodySink(const HttpRequest& request, const VirtualHost& vh);
+std::string selectUploadPath(const HttpRequest& request, const VirtualHost& vh);

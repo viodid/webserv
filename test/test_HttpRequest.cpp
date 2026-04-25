@@ -1,10 +1,13 @@
 #include "../include/HttpRequest/HttpRequest.hpp"
-#include "../include/HttpRequest/MemoryBodySink.hpp"
 #include <chrono>
+#include <cstdio>
 #include <exception>
+#include <fstream>
 #include <gtest/gtest.h>
 #include <iostream>
+#include <sstream>
 #include <thread>
+#include <unistd.h>
 
 class ChunkReader : public IReader {
 public:
@@ -347,53 +350,104 @@ TEST(HttpRequestTest, RejectsUnsupportedTE)
         ExceptionBadFraming);
 }
 
-TEST(HttpRequestTest, NeedsBodySinkAfterHeadersWhenBodyExpected)
+TEST(HttpRequestTest, NeedsBodyConfigAfterHeadersWhenBodyExpected)
 {
-    // Send only headers; the parser should pause at HeadersDoneState before
-    // any body byte is consumed.
     ChunkReader reader(
         "POST /x HTTP/1.1\r\nHost: x\r\nContent-Length: 3\r\n\r\nABC",
         1024, 0);
     HttpRequest request;
     // First call: parses headers, pauses.
     request.parseFromReader(reader);
-    EXPECT_TRUE(request.needsBodySink());
+    EXPECT_TRUE(request.needsBodyConfig());
     EXPECT_EQ(HeadersDoneState, request.getState());
     EXPECT_FALSE(request.isDone());
 
-    // Install a custom-capacity sink (would not be auto-installed).
-    MemoryBodySink* sink = new MemoryBodySink(0);
-    request.installBodySink(sink);
-    EXPECT_FALSE(request.needsBodySink());
+    request.configureBody("", 0);
+    EXPECT_FALSE(request.needsBodyConfig());
 
-    // Drain remaining body from the buffer.
     request.parseBuffered();
     while (!request.isDone())
         request.parseFromReader(reader);
     EXPECT_EQ("ABC", request.getBody().get());
 }
 
-TEST(HttpRequestTest, NeedsBodySinkFalseWhenNoBody)
+TEST(HttpRequestTest, NeedsBodyConfigFalseWhenNoBody)
 {
     ChunkReader reader("GET / HTTP/1.1\r\nHost: x\r\n\r\n", 1024, 0);
     HttpRequest request;
     while (!request.isDone())
         request.parseFromReader(reader);
-    EXPECT_FALSE(request.needsBodySink());
+    EXPECT_FALSE(request.needsBodyConfig());
 }
 
-TEST(HttpRequestTest, SinkLimitYieldsPayloadTooLarge)
+TEST(HttpRequestTest, BodyLimitYieldsPayloadTooLarge)
 {
     ChunkReader reader(
         "POST /x HTTP/1.1\r\nHost: x\r\nContent-Length: 10\r\n\r\n0123456789",
         1024, 0);
     HttpRequest request;
     request.parseFromReader(reader);
-    request.installBodySink(new MemoryBodySink(3));
+    request.configureBody("", 3);
     EXPECT_THROW({
         request.parseBuffered();
         while (!request.isDone())
             request.parseFromReader(reader);
     },
         ExceptionPayloadTooLarge);
+}
+
+TEST(HttpRequestTest, BodyToFileWritesToDisk)
+{
+    char tmpl[] = "/tmp/wsv-req-XXXXXX";
+    std::string dir = mkdtemp(tmpl);
+    std::string path = dir + "/out.bin";
+
+    ChunkReader reader(
+        "POST /upload/x HTTP/1.1\r\nHost: x\r\nContent-Length: 11\r\n\r\nhello world",
+        1024, 0);
+    HttpRequest request;
+    request.parseFromReader(reader);
+    ASSERT_TRUE(request.needsBodyConfig());
+    request.configureBody(path, 0);
+    request.parseBuffered();
+    while (!request.isDone())
+        request.parseFromReader(reader);
+
+    EXPECT_EQ(path, request.getBody().getStoredPath());
+    EXPECT_EQ("", request.getBody().get());
+
+    std::ifstream in(path.c_str(), std::ios::binary);
+    std::ostringstream ss;
+    ss << in.rdbuf();
+    EXPECT_EQ("hello world", ss.str());
+
+    unlink(path.c_str());
+    rmdir(dir.c_str());
+}
+
+TEST(HttpRequestTest, BodyToFileChunked)
+{
+    char tmpl[] = "/tmp/wsv-req-XXXXXX";
+    std::string dir = mkdtemp(tmpl);
+    std::string path = dir + "/chunked.bin";
+
+    ChunkReader reader(
+        "POST /upload/x HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n6\r\n world\r\n0\r\n\r\n",
+        1, 0);
+    HttpRequest request;
+    while (!request.needsBodyConfig() && !request.isDone())
+        request.parseFromReader(reader);
+    ASSERT_TRUE(request.needsBodyConfig());
+    request.configureBody(path, 0);
+    request.parseBuffered();
+    while (!request.isDone())
+        request.parseFromReader(reader);
+
+    std::ifstream in(path.c_str(), std::ios::binary);
+    std::ostringstream ss;
+    ss << in.rdbuf();
+    EXPECT_EQ("hello world", ss.str());
+
+    unlink(path.c_str());
+    rmdir(dir.c_str());
 }

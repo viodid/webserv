@@ -1,5 +1,4 @@
 #pragma once
-#include "../Interfaces/IBodySink.hpp"
 #include "../Interfaces/IReader.hpp"
 #include "../Utils.hpp"
 #include "Body.hpp"
@@ -38,26 +37,26 @@ public:
     void setBody(const std::string&);
 
     // Recv from `reader` and advance the parser. Pauses at HeadersDoneState
-    // so the caller can inspect headers and install a body sink.
+    // so the caller can configure the body destination.
     void parseFromReader(IReader& reader);
 
     // Advance the parser using only bytes already in the internal buffer
-    // (no recv). Useful after installing a sink to consume body bytes that
-    // arrived in the same packet as the headers.
+    // (no recv). Used after configureBody() to consume body bytes that
+    // arrived alongside the headers.
     void parseBuffered();
 
     bool isDone() const;
 
-    // True after headers have been parsed but before body parsing has begun
-    // and no sink has been installed yet.
-    bool needsBodySink() const;
+    // True after headers are parsed and the body destination has not been
+    // configured yet.
+    bool needsBodyConfig() const;
 
     HttpRequestParseState getState() const;
 
-    // Transfers ownership of `sink` to the body. Must be called while
-    // `needsBodySink()` is true (or never, in which case a default in-memory
-    // sink is auto-installed before body parsing).
-    void installBodySink(IBodySink* sink);
+    // Configure the body destination. file_path == "" means in-memory; non-
+    // empty means stream the decoded body into that file. max_bytes == 0
+    // means unlimited. Transitions the parser into the body phase.
+    void configureBody(const std::string& file_path, size_t max_bytes);
 
 private:
     // Request state

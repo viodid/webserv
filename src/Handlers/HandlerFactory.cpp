@@ -5,8 +5,6 @@
 #include "../../include/Handlers/RedirectHandler.hpp"
 #include "../../include/Handlers/StaticHandler.hpp"
 #include "../../include/Handlers/UploadHandler.hpp"
-#include "../../include/HttpRequest/FileBodySink.hpp"
-#include "../../include/HttpRequest/MemoryBodySink.hpp"
 #include "../../include/Utils.hpp"
 #include <sstream>
 
@@ -31,7 +29,6 @@ const Location* matchLocation(const std::string& target,
 
 bool containsTraversal(const std::string& s)
 {
-    // Reject any ".." path segment.
     size_t start = 0;
     while (start < s.size()) {
         size_t end = s.find('/', start);
@@ -52,7 +49,6 @@ std::string pickFilename(const std::string& target, const std::string& route)
     while (!tail.empty() && tail[0] == '/')
         tail.erase(0, 1);
 
-    // basename = last path component
     std::string basename = tail;
     size_t slash = tail.rfind('/');
     if (slash != std::string::npos)
@@ -91,19 +87,17 @@ IRequestHandler* createHandler(const HttpRequest& request,
     return new StaticHandler(*loc, error_renderer);
 }
 
-IBodySink* createBodySink(const HttpRequest& request, const VirtualHost& vh)
+std::string selectUploadPath(const HttpRequest& request, const VirtualHost& vh)
 {
     const std::string& target = request.getRequestLine().getRequestTarget();
     const std::string& method = request.getRequestLine().getMethod();
     const Location* loc = matchLocation(target, vh.getLocations());
-    size_t max_body = vh.getSocketSize();
 
-    if (loc != NULL && method == "POST" && !loc->getUploadStore().empty()) {
-        if (containsTraversal(target))
-            throw ExceptionBadFraming("path traversal in upload target");
-        std::string filename = pickFilename(target, loc->getPath());
-        return new FileBodySink(loc->getUploadStore(), filename, max_body);
-    }
+    if (loc == NULL || method != "POST" || loc->getUploadStore().empty())
+        return "";
 
-    return new MemoryBodySink(max_body);
+    if (containsTraversal(target))
+        throw ExceptionBadFraming("path traversal in upload target");
+
+    return loc->getUploadStore() + "/" + pickFilename(target, loc->getPath());
 }

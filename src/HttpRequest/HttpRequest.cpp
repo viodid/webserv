@@ -1,5 +1,4 @@
 #include "../../include/HttpRequest/HttpRequest.hpp"
-#include "../../include/HttpRequest/MemoryBodySink.hpp"
 #include <cstdlib>
 
 HttpRequest::HttpRequest()
@@ -40,8 +39,6 @@ void HttpRequest::setFieldLines(const std::string& field_name,
 }
 void HttpRequest::setBody(const std::string& body)
 {
-    if (!body_.hasSink())
-        body_.installSink(new MemoryBodySink(0));
     body_.parse(body.data(), body.size());
 }
 
@@ -58,8 +55,7 @@ void HttpRequest::parseFromReader(IReader& reader)
 
     // Header phase only: cap the parse buffer so a slow client can't pin
     // arbitrary memory before sending CRLF-CRLF. Once body parsing begins,
-    // bytes are drained into the sink as they arrive and the read buffer
-    // stays small.
+    // bytes are drained as they arrive and the read buffer stays small.
     if (curr_state_ != BodyState
         && buffer_.size() > Settings::PARSER_MAX_BUFFER_SIZE)
         throw ExceptionConnLenExceeded("overrun MAX_BUFFER_SIZE");
@@ -123,14 +119,19 @@ void HttpRequest::resolveFraming_()
     curr_state_ = Done;
 }
 
-void HttpRequest::installBodySink(IBodySink* sink)
+void HttpRequest::configureBody(const std::string& file_path, size_t max_bytes)
 {
-    body_.installSink(sink);
+    if (curr_state_ != HeadersDoneState)
+        return;
+    body_.setMaxBytes(max_bytes);
+    if (!file_path.empty())
+        body_.useFile(file_path);
+    curr_state_ = BodyState;
 }
 
-bool HttpRequest::needsBodySink() const
+bool HttpRequest::needsBodyConfig() const
 {
-    return curr_state_ == HeadersDoneState && !body_.hasSink();
+    return curr_state_ == HeadersDoneState;
 }
 
 HttpRequestParseState HttpRequest::getState() const
@@ -167,15 +168,15 @@ int HttpRequest::parse_(const char* buffer, int length)
             parsed += n;
             if (n == 2) {
                 resolveFraming_();
-                // Pause so the caller can install a body sink.
+                // Pause so the caller can configure the body destination.
                 keep = false;
             }
             break;
         }
         case HeadersDoneState: {
-            // Default to in-memory storage if caller never installed a sink.
-            if (!body_.hasSink())
-                body_.installSink(new MemoryBodySink(0));
+            // No explicit configureBody() call: default to in-memory,
+            // unlimited. Keeps direct-use callers (tests) working without
+            // ceremony.
             curr_state_ = BodyState;
             break;
         }
