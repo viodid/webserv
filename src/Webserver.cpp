@@ -9,9 +9,6 @@ Webserver::~Webserver()
 {
     for (size_t i = 0; i < connections_.size(); i++)
         delete connections_[i];
-#if DEBUG
-    std::cout << "[Debug] Webserver destructor called " << std::endl;
-#endif
 }
 
 void Webserver::init()
@@ -33,15 +30,21 @@ void Webserver::run()
         for (size_t i = 0; i < connections_.size(); i++) {
             Connection* c = notifier.getConnectionFor(pollfds[i].fd);
             if (pollfds[i].revents & POLLIN) {
+#if DEBUG
                 std::cout << "POLLIN - connection: " << i << " - fd: " << c->getFd() << '\n';
+#endif
                 handleRead_(notifier, *c);
             }
             if (pollfds[i].revents & POLLOUT) {
+#if DEBUG
                 std::cout << "POLLOUT - connection: " << i << " - fd: " << c->getFd() << '\n';
+#endif
                 handleWrite_(notifier, *c);
             }
             if (pollfds[i].revents & POLLERR || pollfds[i].revents & POLLHUP) {
+#if DEBUG
                 std::cout << "POLLERR - connection: " << i << " - fd: " << c->getFd() << '\n';
+#endif
                 handleClosedConn_(notifier, *c);
             }
         }
@@ -60,25 +63,17 @@ void Webserver::handleNewClient_(EventManager& notifier, const Connection& c)
 void Webserver::handleClosedConn_(EventManager& manager, const Connection& c)
 {
     manager.removeFd(c.getFd());
+#if DEBUG
     std::cout << "closed conn fd: " << c.getFd() << std::endl;
+#endif
     for (size_t i = 0; i < connections_.size(); i++) {
         if (connections_[i] == &c) {
             delete connections_[i];
             connections_.erase(connections_.begin() + i);
-#if DEBUG
-            std::cout << "connection erased from connections_: " << i + 1 << "\n";
-#endif
             break;
         }
     }
 }
-
-#if DEBUG
-static void print_field_lines(const std::string& fn, const std::string& fv)
-{
-    std::cout << fn << ": " << fv << "\n";
-}
-#endif
 
 void Webserver::handleRead_(EventManager& notifier, Connection& c)
 {
@@ -89,17 +84,6 @@ void Webserver::handleRead_(EventManager& notifier, Connection& c)
 
     try {
         c.getRequest().parseFromReader(c);
-#if DEBUG
-        std::cout << "Request line:\n"
-                  << "- Method: " << c.getRequest().getRequestLine().getMethod() << "\n"
-                  << "- Target: " << c.getRequest().getRequestLine().getRequestTarget() << "\n"
-                  << "- Version: " << c.getRequest().getRequestLine().getHttpVersion() << "\n"
-                  << "Field line:\n";
-        c.getRequest().getFieldLines().forEach(&print_field_lines);
-        std::cout << "Body:\n"
-                  << c.getRequest().getBody().get() << "\n";
-
-#endif
         if (c.getRequest().isDone())
             notifier.enableWrite(c.getFd());
     } catch (const std::exception& e) {

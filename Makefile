@@ -1,6 +1,6 @@
 BINARY 		= webserv
 CXX 		= g++
-CXXFLAGS	= -std=c++98 -Wall -Wextra -Werror -Wpedantic -g3 -O0 -DDEBUG=0
+CXXFLAGS	= -std=c++98 -Wall -Wextra -Werror -Wpedantic -g3 -O0 -DDEBUG=1
 
 SRCS		= $(shell find src -type f -name '*.cpp')
 OBJS 		= $(SRCS:.cpp=.o)

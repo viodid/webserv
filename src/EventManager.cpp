@@ -14,11 +14,6 @@ int EventManager::manage()
     if (poll_count == -1)
         throw std::runtime_error(std::strerror(errno));
 
-#if DEBUG
-    std::cout << "poll_count: " << poll_count << std::endl
-              << "connections_ size: " << connections_.size() << std::endl;
-#endif
-
     return poll_count;
 }
 
@@ -63,9 +58,6 @@ void EventManager::removeFd(int fd)
                 throw std::runtime_error(s.str());
             }
             fds_.erase(fds_.begin() + i);
-#if DEBUG
-            std::cout << "pollfds removed: " << connections_[i]->getFd() << "\n";
-#endif
             return;
         }
     }

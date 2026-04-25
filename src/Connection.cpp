@@ -89,7 +89,6 @@ size_t Connection::sendBytes()
 int Connection::read(char buffer[], int len)
 {
     int read_n = recv(socket_->getFd(), buffer, len, 0);
-    std::cout << "recv on socket: " << socket_->getFd() << " - read_n: " << read_n << "\n";
     if (read_n == -1)
         throw ExceptionErrorConnectionSocket(std::strerror(errno));
     if (read_n == 0)

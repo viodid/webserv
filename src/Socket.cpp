@@ -60,29 +60,6 @@ size_t Socket::sendBytes(const std::vector<char>& bytes) const
     return static_cast<size_t>(n);
 }
 
-const char* inet_ntop2(void* addr, char* buf, size_t size)
-{
-    struct sockaddr_storage* sas = (sockaddr_storage*)addr;
-    struct sockaddr_in* sa4;
-    struct sockaddr_in6* sa6;
-    void* src;
-
-    switch (sas->ss_family) {
-    case AF_INET:
-        sa4 = (sockaddr_in*)addr;
-        src = &(sa4->sin_addr);
-        break;
-    case AF_INET6:
-        sa6 = (sockaddr_in6*)addr;
-        src = &(sa6->sin6_addr);
-        break;
-    default:
-        return NULL;
-    }
-
-    return inet_ntop(sas->ss_family, src, buf, size);
-}
-
 void Socket::bindAndListen_()
 {
     struct addrinfo hints;
@@ -121,13 +98,6 @@ void Socket::bindAndListen_()
     }
 
 #if DEBUG
-    char buf[100];
-
-    struct addrinfo* addr;
-    for (addr = addrinf_; addr != NULL; addr = addr->ai_next) {
-        std::cout << inet_ntop2((void*)addr->ai_addr, buf, addr->ai_addrlen)
-                  << ":" << ((struct sockaddr_in*)addr->ai_addr)->sin_port << "\n";
-    }
     std::cout << "[Debug] success listen on lfd " << fd_ << std::endl;
 #endif
 }
