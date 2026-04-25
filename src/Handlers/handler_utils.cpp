@@ -1,4 +1,6 @@
 #include "../../include/Handlers/handler_utils.hpp"
+#include "../../include/HttpResponse/EmptyBodySource.hpp"
+#include "../../include/HttpResponse/StringBodySource.hpp"
 #include <cstring>
 #include <dirent.h>
 #include <sstream>
@@ -6,22 +8,41 @@
 #include <string>
 #include <vector>
 
-HttpResponse constructHttpErrorResponse(const HttpRequest& request,
+HttpResponse* constructHttpErrorResponse(const HttpRequest& request,
     const ErrorRenderer& error_renderer,
     Location::StatusCodes error_no)
 {
     std::string body_html = error_renderer.render(error_no);
     FieldLines field_lines;
     field_lines.set("Server", "42webserv/0.1.0");
-    field_lines.set("Content-Type", "text/html; charset=utf-8");
+    field_lines.set("Content-Type", "text/html");
     field_lines.set("Connection", "close");
     std::stringstream ss;
     ss << body_html.size();
     field_lines.set("Content-Length", ss.str());
-    return HttpResponse(
-        StatusLine(request.getRequestLine().getHttpVersion(), error_no),
-        field_lines,
-        Body(body_html));
+
+    HttpResponse* response = new HttpResponse;
+    response->setStatusLine(StatusLine(request.getRequestLine().getHttpVersion(), error_no));
+    response->setFieldLines(field_lines);
+    response->setBodySource(new StringBodySource(body_html));
+    return response;
+}
+
+HttpResponse* constructHttpRedirectResponse(const HttpRequest& request,
+    const std::string& location,
+    Location::StatusCodes code)
+{
+    FieldLines field_lines;
+    field_lines.set("Server", "42webserv/0.1.0");
+    field_lines.set("Location", location);
+    field_lines.set("Content-Length", "0");
+    field_lines.set("Connection", "close");
+
+    HttpResponse* response = new HttpResponse;
+    response->setStatusLine(StatusLine(request.getRequestLine().getHttpVersion(), code));
+    response->setFieldLines(field_lines);
+    response->setBodySource(new EmptyBodySource);
+    return response;
 }
 
 bool isMethodAllowed(const HttpRequest& request, const Location& location)

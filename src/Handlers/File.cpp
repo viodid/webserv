@@ -40,15 +40,11 @@ std::string File::getTypeFormat() const
     }
 }
 
-// TODO: use stat to get file size - chunk the response if size > 32KiB (change buffer size settings)
 const std::string& File::readFile()
 {
     if (type_ == DIRECTORY)
         throw std::runtime_error("cannot read a directory");
     if (content_.empty()) {
-#if DEBUG
-        std::cout << "File.read() cache miss\n";
-#endif
         int fd = open(path_.c_str(), O_RDONLY);
         if (fd == -1)
             throw std::runtime_error(std::strerror(errno));
@@ -63,9 +59,6 @@ const std::string& File::readFile()
             buffer[bytes] = '\0';
         close(fd);
         content_ = std::string(buffer);
-    } else {
-        // TODO: rm
-        std::cout << "File.read() cache hit\n";
     }
     return content_;
 }

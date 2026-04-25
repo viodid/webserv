@@ -2,6 +2,7 @@
 #include "Connection.hpp"
 #include <iterator>
 #include <sstream>
+#include <stdexcept>
 #include <sys/poll.h>
 #include <vector>
 
@@ -44,6 +45,18 @@ public:
      * It removes a pollfd struct instance from the vector given a FD.
      */
     void removeFd(int fd);
+    /**
+     * @brief Enable POLLOUT monitoring for a given fd.
+     */
+    void enableWrite(int fd);
+    /**
+     * @brief Disable POLLOUT monitoring for a given fd.
+     */
+    void disableWrite(int fd);
+    /**
+     * @brief Gets the corresponding connection for the given FD.
+     */
+    Connection* getConnectionFor(int fd) const;
 
 private:
     const std::vector<Connection*>& connections_;

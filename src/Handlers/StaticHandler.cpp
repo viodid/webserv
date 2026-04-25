@@ -1,4 +1,7 @@
 #include "../../include/Handlers/StaticHandler.hpp"
+#include "../../include/HttpResponse/FileBodySource.hpp"
+#include "../../include/HttpResponse/StringBodySource.hpp"
+#include <sys/stat.h>
 
 StaticHandler::StaticHandler(const Location& conf, const ErrorRenderer& error_renderer)
     : conf_(conf)
@@ -6,7 +9,7 @@ StaticHandler::StaticHandler(const Location& conf, const ErrorRenderer& error_re
 {
 }
 
-HttpResponse StaticHandler::handle(const HttpRequest& request)
+HttpResponse* StaticHandler::handle(const HttpRequest& request)
 {
     try {
         std::string path = constructPath(request, conf_);
@@ -22,43 +25,66 @@ HttpResponse StaticHandler::handle(const HttpRequest& request)
             return constructHttpErrorResponse(request, error_renderer_, Location::S_403);
 
         if (file.getType() == File::DIRECTORY) {
+            const std::string& target = request.getRequestLine().getRequestTarget();
+            size_t qpos = target.find('?');
+            std::string target_path = (qpos == std::string::npos) ? target : target.substr(0, qpos);
+            if (target_path.empty() || target_path[target_path.size() - 1] != '/') {
+                std::string new_target = target_path + "/";
+                if (qpos != std::string::npos)
+                    new_target.append(target, qpos, std::string::npos);
+                return constructHttpRedirectResponse(request, new_target, Location::S_301);
+            }
             if (!conf_.getDefaultFile().empty()) {
                 if (!path.empty() && path[path.size() - 1] != '/')
                     path.append("/");
-                file = File(path.append(conf_.getDefaultFile()));
+                path.append(conf_.getDefaultFile());
+                file = File(path);
             } else if (conf_.isDirectoryListing()) {
-                std::string dir_list = renderDirListing(path, request.getRequestLine().getRequestTarget());
-                return constructHttpOKResponse_(request, "text/html", dir_list);
-            } else
+                std::string html = renderDirListing(path, request.getRequestLine().getRequestTarget());
+                return buildOkResponse_(request, "text/html", html.size(),
+                    new StringBodySource(html));
+            } else {
                 return constructHttpErrorResponse(request, error_renderer_, Location::S_500);
+            }
         }
-        return constructHttpOKResponse_(request, file.getTypeFormat(), file.readFile());
+
+        struct stat st;
+        if (stat(path.c_str(), &st) == -1)
+            return constructHttpErrorResponse(request, error_renderer_, Location::S_500);
+
+        return buildOkResponse_(request, file.getTypeFormat(),
+            static_cast<size_t>(st.st_size),
+            new FileBodySource(path));
     } catch (const ExceptionUnsupportedFileType& e) {
         std::cerr << e.what() << '\n';
         return constructHttpErrorResponse(request, error_renderer_, Location::S_415);
     } catch (const ExceptionParentRootDirectory& e) {
         std::cerr << e.what() << '\n';
         return constructHttpErrorResponse(request, error_renderer_, Location::S_403);
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        return constructHttpErrorResponse(request, error_renderer_, Location::S_500);
     }
-    return constructHttpErrorResponse(request, error_renderer_, Location::S_404);
 }
 
-HttpResponse StaticHandler::constructHttpOKResponse_(const HttpRequest& request,
-    const std::string& file_format,
-    const std::string& file_content)
+HttpResponse* StaticHandler::buildOkResponse_(const HttpRequest& request,
+    const std::string& mime,
+    size_t content_length,
+    IBodySource* body)
 {
+    HttpResponse* response = new HttpResponse;
+    response->setStatusLine(StatusLine(request.getRequestLine().getHttpVersion(), Location::S_200));
+
     FieldLines field_lines;
     field_lines.set("Server", "42webserv/0.1.0");
-    std::string file_type = file_format;
-    file_type.append("; charset=utf-8");
-    field_lines.set("Content-Type", file_type);
+    field_lines.set("Content-Type", mime);
     field_lines.set("Connection", "close");
 
     std::stringstream ss;
-    ss << file_content.size();
+    ss << content_length;
     field_lines.set("Content-Length", ss.str());
-    return HttpResponse(
-        StatusLine(request.getRequestLine().getHttpVersion(), Location::S_200),
-        field_lines,
-        Body(file_content));
+
+    response->setFieldLines(field_lines);
+    response->setBodySource(body);
+    return response;
 }

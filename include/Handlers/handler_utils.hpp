@@ -22,9 +22,12 @@
 
 class ErrorRenderer;
 
-HttpResponse constructHttpErrorResponse(const HttpRequest& request,
+HttpResponse* constructHttpErrorResponse(const HttpRequest& request,
     const ErrorRenderer& error_renderer,
     Location::StatusCodes error_no);
+HttpResponse* constructHttpRedirectResponse(const HttpRequest& request,
+    const std::string& location,
+    Location::StatusCodes code);
 bool isMethodAllowed(const HttpRequest& request, const Location& location);
 std::string constructPath(const HttpRequest& request, const Location& location);
 std::string renderDirListing(const std::string& path, const std::string& requested_path);

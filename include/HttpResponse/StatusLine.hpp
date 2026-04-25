@@ -7,12 +7,13 @@
  */
 class StatusLine {
 public:
+    StatusLine();
     StatusLine(const std::string& http_version, Location::StatusCodes status_code);
 
     std::string format() const;
 
 private:
-    const std::string http_version_;
-    const Location::StatusCodes status_code_;
-    const std::string reason_phrase_;
+    std::string http_version_;
+    Location::StatusCodes status_code_;
+    std::string reason_phrase_;
 };

@@ -1,4 +1,5 @@
 #include "../include/Socket.hpp"
+#include <netinet/tcp.h>
 
 Socket::Socket(int fd)
     : fd_(fd)
@@ -7,6 +8,9 @@ Socket::Socket(int fd)
     , addrinf_(NULL)
     , curraddr_(NULL)
 {
+    int yes = 1;
+    if (setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, &yes, sizeof(yes)) == -1)
+        std::cerr << "[Warn] TCP_NODELAY on fd " << fd_ << ": " << std::strerror(errno) << '\n';
 }
 
 Socket::Socket(const std::string& hostname, const std::string& port)
@@ -43,39 +47,17 @@ int Socket::acceptConn() const
     return cfd;
 }
 
-ssize_t Socket::sendMsg(const std::string& msg) const
+size_t Socket::sendBytes(const std::vector<char>& bytes) const
 {
-    ssize_t total_sent = 0;
-    while (total_sent < static_cast<ssize_t>(msg.size())) {
-        ssize_t send_n = send(fd_, msg.c_str(), msg.size(), MSG_NOSIGNAL);
-        if (send_n == -1)
-            throw ExceptionErrorConnectionSocket(std::strerror(errno));
-        total_sent += send_n;
+    if (bytes.empty())
+        return 0;
+    ssize_t n = send(fd_, bytes.data(), bytes.size(), MSG_NOSIGNAL);
+    if (n == -1) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+            return 0;
+        throw ExceptionErrorConnectionSocket(std::strerror(errno));
     }
-    return total_sent;
-}
-
-const char* inet_ntop2(void* addr, char* buf, size_t size)
-{
-    struct sockaddr_storage* sas = (sockaddr_storage*)addr;
-    struct sockaddr_in* sa4;
-    struct sockaddr_in6* sa6;
-    void* src;
-
-    switch (sas->ss_family) {
-    case AF_INET:
-        sa4 = (sockaddr_in*)addr;
-        src = &(sa4->sin_addr);
-        break;
-    case AF_INET6:
-        sa6 = (sockaddr_in6*)addr;
-        src = &(sa6->sin6_addr);
-        break;
-    default:
-        return NULL;
-    }
-
-    return inet_ntop(sas->ss_family, src, buf, size);
+    return static_cast<size_t>(n);
 }
 
 void Socket::bindAndListen_()
@@ -109,20 +91,13 @@ void Socket::bindAndListen_()
     }
     if (curraddr_ == NULL)
         throw std::runtime_error(std::strerror(errno));
-    if (listen(fd_, 0) == -1) {
+    if (listen(fd_, SOMAXCONN) == -1) {
         close(fd_);
         freeaddrinfo(addrinf_);
         throw std::runtime_error(std::strerror(errno));
     }
 
 #if DEBUG
-    char buf[100];
-
-    struct addrinfo* addr;
-    for (addr = addrinf_; addr != NULL; addr = addr->ai_next) {
-        std::cout << inet_ntop2((void*)addr->ai_addr, buf, addr->ai_addrlen)
-                  << ":" << ((struct sockaddr_in*)addr->ai_addr)->sin_port << "\n";
-    }
     std::cout << "[Debug] success listen on lfd " << fd_ << std::endl;
 #endif
 }
