@@ -110,3 +110,23 @@ public:
 private:
     const std::string msg_;
 };
+
+class ExceptionPayloadTooLarge : public std::exception {
+public:
+    ExceptionPayloadTooLarge(const std::string& msg);
+    virtual ~ExceptionPayloadTooLarge() throw();
+    const char* what() const throw();
+
+private:
+    const std::string msg_;
+};
+
+class ExceptionBadFraming : public std::exception {
+public:
+    ExceptionBadFraming(const std::string& msg);
+    virtual ~ExceptionBadFraming() throw();
+    const char* what() const throw();
+
+private:
+    const std::string msg_;
+};
