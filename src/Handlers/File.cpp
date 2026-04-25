@@ -34,6 +34,8 @@ std::string File::getTypeFormat() const
         return "image/jpeg";
     case IMAGE_ICO:
         return "image/vnd.microsoft.icon";
+    case PDF:
+        return "application/pdf";
     default:
         std::cerr << "fallthrough default file format 'text/plan'\n";
         return "text/plain";
@@ -130,5 +132,7 @@ File::Type File::mapFileType_() const
         return File::IMAGE_JPEG;
     if (extension == "ico")
         return File::IMAGE_ICO;
+    if (extension == "pdf")
+        return File::PDF;
     throw ExceptionUnsupportedFileType(extension);
 }

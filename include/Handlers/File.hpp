@@ -22,7 +22,8 @@ public:
         APP_JSON,
         IMAGE_JPEG,
         IMAGE_PNG,
-        IMAGE_ICO
+        IMAGE_ICO,
+        PDF
     };
     File(const std::string& path);
 
