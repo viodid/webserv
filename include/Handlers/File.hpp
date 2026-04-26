@@ -16,6 +16,7 @@ public:
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/MIME_types/Common_types
     enum Type {
         DIRECTORY,
+        TEXT_PLAIN,
         TEXT_HTML,
         TEXT_CSS,
         TEXT_JS,
@@ -23,6 +24,8 @@ public:
         IMAGE_JPEG,
         IMAGE_PNG,
         IMAGE_ICO,
+        AUDIO_MPEG,
+        VIDEO_MP4,
         PDF
     };
     File(const std::string& path);
