@@ -21,8 +21,11 @@ private:
     std::vector<Connection*> connections_;
 
     void handleRead_(EventManager& notifier, Connection& c, std::set<int>& dead_fds);
-    void handleWrite_(Connection& c, std::set<int>& dead_fds);
+    void handleWrite_(EventManager& notifier, Connection& c, std::set<int>& dead_fds);
     void handleNewClient_(EventManager& manager, const Connection& conn);
     void markClosed_(std::set<int>& dead_fds, const Connection& c);
     void destroyConnection_(EventManager& manager, int fd);
+    void handleCgiReadable_(EventManager& notifier, int fd);
+    void finalizeCgi_(EventManager& notifier, Connection& c);
+    void sweepCgiTimeouts_(EventManager& notifier);
 };
