@@ -1,5 +1,6 @@
 #include "../../include/HttpRequest/ChunkedDecoder.hpp"
 #include "../../include/Exceptions.hpp"
+#include "../../include/Settings.hpp"
 #include <algorithm>
 #include <cstdlib>
 
@@ -23,6 +24,8 @@ size_t ChunkedDecoder::feed(const char* buf, size_t len, std::vector<char>& out)
         case SizeLine: {
             partial_line_ += buf[i];
             ++i;
+            if (partial_line_.size() > static_cast<size_t>(Settings::PARSER_MAX_BUFFER_SIZE))
+                throw ExceptionPayloadTooLarge("chunk-size line exceeds max buffer");
             const size_t s = partial_line_.size();
             if (s >= 2 && partial_line_[s - 2] == '\r' && partial_line_[s - 1] == '\n')
                 parseSize_();
@@ -56,6 +59,8 @@ size_t ChunkedDecoder::feed(const char* buf, size_t len, std::vector<char>& out)
         case Trailer: {
             partial_line_ += buf[i];
             ++i;
+            if (partial_line_.size() > static_cast<size_t>(Settings::PARSER_MAX_BUFFER_SIZE))
+                throw ExceptionPayloadTooLarge("chunk trailer line exceeds max buffer");
             const size_t s = partial_line_.size();
             if (s >= 2 && partial_line_[s - 2] == '\r' && partial_line_[s - 1] == '\n') {
                 if (s == 2)

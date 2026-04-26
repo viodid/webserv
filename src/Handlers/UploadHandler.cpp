@@ -12,7 +12,7 @@ HttpResponse* UploadHandler::handle(const HttpRequest& request)
 {
     const std::string& path = request.getBody().getStoredPath();
     if (path.empty())
-        return constructHttpErrorResponse(request, error_renderer_, Location::S_500);
+        return constructHttpErrorResponse(request, error_renderer_, Location::S_400);
 
     std::string basename = path;
     size_t slash = path.rfind('/');

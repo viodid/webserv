@@ -39,6 +39,10 @@ public:
     void setBody(const std::string&);
 
     void parseFromReader(IReader& reader, const std::vector<Location>& locations);
+    void parseFromReader(IReader& reader)
+    {
+        parseFromReader(reader, std::vector<Location>());
+    }
 
     bool isDone() const;
 

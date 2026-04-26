@@ -1,4 +1,5 @@
 #include "../../include/HttpRequest/Body.hpp"
+#include "../../include/Handlers/handler_utils.hpp"
 #include <vector>
 
 Body::Body()
@@ -61,12 +62,19 @@ int Body::parseChunked(const char* buffer, size_t buf_len,
         if (upload_store.empty())
             throw ExceptionFileWrite("upload_store not configured for route");
 
+        std::string clean = target;
+        stripQueryURI(clean);
+        size_t hash = clean.find('#');
+        if (hash != std::string::npos)
+            clean.erase(hash);
+        clean = normalizeURI(clean);
+
         std::string basename = "upload.bin";
-        size_t slash = target.rfind('/');
-        if (slash != std::string::npos && slash + 1 < target.size())
-            basename = target.substr(slash + 1);
-        else if (slash == std::string::npos && !target.empty())
-            basename = target;
+        size_t slash = clean.rfind('/');
+        if (slash != std::string::npos && slash + 1 < clean.size())
+            basename = clean.substr(slash + 1);
+        else if (slash == std::string::npos && !clean.empty())
+            basename = clean;
 
         stored_path_ = upload_store;
         if (!stored_path_.empty() && stored_path_[stored_path_.size() - 1] != '/')

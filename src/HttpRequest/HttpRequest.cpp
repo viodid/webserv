@@ -106,10 +106,11 @@ int HttpRequest::parse_(const char* buffer, int length, const std::vector<Locati
             if (n == 2) {
                 const std::string& content_length = field_lines_.get("content-length");
                 const std::string& transfer_encoding = field_lines_.get("transfer-encoding");
-                if (!content_length.empty() && content_length != "0")
-                    curr_state_ = BodyState;
-                else if (toLower(transfer_encoding).find("chunked") != std::string::npos)
+                const bool is_chunked = toLower(transfer_encoding).find("chunked") != std::string::npos;
+                if (is_chunked)
                     curr_state_ = ChunkedBodyState;
+                else if (!content_length.empty() && content_length != "0")
+                    curr_state_ = BodyState;
                 else
                     curr_state_ = Done;
             }
