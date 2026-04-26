@@ -6,6 +6,7 @@
 #include "Handlers/HandlerFactory.hpp"
 #include "Handlers/StaticHandler.hpp"
 #include "HttpRequest/HttpRequest.hpp"
+#include <set>
 
 class Webserver {
 public:
@@ -19,8 +20,9 @@ private:
     const std::vector<VirtualHost>& config_;
     std::vector<Connection*> connections_;
 
-    void handleRead_(EventManager& notifier, Connection& c);
-    void handleWrite_(EventManager& notifier, Connection& c);
+    void handleRead_(EventManager& notifier, Connection& c, std::set<int>& dead_fds);
+    void handleWrite_(Connection& c, std::set<int>& dead_fds);
     void handleNewClient_(EventManager& manager, const Connection& conn);
-    void handleClosedConn_(EventManager& manager, const Connection& conn);
+    void markClosed_(std::set<int>& dead_fds, const Connection& c);
+    void destroyConnection_(EventManager& manager, int fd);
 };
