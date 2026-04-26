@@ -57,9 +57,6 @@ void HttpRequest::parseFromReader(IReader& reader, const std::vector<Location>& 
 
     cursor_ += bytes_read;
 
-    if (cursor_ >= buffer_.size())
-        buffer_.resize(buffer_.size() * 2);
-
     int bytes_parsed = parse_(buffer_.data(), cursor_, locations);
 
     // remove already parsed content from buffer
@@ -69,6 +66,11 @@ void HttpRequest::parseFromReader(IReader& reader, const std::vector<Location>& 
         buffer_.resize(buffer_size);
         cursor_ -= bytes_parsed;
     }
+
+    // grow only if the parser couldn't make progress and the buffer is full
+    // (e.g., an incomplete header/chunk-size line longer than the buffer)
+    if (cursor_ >= buffer_.size())
+        buffer_.resize(buffer_.size() * 2);
 }
 
 /*

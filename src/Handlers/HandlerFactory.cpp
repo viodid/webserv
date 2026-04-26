@@ -36,11 +36,16 @@ const Location* matchLocation(const std::string& target,
     size_t best_len = 0;
     for (size_t i = 0; i < locations.size(); ++i) {
         const std::string& path = locations[i].getPath();
-        if (target.compare(0, path.size(), path) == 0) {
-            if (best == NULL || path.size() > best_len) {
-                best = &locations[i];
-                best_len = path.size();
-            }
+        if (target.compare(0, path.size(), path) != 0)
+            continue;
+        bool on_boundary = target.size() == path.size()
+            || path[path.size() - 1] == '/'
+            || target[path.size()] == '/';
+        if (!on_boundary)
+            continue;
+        if (best == NULL || path.size() > best_len) {
+            best = &locations[i];
+            best_len = path.size();
         }
     }
     return best;
