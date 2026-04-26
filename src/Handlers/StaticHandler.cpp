@@ -56,13 +56,13 @@ HttpResponse* StaticHandler::handle(const HttpRequest& request)
             static_cast<size_t>(st.st_size),
             new FileBodySource(path));
     } catch (const ExceptionUnsupportedFileType& e) {
-        std::cerr << e.what() << '\n';
+        std::cerr << "StaticHandler -  unsupported file type: " << e.what() << '\n';
         return constructHttpErrorResponse(request, error_renderer_, Location::S_415);
     } catch (const ExceptionParentRootDirectory& e) {
-        std::cerr << e.what() << '\n';
+        std::cerr << "StaticHandler -  exception parent root dir: " << e.what() << '\n';
         return constructHttpErrorResponse(request, error_renderer_, Location::S_403);
     } catch (const std::exception& e) {
-        std::cerr << e.what() << '\n';
+        std::cerr << "StaticHandler -  general exception: " << e.what() << '\n';
         return constructHttpErrorResponse(request, error_renderer_, Location::S_500);
     }
 }
