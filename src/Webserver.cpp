@@ -1,6 +1,7 @@
 #include "../include/Webserver.hpp"
 #include "../include/CgiProcess.hpp"
 #include "../include/Handlers/handler_utils.hpp"
+#include "../include/Utils.hpp"
 #include <csignal>
 
 Webserver::Webserver(const std::vector<VirtualHost>& config)
@@ -232,7 +233,7 @@ void Webserver::finalizeCgi_(EventManager& notifier, Connection& c)
 
 void Webserver::sweepCgiTimeouts_(EventManager& notifier)
 {
-    unsigned long now = nowMs();
+    unsigned long now = static_cast<unsigned long>(currTimeMs());
     for (size_t i = 0; i < connections_.size(); ++i) {
         Connection* c = connections_[i];
         CgiProcess* cgi = c->getCgi();

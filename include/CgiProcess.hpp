@@ -76,5 +76,3 @@ private:
     CgiProcess(const CgiProcess&);
     CgiProcess& operator=(const CgiProcess&);
 };
-
-unsigned long nowMs();

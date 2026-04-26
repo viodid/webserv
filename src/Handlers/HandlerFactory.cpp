@@ -7,28 +7,6 @@
 #include "../../include/Handlers/UploadHandler.hpp"
 #include "../../include/Handlers/handler_utils.hpp"
 #include "../../include/Utils.hpp"
-#include <sys/stat.h>
-
-namespace {
-
-// Strip the query string and return the file extension (with leading dot).
-// Returns an empty string if no extension is found.
-std::string extensionOf(const std::string& target)
-{
-    std::string path = target;
-    size_t q = path.find('?');
-    if (q != std::string::npos)
-        path.erase(q);
-    size_t slash = path.rfind('/');
-    size_t dot = path.rfind('.');
-    if (dot == std::string::npos)
-        return "";
-    if (slash != std::string::npos && dot < slash)
-        return "";
-    return path.substr(dot);
-}
-
-} // namespace
 
 IRequestHandler* createHandler(const HttpRequest& request,
     const VirtualHost& vh,

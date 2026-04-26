@@ -2,6 +2,7 @@
 #include "../../include/CgiProcess.hpp"
 #include "../../include/Connection.hpp"
 #include "../../include/Handlers/handler_utils.hpp"
+#include "../../include/Settings.hpp"
 #include <cctype>
 #include <cerrno>
 #include <cstdio>
@@ -32,9 +33,7 @@ CGIHandler::CGIHandler(const Location& conf,
 
 CGIHandler::~CGIHandler() { }
 
-namespace {
-
-std::string toUpperHeader(const std::string& s)
+static std::string toUpperHeader(const std::string& s)
 {
     std::string out;
     out.reserve(s.size());
@@ -50,7 +49,7 @@ std::string toUpperHeader(const std::string& s)
     return out;
 }
 
-std::string dirNameOf(const std::string& path)
+static std::string dirNameOf(const std::string& path)
 {
     size_t slash = path.rfind('/');
     if (slash == std::string::npos)
@@ -61,7 +60,7 @@ std::string dirNameOf(const std::string& path)
 }
 
 // Build CGI environment vector. Each entry is "KEY=VALUE".
-void buildEnv(std::vector<std::string>& env,
+static void buildEnv(std::vector<std::string>& env,
     const HttpRequest& request,
     const VirtualHost& vh,
     const std::string& script_url_path,
@@ -102,49 +101,59 @@ void buildEnv(std::vector<std::string>& env,
     }
 }
 
-bool setNonBlockCloexec(int fd)
+static bool setNonBlockCloexec(int fd)
 {
-    if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
+    int status_flags = fcntl(fd, F_GETFL);
+    if (status_flags == -1)
         return false;
-    if (fcntl(fd, F_SETFD, FD_CLOEXEC) == -1)
+    if (fcntl(fd, F_SETFL, status_flags | O_NONBLOCK) == -1)
+        return false;
+    int descriptor_flags = fcntl(fd, F_GETFD);
+    if (descriptor_flags == -1)
+        return false;
+    if (fcntl(fd, F_SETFD, descriptor_flags | FD_CLOEXEC) == -1)
         return false;
     return true;
 }
 
 // Open a tempfile, write `body` to it, return the fd opened for reading.
 // On failure, returns -1 and sets out_path to empty.
-int makeBodyFd(const std::string& body, std::string& out_path)
+static int makeBodyFd(const std::string& body, std::string& out_path)
 {
     if (body.empty()) {
         out_path.clear();
-        int fd = ::open("/dev/null", O_RDONLY);
+        int fd = open("/dev/null", O_RDONLY);
+        if (fd == -1)
+            return -1;
         return fd;
     }
 
-    char tpl[] = "/tmp/webserv_cgi_XXXXXX";
-    int wfd = ::mkstemp(tpl);
+    std::string tmpl = std::string(Settings::CGI_TMP_DIR) + "/webserv_cgi_XXXXXX";
+    std::vector<char> tplbuf(tmpl.begin(), tmpl.end());
+    tplbuf.push_back('\0');
+    int wfd = mkstemp(&tplbuf[0]);
     if (wfd == -1) {
         out_path.clear();
         return -1;
     }
-    out_path.assign(tpl);
+    out_path.assign(&tplbuf[0]);
 
     size_t off = 0;
     while (off < body.size()) {
-        ssize_t n = ::write(wfd, body.data() + off, body.size() - off);
+        ssize_t n = write(wfd, body.data() + off, body.size() - off);
         if (n <= 0) {
-            ::close(wfd);
-            ::unlink(out_path.c_str());
+            close(wfd);
+            unlink(out_path.c_str());
             out_path.clear();
             return -1;
         }
         off += static_cast<size_t>(n);
     }
-    ::close(wfd);
+    close(wfd);
 
-    int rfd = ::open(out_path.c_str(), O_RDONLY);
+    int rfd = open(out_path.c_str(), O_RDONLY);
     if (rfd == -1) {
-        ::unlink(out_path.c_str());
+        unlink(out_path.c_str());
         out_path.clear();
         return -1;
     }
@@ -153,20 +162,18 @@ int makeBodyFd(const std::string& body, std::string& out_path)
 
 // Read file contents into a string (used for chunked-uploaded bodies that
 // the parser already streamed to disk).
-bool readFileFully(const std::string& path, std::string& out)
+static bool readFileFully(const std::string& path, std::string& out)
 {
-    int fd = ::open(path.c_str(), O_RDONLY);
+    int fd = open(path.c_str(), O_RDONLY);
     if (fd == -1)
         return false;
     char buf[8192];
     ssize_t n;
-    while ((n = ::read(fd, buf, sizeof(buf))) > 0)
+    while ((n = read(fd, buf, sizeof(buf))) > 0)
         out.append(buf, static_cast<size_t>(n));
-    ::close(fd);
+    close(fd);
     return n >= 0;
 }
-
-} // namespace
 
 HttpResponse* CGIHandler::handle(const HttpRequest& request)
 {
@@ -189,7 +196,7 @@ HttpResponse* CGIHandler::handle(const HttpRequest& request)
         query_string.erase(0, 1);
 
     struct stat st;
-    if (::stat(script_fs_path.c_str(), &st) == -1)
+    if (stat(script_fs_path.c_str(), &st) == -1)
         return constructHttpErrorResponse(request, error_renderer_, Location::S_404);
     if (!S_ISREG(st.st_mode))
         return constructHttpErrorResponse(request, error_renderer_, Location::S_403);
@@ -222,19 +229,19 @@ HttpResponse* CGIHandler::handle(const HttpRequest& request)
     }
 
     int pipefd[2];
-    if (::pipe(pipefd) == -1) {
-        ::close(body_fd);
+    if (pipe(pipefd) == -1) {
+        close(body_fd);
         if (!body_tmp_path.empty())
-            ::unlink(body_tmp_path.c_str());
+            unlink(body_tmp_path.c_str());
         std::cerr << "[CGI] pipe() failed\n";
         return constructHttpErrorResponse(request, error_renderer_, Location::S_500);
     }
     if (!setNonBlockCloexec(pipefd[0])) {
-        ::close(pipefd[0]);
-        ::close(pipefd[1]);
-        ::close(body_fd);
+        close(pipefd[0]);
+        close(pipefd[1]);
+        close(body_fd);
         if (!body_tmp_path.empty())
-            ::unlink(body_tmp_path.c_str());
+            unlink(body_tmp_path.c_str());
         std::cerr << "[CGI] failed to configure pipe fds\n";
         return constructHttpErrorResponse(request, error_renderer_, Location::S_500);
     }
@@ -243,28 +250,28 @@ HttpResponse* CGIHandler::handle(const HttpRequest& request)
     buildEnv(env_strs, request, vh_, script_url_path, script_fs_path,
         query_string, body_bytes.size());
 
-    pid_t pid = ::fork();
+    pid_t pid = fork();
     if (pid == -1) {
-        ::close(pipefd[0]);
-        ::close(pipefd[1]);
-        ::close(body_fd);
+        close(pipefd[0]);
+        close(pipefd[1]);
+        close(body_fd);
         if (!body_tmp_path.empty())
-            ::unlink(body_tmp_path.c_str());
+            unlink(body_tmp_path.c_str());
         std::cerr << "[CGI] fork() failed\n";
         return constructHttpErrorResponse(request, error_renderer_, Location::S_500);
     }
 
     if (pid == 0) {
         // Child.
-        ::dup2(body_fd, STDIN_FILENO);
-        ::dup2(pipefd[1], STDOUT_FILENO);
-        ::close(body_fd);
-        ::close(pipefd[0]);
-        ::close(pipefd[1]);
+        dup2(body_fd, STDIN_FILENO);
+        dup2(pipefd[1], STDOUT_FILENO);
+        close(body_fd);
+        close(pipefd[0]);
+        close(pipefd[1]);
 
         std::string script_dir = dirNameOf(script_fs_path);
-        if (::chdir(script_dir.c_str()) == -1)
-            ::_exit(127);
+        if (chdir(script_dir.c_str()) == -1)
+            _exit(127);
 
         std::vector<char*> argv;
         argv.push_back(const_cast<char*>(interpreter_.c_str()));
@@ -277,13 +284,13 @@ HttpResponse* CGIHandler::handle(const HttpRequest& request)
             envp.push_back(const_cast<char*>(env_strs[i].c_str()));
         envp.push_back(NULL);
 
-        ::execve(interpreter_.c_str(), &argv[0], &envp[0]);
-        ::_exit(127);
+        execve(interpreter_.c_str(), &argv[0], &envp[0]);
+        _exit(127);
     }
 
     // Parent.
-    ::close(pipefd[1]);
-    ::close(body_fd);
+    close(pipefd[1]);
+    close(body_fd);
 
     CgiProcess* cgi = new CgiProcess(pid, pipefd[0], body_tmp_path, request, conn_);
     conn_->setCgi(cgi);

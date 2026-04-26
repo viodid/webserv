@@ -3,22 +3,14 @@
 #include "../include/Handlers/handler_utils.hpp"
 #include "../include/HttpResponse/StringBodySource.hpp"
 #include "../include/Settings.hpp"
+#include "../include/Utils.hpp"
 #include <cerrno>
 #include <csignal>
 #include <cstring>
 #include <iostream>
 #include <sstream>
-#include <sys/time.h>
 #include <sys/wait.h>
 #include <unistd.h>
-
-unsigned long nowMs()
-{
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return static_cast<unsigned long>(tv.tv_sec) * 1000UL
-        + static_cast<unsigned long>(tv.tv_usec) / 1000UL;
-}
 
 CgiProcess::CgiProcess(pid_t pid,
     int stdout_fd,
@@ -28,7 +20,7 @@ CgiProcess::CgiProcess(pid_t pid,
     : pid_(pid)
     , stdout_fd_(stdout_fd)
     , body_tmp_path_(body_tmp_path)
-    , started_at_ms_(nowMs())
+    , started_at_ms_(static_cast<unsigned long>(currTimeMs()))
     , state_(Running)
     , owner_(owner)
 {
@@ -59,7 +51,7 @@ void CgiProcess::onReadable()
         return;
 
     char buf[4096];
-    ssize_t n = ::read(stdout_fd_, buf, sizeof(buf));
+    ssize_t n = read(stdout_fd_, buf, sizeof(buf));
     if (n > 0) {
         if (output_.size() + static_cast<size_t>(n) > Settings::CGI_MAX_OUTPUT_BYTES) {
             std::cerr << "[CGI] output cap exceeded; killing pid " << pid_ << '\n';
@@ -98,7 +90,7 @@ bool CgiProcess::checkTimeout(unsigned long now_ms)
 void CgiProcess::killChild_()
 {
     if (pid_ > 0)
-        ::kill(pid_, SIGKILL);
+        kill(pid_, SIGKILL);
 }
 
 void CgiProcess::reapChild_()
@@ -108,15 +100,13 @@ void CgiProcess::reapChild_()
     int status = 0;
     pid_t r;
     do {
-        r = ::waitpid(pid_, &status, 0);
+        r = waitpid(pid_, &status, 0);
     } while (r == -1 && errno == EINTR);
     pid_ = -1;
 }
 
-namespace {
-
-// Trim leading and trailing whitespace from a string in place.
-std::string trimWs(const std::string& s)
+// Trim leading and trailing horizontal whitespace (also CR) from a string.
+static std::string trimWs(const std::string& s)
 {
     size_t a = 0;
     while (a < s.size() && (s[a] == ' ' || s[a] == '\t'))
@@ -130,7 +120,7 @@ std::string trimWs(const std::string& s)
 // Locate the end of the CGI header block. Accepts \n\n or \r\n\r\n.
 // Returns std::string::npos if no terminator is found, otherwise returns
 // the index of the first byte AFTER the terminator (i.e. start of body).
-size_t findHeaderEnd(const std::vector<char>& v, size_t& header_len)
+static size_t findHeaderEnd(const std::vector<char>& v, size_t& header_len)
 {
     for (size_t i = 0; i + 1 < v.size(); ++i) {
         if (v[i] == '\n' && v[i + 1] == '\n') {
@@ -147,7 +137,7 @@ size_t findHeaderEnd(const std::vector<char>& v, size_t& header_len)
     return std::string::npos;
 }
 
-Location::StatusCodes parseStatusCode(const std::string& value)
+static Location::StatusCodes parseStatusCode(const std::string& value)
 {
     long code = std::strtol(value.c_str(), NULL, 10);
     switch (code) {
@@ -171,8 +161,6 @@ Location::StatusCodes parseStatusCode(const std::string& value)
     default:  return Location::S_200;
     }
 }
-
-} // namespace
 
 HttpResponse* CgiProcess::buildResponse(const HttpRequest& request,
     const ErrorRenderer& error_renderer)
