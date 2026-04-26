@@ -129,3 +129,15 @@ const char* ExceptionBadFraming::what() const throw()
 {
     return msg_.c_str();
 }
+
+ExceptionFileWrite::ExceptionFileWrite(const std::string& msg)
+    : msg_(msg)
+{
+}
+
+ExceptionFileWrite::~ExceptionFileWrite() throw() { }
+
+const char* ExceptionFileWrite::what() const throw()
+{
+    return msg_.c_str();
+}

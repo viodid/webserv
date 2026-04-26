@@ -130,3 +130,13 @@ public:
 private:
     const std::string msg_;
 };
+
+class ExceptionFileWrite : public std::exception {
+public:
+    ExceptionFileWrite(const std::string& msg);
+    virtual ~ExceptionFileWrite() throw();
+    const char* what() const throw();
+
+private:
+    const std::string msg_;
+};

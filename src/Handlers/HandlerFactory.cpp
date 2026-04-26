@@ -4,9 +4,7 @@
 #include "../../include/Handlers/RedirectHandler.hpp"
 #include "../../include/Handlers/StaticHandler.hpp"
 #include "../../include/Handlers/UploadHandler.hpp"
-
-static const Location* matchLocation(const std::string& target,
-    const std::vector<Location>& locations);
+#include "../../include/Utils.hpp"
 
 IRequestHandler* createHandler(const HttpRequest& request,
     const VirtualHost& vh,
@@ -31,7 +29,7 @@ IRequestHandler* createHandler(const HttpRequest& request,
     return new StaticHandler(*loc, error_renderer);
 }
 
-static const Location* matchLocation(const std::string& target,
+const Location* matchLocation(const std::string& target,
     const std::vector<Location>& locations)
 {
     const Location* best = NULL;
