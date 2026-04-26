@@ -105,3 +105,39 @@ const char* ExceptionParentRootDirectory::what() const throw()
 {
     return msg_.c_str();
 }
+
+ExceptionPayloadTooLarge::ExceptionPayloadTooLarge(const std::string& msg)
+    : msg_(msg)
+{
+}
+
+ExceptionPayloadTooLarge::~ExceptionPayloadTooLarge() throw() { }
+
+const char* ExceptionPayloadTooLarge::what() const throw()
+{
+    return msg_.c_str();
+}
+
+ExceptionBadFraming::ExceptionBadFraming(const std::string& msg)
+    : msg_(msg)
+{
+}
+
+ExceptionBadFraming::~ExceptionBadFraming() throw() { }
+
+const char* ExceptionBadFraming::what() const throw()
+{
+    return msg_.c_str();
+}
+
+ExceptionFileWrite::ExceptionFileWrite(const std::string& msg)
+    : msg_(msg)
+{
+}
+
+ExceptionFileWrite::~ExceptionFileWrite() throw() { }
+
+const char* ExceptionFileWrite::what() const throw()
+{
+    return msg_.c_str();
+}

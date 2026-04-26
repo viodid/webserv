@@ -26,28 +26,44 @@ void Webserver::run()
     EventManager notifier(connections_);
     for (;;) {
         notifier.manage();
-        const std::vector<pollfd>& pollfds = notifier.getPollFds();
-        for (size_t i = 0; i < connections_.size(); i++) {
-            Connection* c = notifier.getConnectionFor(pollfds[i].fd);
+        std::vector<pollfd> pollfds = notifier.getPollFds();
+        std::set<int> dead_fds;
+
+        for (size_t i = 0; i < pollfds.size(); i++) {
+            int fd = pollfds[i].fd;
+            if (dead_fds.count(fd))
+                continue;
+            Connection* c = notifier.getConnectionFor(fd);
+            if (!c)
+                continue;
+
             if (pollfds[i].revents & POLLIN) {
 #if DEBUG
                 std::cout << "POLLIN - connection: " << i << " - fd: " << c->getFd() << '\n';
 #endif
-                handleRead_(notifier, *c);
+                handleRead_(notifier, *c, dead_fds);
+                if (dead_fds.count(fd))
+                    continue;
             }
             if (pollfds[i].revents & POLLOUT) {
 #if DEBUG
                 std::cout << "POLLOUT - connection: " << i << " - fd: " << c->getFd() << '\n';
 #endif
-                handleWrite_(notifier, *c);
+                handleWrite_(*c, dead_fds);
+                if (dead_fds.count(fd))
+                    continue;
             }
-            if (pollfds[i].revents & POLLERR || pollfds[i].revents & POLLHUP) {
+            if (pollfds[i].revents & (POLLERR | POLLHUP)) {
 #if DEBUG
                 std::cout << "POLLERR - connection: " << i << " - fd: " << c->getFd() << '\n';
 #endif
-                handleClosedConn_(notifier, *c);
+                dead_fds.insert(fd);
             }
         }
+
+        for (std::set<int>::const_iterator it = dead_fds.begin();
+            it != dead_fds.end(); ++it)
+            destroyConnection_(notifier, *it);
     }
 }
 
@@ -60,22 +76,27 @@ void Webserver::handleNewClient_(EventManager& notifier, const Connection& c)
     connections_.push_back(connection_ptr);
 }
 
-void Webserver::handleClosedConn_(EventManager& manager, const Connection& c)
+void Webserver::markClosed_(std::set<int>& dead_fds, const Connection& c)
 {
-    manager.removeFd(c.getFd());
 #if DEBUG
-    std::cout << "closed conn fd: " << c.getFd() << std::endl;
+    std::cout << "marking conn closed fd: " << c.getFd() << std::endl;
 #endif
+    dead_fds.insert(c.getFd());
+}
+
+void Webserver::destroyConnection_(EventManager& manager, int fd)
+{
+    manager.removeFd(fd);
     for (size_t i = 0; i < connections_.size(); i++) {
-        if (connections_[i] == &c) {
+        if (connections_[i]->getFd() == fd) {
             delete connections_[i];
             connections_.erase(connections_.begin() + i);
-            break;
+            return;
         }
     }
 }
 
-void Webserver::handleRead_(EventManager& notifier, Connection& c)
+void Webserver::handleRead_(EventManager& notifier, Connection& c, std::set<int>& dead_fds)
 {
     if (c.getType() == Connection::LISTENER) {
         handleNewClient_(notifier, c);
@@ -83,16 +104,16 @@ void Webserver::handleRead_(EventManager& notifier, Connection& c)
     }
 
     try {
-        c.getRequest().parseFromReader(c);
+        c.getRequest().parseFromReader(c, c.getConfig().getLocations());
         if (c.getRequest().isDone())
             notifier.enableWrite(c.getFd());
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
-        return handleClosedConn_(notifier, c);
+        markClosed_(dead_fds, c);
     }
 }
 
-void Webserver::handleWrite_(EventManager& notifier, Connection& c)
+void Webserver::handleWrite_(Connection& c, std::set<int>& dead_fds)
 {
     if (!c.getRequest().isDone())
         return;
@@ -112,9 +133,9 @@ void Webserver::handleWrite_(EventManager& notifier, Connection& c)
         c.sendBytes();
 
         if (c.isWriteDone())
-            handleClosedConn_(notifier, c);
+            markClosed_(dead_fds, c);
     } catch (const std::exception& e) {
         std::cerr << "handleWrite_: " << e.what() << '\n';
-        handleClosedConn_(notifier, c);
+        markClosed_(dead_fds, c);
     }
 }

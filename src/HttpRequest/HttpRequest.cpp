@@ -41,7 +41,7 @@ void HttpRequest::setBody(const std::string& body)
     body_.set(body);
 }
 
-void HttpRequest::parseFromReader(IReader& reader)
+void HttpRequest::parseFromReader(IReader& reader, const std::vector<Location>& locations)
 {
     if (currTimeMs() - start_time_ > Settings::TIMEOUT_REQUEST_MS)
         throw ExceptionRequestTimeout("request timeout");
@@ -57,10 +57,7 @@ void HttpRequest::parseFromReader(IReader& reader)
 
     cursor_ += bytes_read;
 
-    if (cursor_ >= buffer_.size())
-        buffer_.resize(buffer_.size() * 2);
-
-    int bytes_parsed = parse_(buffer_.data(), cursor_);
+    int bytes_parsed = parse_(buffer_.data(), cursor_, locations);
 
     // remove already parsed content from buffer
     if (bytes_parsed) {
@@ -69,12 +66,17 @@ void HttpRequest::parseFromReader(IReader& reader)
         buffer_.resize(buffer_size);
         cursor_ -= bytes_parsed;
     }
+
+    // grow only if the parser couldn't make progress and the buffer is full
+    // (e.g., an incomplete header/chunk-size line longer than the buffer)
+    if (cursor_ >= buffer_.size())
+        buffer_.resize(buffer_.size() * 2);
 }
 
 /*
  * https://www.rfc-editor.org/rfc/rfc9112#name-message-parsing
  */
-int HttpRequest::parse_(const char* buffer, int length)
+int HttpRequest::parse_(const char* buffer, int length, const std::vector<Location>& locations)
 {
     int parsed = 0;
     bool keep = true;
@@ -89,6 +91,9 @@ int HttpRequest::parse_(const char* buffer, int length)
             }
             curr_state_ = FieldLinesState;
             parsed += n;
+            const Location* loc = matchLocation(request_line_.getRequestTarget(), locations);
+            if (loc)
+                upload_store_ = loc->getUploadStore();
             break;
         }
         case FieldLinesState: {
@@ -100,7 +105,11 @@ int HttpRequest::parse_(const char* buffer, int length)
             parsed += n;
             if (n == 2) {
                 const std::string& content_length = field_lines_.get("content-length");
-                if (!content_length.empty() && content_length != "0")
+                const std::string& transfer_encoding = field_lines_.get("transfer-encoding");
+                const bool is_chunked = toLower(transfer_encoding).find("chunked") != std::string::npos;
+                if (is_chunked)
+                    curr_state_ = ChunkedBodyState;
+                else if (!content_length.empty() && content_length != "0")
                     curr_state_ = BodyState;
                 else
                     curr_state_ = Done;
@@ -119,6 +128,19 @@ int HttpRequest::parse_(const char* buffer, int length)
             parsed += n;
             curr_state_ = Done;
             keep = false;
+            break;
+        }
+        case ChunkedBodyState: {
+            int n = body_.parseChunked(buffer + parsed, length - parsed,
+                upload_store_,
+                request_line_.getRequestTarget());
+            parsed += n;
+            if (body_.isChunkedDone()) {
+                curr_state_ = Done;
+                keep = false;
+            } else if (n == 0) {
+                keep = false;
+            }
             break;
         }
         case Done: {

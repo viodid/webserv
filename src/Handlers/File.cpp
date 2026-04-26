@@ -20,6 +20,8 @@ std::string File::getTypeFormat() const
     if (type_ == DIRECTORY)
         throw std::runtime_error("directory does not have a file format");
     switch (type_) {
+    case TEXT_PLAIN:
+        return "text/plain";
     case TEXT_HTML:
         return "text/html";
     case TEXT_CSS:
@@ -34,8 +36,14 @@ std::string File::getTypeFormat() const
         return "image/jpeg";
     case IMAGE_ICO:
         return "image/vnd.microsoft.icon";
+    case PDF:
+        return "application/pdf";
+    case AUDIO_MPEG:
+        return "audio/mpeg";
+    case VIDEO_MP4:
+        return "video/mp4";
     default:
-        std::cerr << "fallthrough default file format 'text/plan'\n";
+        std::cerr << "fallthrough default file format 'text/plain'\n";
         return "text/plain";
     }
 }
@@ -116,6 +124,8 @@ File::Type File::mapFileType_() const
         return File::DIRECTORY;
 
     std::string extension = path_.substr(path_.rfind('.', path_.size() - 1) + 1);
+    if (extension == "txt")
+        return File::TEXT_PLAIN;
     if (extension == "html" || extension == "htm")
         return File::TEXT_HTML;
     if (extension == "css")
@@ -130,5 +140,11 @@ File::Type File::mapFileType_() const
         return File::IMAGE_JPEG;
     if (extension == "ico")
         return File::IMAGE_ICO;
+    if (extension == "pdf")
+        return File::PDF;
+    if (extension == "mp3")
+        return File::AUDIO_MPEG;
+    if (extension == "mp4")
+        return File::VIDEO_MP4;
     throw ExceptionUnsupportedFileType(extension);
 }

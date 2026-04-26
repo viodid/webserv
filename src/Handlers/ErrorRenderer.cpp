@@ -9,8 +9,12 @@ ErrorRenderer::ErrorRenderer(const std::vector<std::pair<Location::StatusCodes, 
     error_path_[Location::S_408] = Settings::ERROR_PAGE_PATH;
     error_path_[Location::S_413] = Settings::ERROR_PAGE_PATH;
     error_path_[Location::S_414] = Settings::ERROR_PAGE_PATH;
+    error_path_[Location::S_415] = Settings::ERROR_PAGE_PATH;
     error_path_[Location::S_500] = Settings::ERROR_PAGE_PATH;
     error_path_[Location::S_501] = Settings::ERROR_PAGE_PATH;
+    error_path_[Location::S_502] = Settings::ERROR_PAGE_PATH;
+    error_path_[Location::S_503] = Settings::ERROR_PAGE_PATH;
+    error_path_[Location::S_504] = Settings::ERROR_PAGE_PATH;
     for (std::vector<std::pair<Location::StatusCodes, std::string> >::const_iterator it = error_pages_.begin();
         it != error_pages_.end();
         it++)
