@@ -135,9 +135,17 @@ void Webserver::handleRead_(EventManager& notifier, Connection& c, std::set<int>
     }
 
     try {
-        c.getRequest().parseFromReader(c, c.getConfig().getLocations());
+        c.getRequest().parseFromReader(c,
+            c.getConfig().getLocations(),
+            c.getConfig().getSocketSize());
         if (c.getRequest().isDone())
             notifier.enableWrite(c.getFd());
+    } catch (const ExceptionPayloadTooLarge& e) {
+        std::cerr << e.what() << '\n';
+        ErrorRenderer error_renderer(c.getConfig().getStatusCodes());
+        c.setResponse(constructHttpErrorResponse(c.getRequest(), error_renderer, Location::S_413));
+        c.getRequest().markDone();
+        notifier.enableWrite(c.getFd());
     } catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
         markClosed_(dead_fds, c);
