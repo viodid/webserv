@@ -10,11 +10,13 @@ class ConfigParser {
 public:
     ConfigParser(const std::string& filepath);
     Config parse();
+    void setSkipFsChecks(bool skip);
 
 private:
     std::string filepath_;
     std::string content_;
     size_t      pos_;
+    bool        skip_fs_checks_;
 
     void        readFile();
     void        skipWhitespaceAndComments();

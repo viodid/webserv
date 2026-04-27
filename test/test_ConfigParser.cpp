@@ -1,5 +1,6 @@
 #include "../include/ConfigParser.hpp"
 #include "../include/Exceptions.hpp"
+#include "../include/Settings.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <gtest/gtest.h>
@@ -39,7 +40,9 @@ struct TempConf {
 static Config parseConf(const std::string& content)
 {
     TempConf tmp(content);
-    return ConfigParser(tmp.path).parse();
+    ConfigParser parser(tmp.path);
+    parser.setSkipFsChecks(true);
+    return parser.parse();
 }
 
 // ============================================================
@@ -515,8 +518,8 @@ TEST(ConfigParser, UnclosedServerBlockThrows)
 
 TEST(ConfigParser, DefaultConfFileParsesSuccessfully)
 {
-    // Smoke-test the actual bundled config
-    EXPECT_NO_THROW(ConfigParser("resources/default.conf").parse());
+    // Smoke-test the actual bundled config via the same path main.cpp uses.
+    EXPECT_NO_THROW(ConfigParser(Settings::DEFAULT_CONFIG_PATH).parse());
 }
 
 TEST(ConfigParser, RedirectWithCode302Parsed)

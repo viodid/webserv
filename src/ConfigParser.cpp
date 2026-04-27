@@ -76,7 +76,13 @@ static void validateExecutable(const std::string& path, const std::string& direc
 ConfigParser::ConfigParser(const std::string& filepath)
     : filepath_(filepath)
     , pos_(0)
+    , skip_fs_checks_(false)
 {
+}
+
+void ConfigParser::setSkipFsChecks(bool skip)
+{
+    skip_fs_checks_ = skip;
 }
 
 // Read File
@@ -231,7 +237,8 @@ void ConfigParser::parseStatusCode(std::vector<std::pair<Location::StatusCodes, 
     std::string path = nextToken();
     pages.push_back(std::make_pair(Location::statusCodeFromCode(code), path));
     expect(";");
-    validatePathReadable(path, "error_page");
+    if (!skip_fs_checks_)
+        validatePathReadable(path, "error_page");
 }
 
 // ==================== Directive helpers (Location) ====================
@@ -466,18 +473,20 @@ Location ConfigParser::parseLocationBlock()
         }
     }
 
-    if (root_set)
-        validateDirReadable(root, "root");
-    if (upload_store_set)
-        validateDirWritable(upload_store, "upload_store");
-    if (cgi_map_set) {
-        for (std::map<std::string, std::string>::const_iterator it = cgi_map.begin();
-             it != cgi_map.end(); ++it) {
-            validateExecutable(it->second, "cgi_pass");
+    if (!skip_fs_checks_) {
+        if (root_set)
+            validateDirReadable(root, "root");
+        if (upload_store_set)
+            validateDirWritable(upload_store, "upload_store");
+        if (cgi_map_set) {
+            for (std::map<std::string, std::string>::const_iterator it = cgi_map.begin();
+                 it != cgi_map.end(); ++it) {
+                validateExecutable(it->second, "cgi_pass");
+            }
         }
+        if (index_set && root_set)
+            validatePathReadable(root + "/" + default_file, "index");
     }
-    if (index_set && root_set)
-        validatePathReadable(root + "/" + default_file, "index");
 
     return Location(path, methods, redirection_code, redirection_path, root, default_file, dir_listing, upload_store, cgi_map);
 }
