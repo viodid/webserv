@@ -1,10 +1,12 @@
 #include "../include/Connection.hpp"
+#include "../include/CgiProcess.hpp"
 
 Connection::Connection(Type type, Socket* socket, const VirtualHost& vh)
     : config_(vh)
     , type_(type)
     , socket_(socket)
     , response_(NULL)
+    , cgi_(NULL)
 {
 }
 
@@ -12,9 +14,27 @@ Connection::~Connection()
 {
     delete socket_;
     delete response_;
+    delete cgi_;
 #if DEBUG
     std::cout << "[Debug] Connection destructor called " << std::endl;
 #endif
+}
+
+CgiProcess* Connection::getCgi() const
+{
+    return cgi_;
+}
+
+void Connection::setCgi(CgiProcess* cgi)
+{
+    delete cgi_;
+    cgi_ = cgi;
+}
+
+void Connection::clearCgi()
+{
+    delete cgi_;
+    cgi_ = NULL;
 }
 
 Connection::Type Connection::getType() const

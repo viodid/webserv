@@ -33,3 +33,8 @@ std::string constructPath(const HttpRequest& request, const Location& location);
 std::string renderDirListing(const std::string& path, const std::string& requested_path);
 std::string normalizeURI(const std::string& uri);
 std::string stripQueryURI(std::string& uri);
+/*
+ * Strips any query string from `target` and returns the file extension
+ * (with leading dot) of the remaining path. Returns "" if no extension.
+ */
+std::string extensionOf(const std::string& target);

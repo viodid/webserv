@@ -11,6 +11,8 @@
 #include <stdexcept>
 #include <vector>
 
+class CgiProcess; // forward decl
+
 /**
  * @class Connection
  * @brief State holder of a socket.
@@ -61,6 +63,14 @@ public:
 
     virtual int read(char buffer[], int len);
 
+    /*
+     * Optional CGI process attached to this connection. NULL when no CGI is
+     * in flight. Connection owns the pointer and deletes it.
+     */
+    CgiProcess* getCgi() const;
+    void setCgi(CgiProcess* cgi);
+    void clearCgi();
+
 private:
     const VirtualHost config_;
     Type type_;
@@ -68,6 +78,7 @@ private:
     HttpRequest request_;
     HttpResponse* response_;
     std::vector<char> out_buf_;
+    CgiProcess* cgi_;
 
     void appendToBuffer_(const std::string& s);
 

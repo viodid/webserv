@@ -10,7 +10,10 @@ EventManager::EventManager(std::vector<Connection*>& connections)
 
 int EventManager::manage()
 {
-    int poll_count = poll(fds_.data(), connections_.size(), -1);
+    // Block indefinitely when idle, but cap the wait when CGI processes are
+    // in flight so the timeout sweep can run between poll() returns.
+    int timeout_ms = cgi_fds_.empty() ? -1 : 1000;
+    int poll_count = poll(fds_.data(), fds_.size(), timeout_ms);
     if (poll_count == -1)
         throw std::runtime_error(std::strerror(errno));
 
@@ -50,13 +53,8 @@ void EventManager::disableWrite(int fd)
 
 void EventManager::removeFd(int fd)
 {
-    for (size_t i = 0; i < connections_.size(); ++i) {
-        if (connections_[i]->getFd() == fd) {
-            if (i >= fds_.size()) {
-                std::stringstream s;
-                s << "Index '" << i << "' out of bounds of fds_\n";
-                throw std::runtime_error(s.str());
-            }
+    for (size_t i = 0; i < fds_.size(); ++i) {
+        if (fds_[i].fd == fd) {
             fds_.erase(fds_.begin() + i);
             return;
         }
@@ -74,5 +72,30 @@ Connection* EventManager::getConnectionFor(int fd) const
         if ((*it)->getFd() == fd)
             return *it;
     }
-    throw std::runtime_error("connection not found");
+    return NULL;
+}
+
+void EventManager::addCgiFd(int fd, CgiProcess* cgi)
+{
+    addFd(fd);
+    cgi_fds_[fd] = cgi;
+}
+
+void EventManager::removeCgiFd(int fd)
+{
+    cgi_fds_.erase(fd);
+    removeFd(fd);
+}
+
+CgiProcess* EventManager::getCgiFor(int fd) const
+{
+    std::map<int, CgiProcess*>::const_iterator it = cgi_fds_.find(fd);
+    if (it == cgi_fds_.end())
+        return NULL;
+    return it->second;
+}
+
+bool EventManager::hasCgi() const
+{
+    return !cgi_fds_.empty();
 }

@@ -70,6 +70,21 @@ std::string constructPath(const HttpRequest& request, const Location& location)
     return alias;
 }
 
+std::string extensionOf(const std::string& target)
+{
+    std::string path = target;
+    size_t q = path.find('?');
+    if (q != std::string::npos)
+        path.erase(q);
+    size_t slash = path.rfind('/');
+    size_t dot = path.rfind('.');
+    if (dot == std::string::npos)
+        return "";
+    if (slash != std::string::npos && dot < slash)
+        return "";
+    return path.substr(dot);
+}
+
 /*
  * Mutates the input string if a query URL is found.
  * Returns the query URL
