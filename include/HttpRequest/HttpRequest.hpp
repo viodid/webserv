@@ -38,13 +38,18 @@ public:
     void setFieldLines(const std::string&, const std::string&);
     void setBody(const std::string&);
 
-    void parseFromReader(IReader& reader, const std::vector<Location>& locations);
+    void parseFromReader(IReader& reader, const std::vector<Location>& locations, size_t max_body_size);
+    void parseFromReader(IReader& reader, const std::vector<Location>& locations)
+    {
+        parseFromReader(reader, locations, 0);
+    }
     void parseFromReader(IReader& reader)
     {
-        parseFromReader(reader, std::vector<Location>());
+        parseFromReader(reader, std::vector<Location>(), 0);
     }
 
     bool isDone() const;
+    void markDone();
 
 private:
     // Request state
@@ -59,5 +64,5 @@ private:
     std::vector<char> buffer_;
     std::string upload_store_;
 
-    int parse_(const char* buffer, int length, const std::vector<Location>& locations);
+    int parse_(const char* buffer, int length, const std::vector<Location>& locations, size_t max_body_size);
 };

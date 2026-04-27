@@ -41,12 +41,15 @@ void HttpRequest::setBody(const std::string& body)
     body_.set(body);
 }
 
-void HttpRequest::parseFromReader(IReader& reader, const std::vector<Location>& locations)
+void HttpRequest::parseFromReader(IReader& reader, const std::vector<Location>& locations, size_t max_body_size)
 {
+    if (curr_state_ == Done)
+        return;
+
     if (currTimeMs() - start_time_ > Settings::TIMEOUT_REQUEST_MS)
         throw ExceptionRequestTimeout("request timeout");
 
-    if (buffer_.size() > Settings::PARSER_MAX_BUFFER_SIZE)
+    if (curr_state_ < BodyState && buffer_.size() > Settings::PARSER_MAX_BUFFER_SIZE)
         throw ExceptionConnLenExceeded("overrun MAX_BUFFER_SIZE");
 
     int bytes_read = reader.read(buffer_.data() + cursor_,
@@ -57,7 +60,7 @@ void HttpRequest::parseFromReader(IReader& reader, const std::vector<Location>& 
 
     cursor_ += bytes_read;
 
-    int bytes_parsed = parse_(buffer_.data(), cursor_, locations);
+    int bytes_parsed = parse_(buffer_.data(), cursor_, locations, max_body_size);
 
     // remove already parsed content from buffer
     if (bytes_parsed) {
@@ -76,7 +79,7 @@ void HttpRequest::parseFromReader(IReader& reader, const std::vector<Location>& 
 /*
  * https://www.rfc-editor.org/rfc/rfc9112#name-message-parsing
  */
-int HttpRequest::parse_(const char* buffer, int length, const std::vector<Location>& locations)
+int HttpRequest::parse_(const char* buffer, int length, const std::vector<Location>& locations, size_t max_body_size)
 {
     int parsed = 0;
     bool keep = true;
@@ -118,22 +121,21 @@ int HttpRequest::parse_(const char* buffer, int length, const std::vector<Locati
         }
         case BodyState: {
             int n = body_.parse(buffer + parsed, length - parsed,
-                field_lines_.get("content-length"));
-
-            if (n == 0) {
-                keep = false;
-                break;
-            }
-
+                field_lines_.get("content-length"), max_body_size);
             parsed += n;
-            curr_state_ = Done;
-            keep = false;
+            if (body_.isContentLengthDone()) {
+                curr_state_ = Done;
+                keep = false;
+            } else if (n == 0) {
+                keep = false;
+            }
             break;
         }
         case ChunkedBodyState: {
             int n = body_.parseChunked(buffer + parsed, length - parsed,
                 upload_store_,
-                request_line_.getRequestTarget());
+                request_line_.getRequestTarget(),
+                max_body_size);
             parsed += n;
             if (body_.isChunkedDone()) {
                 curr_state_ = Done;
@@ -155,4 +157,9 @@ int HttpRequest::parse_(const char* buffer, int length, const std::vector<Locati
 bool HttpRequest::isDone() const
 {
     return curr_state_ == Done;
+}
+
+void HttpRequest::markDone()
+{
+    curr_state_ = Done;
 }

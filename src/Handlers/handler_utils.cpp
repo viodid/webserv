@@ -2,11 +2,44 @@
 #include "../../include/HttpResponse/EmptyBodySource.hpp"
 #include "../../include/HttpResponse/StringBodySource.hpp"
 #include <cstring>
+#include <ctime>
 #include <dirent.h>
+#include <iomanip>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+static std::string formatDate(time_t t)
+{
+    struct tm tm_buf;
+    if (localtime_r(&t, &tm_buf) == NULL)
+        return "-";
+    char buf[32];
+    if (strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M", &tm_buf) == 0)
+        return "-";
+    return std::string(buf);
+}
+
+static std::string formatSize(off_t bytes)
+{
+    if (bytes < 0)
+        return "-";
+    const char* units[] = { "B", "KiB", "MiB", "GiB", "TiB" };
+    const int max_unit = sizeof(units) / sizeof(units[0]) - 1;
+    int unit = 0;
+    double size = static_cast<double>(bytes);
+    while (size >= 1024.0 && unit < max_unit) {
+        size /= 1024.0;
+        ++unit;
+    }
+    std::stringstream ss;
+    if (unit == 0)
+        ss << bytes << " " << units[unit];
+    else
+        ss << std::fixed << std::setprecision(1) << size << " " << units[unit];
+    return ss.str();
+}
 
 HttpResponse* constructHttpErrorResponse(const HttpRequest& request,
     const ErrorRenderer& error_renderer,
@@ -159,19 +192,14 @@ std::string renderDirListing(const std::string& path, const std::string& request
         if (stat(local_path.c_str(), &f_stat) == -1)
             throw std::runtime_error(std::strerror(errno));
 
-        // std::string date = std::to_string(std::localtime(&f_stat.st_mtim.tv_sec));
-        std::stringstream ss;
-        ss << f_stat.st_mtim.tv_sec;
-        std::string date = ss.str();
+        std::string date = formatDate(f_stat.st_mtim.tv_sec);
         std::string size = "-";
         std::string icon = "📄";
         if (p_dir->d_type == DT_DIR) {
             icon = "📁";
             url += '/';
         } else {
-            std::stringstream ss;
-            ss << f_stat.st_size;
-            size = ss.str();
+            size = formatSize(f_stat.st_size);
         }
         std::string tr_template = table_row.readFile();
         // FILE NAME

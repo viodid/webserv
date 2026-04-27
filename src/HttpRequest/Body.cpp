@@ -4,6 +4,7 @@
 
 Body::Body()
     : content_length_(0)
+    , bytes_received_(0)
     , chunked_inited_(false)
 {
 }
@@ -11,6 +12,7 @@ Body::Body()
 Body::Body(const std::string& body)
     : body_(body)
     , content_length_(0)
+    , bytes_received_(body.size())
     , chunked_inited_(false)
 {
 }
@@ -30,18 +32,30 @@ std::string Body::format() const
     return body_;
 }
 
-int Body::parse(const char* buffer, size_t buf_len, const std::string& content_len)
+int Body::parse(const char* buffer, size_t buf_len, const std::string& content_len, size_t max_body_size)
 {
     if (content_length_ == 0) {
         char* end = NULL;
         content_length_ = std::strtoul(content_len.c_str(), &end, 10);
         if (content_length_ == 0)
             throw ExceptionBodyLength("malformed 'Content-Length' header");
+        if (max_body_size > 0 && content_length_ > max_body_size)
+            throw ExceptionPayloadTooLarge("Content-Length exceeds client_max_body_size");
     }
-    if (buf_len >= content_length_)
-        body_ = std::string(buffer, std::min(static_cast<size_t>(buf_len), content_length_));
+    size_t remaining = content_length_ - bytes_received_;
+    size_t take = std::min(buf_len, remaining);
+    if (take > 0) {
+        body_.append(buffer, take);
+        bytes_received_ += take;
+        if (max_body_size > 0 && bytes_received_ > max_body_size)
+            throw ExceptionPayloadTooLarge("body exceeds client_max_body_size");
+    }
+    return static_cast<int>(take);
+}
 
-    return body_.size();
+bool Body::isContentLengthDone() const
+{
+    return bytes_received_ >= content_length_;
 }
 
 const std::string& Body::getStoredPath() const
@@ -56,7 +70,8 @@ bool Body::isChunkedDone() const
 
 int Body::parseChunked(const char* buffer, size_t buf_len,
     const std::string& upload_store,
-    const std::string& target)
+    const std::string& target,
+    size_t max_body_size)
 {
     if (!chunked_inited_) {
         if (upload_store.empty())
@@ -90,6 +105,9 @@ int Body::parseChunked(const char* buffer, size_t buf_len,
     std::vector<char> decoded;
     size_t consumed = decoder_.feed(buffer, buf_len, decoded);
     if (!decoded.empty()) {
+        bytes_received_ += decoded.size();
+        if (max_body_size > 0 && bytes_received_ > max_body_size)
+            throw ExceptionPayloadTooLarge("chunked body exceeds client_max_body_size");
         out_file_.write(&decoded[0], decoded.size());
         if (out_file_.fail())
             throw ExceptionFileWrite("write failed: " + stored_path_);
