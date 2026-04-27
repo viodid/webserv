@@ -5,5 +5,6 @@
 class IRequestHandler {
 public:
     virtual ~IRequestHandler() { };
-    virtual HttpResponse handle(const HttpRequest& request) = 0;
+
+    virtual HttpResponse* handle(const HttpRequest& request) = 0;
 };

@@ -12,6 +12,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <vector>
 
 /**
  * @class Socket
@@ -53,7 +54,7 @@ public:
      */
     int getFd() const;
     int acceptConn() const;
-    ssize_t sendMsg(const std::string& msg) const;
+    size_t sendBytes(const std::vector<char>& bytes) const;
 
 private:
     int fd_;

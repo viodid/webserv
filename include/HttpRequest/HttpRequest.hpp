@@ -1,4 +1,5 @@
 #pragma once
+#include "../Config.hpp"
 #include "../Interfaces/IReader.hpp"
 #include "../Utils.hpp"
 #include "Body.hpp"
@@ -7,11 +8,13 @@
 #include <map>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 enum HttpRequestParseState {
     RequestLineState,
     FieldLinesState,
     BodyState,
+    ChunkedBodyState,
     Done
 };
 
@@ -35,9 +38,18 @@ public:
     void setFieldLines(const std::string&, const std::string&);
     void setBody(const std::string&);
 
-    void parseFromReader(IReader& reader);
+    void parseFromReader(IReader& reader, const std::vector<Location>& locations, size_t max_body_size);
+    void parseFromReader(IReader& reader, const std::vector<Location>& locations)
+    {
+        parseFromReader(reader, locations, 0);
+    }
+    void parseFromReader(IReader& reader)
+    {
+        parseFromReader(reader, std::vector<Location>(), 0);
+    }
 
     bool isDone() const;
+    void markDone();
 
 private:
     // Request state
@@ -46,10 +58,11 @@ private:
     Body body_;
 
     // Parsing state
-    const size_t start_time_;
+    size_t start_time_;
     HttpRequestParseState curr_state_;
     size_t cursor_;
     std::vector<char> buffer_;
+    std::string upload_store_;
 
-    int parse_(const char* buffer, int length);
+    int parse_(const char* buffer, int length, const std::vector<Location>& locations, size_t max_body_size);
 };

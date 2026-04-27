@@ -1,27 +1,81 @@
 #include "../../include/Handlers/handler_utils.hpp"
+#include "../../include/HttpResponse/EmptyBodySource.hpp"
+#include "../../include/HttpResponse/StringBodySource.hpp"
 #include <cstring>
+#include <ctime>
 #include <dirent.h>
+#include <iomanip>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-HttpResponse constructHttpErrorResponse(const HttpRequest& request,
+static std::string formatDate(time_t t)
+{
+    struct tm tm_buf;
+    if (localtime_r(&t, &tm_buf) == NULL)
+        return "-";
+    char buf[32];
+    if (strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M", &tm_buf) == 0)
+        return "-";
+    return std::string(buf);
+}
+
+static std::string formatSize(off_t bytes)
+{
+    if (bytes < 0)
+        return "-";
+    const char* units[] = { "B", "KiB", "MiB", "GiB", "TiB" };
+    const int max_unit = sizeof(units) / sizeof(units[0]) - 1;
+    int unit = 0;
+    double size = static_cast<double>(bytes);
+    while (size >= 1024.0 && unit < max_unit) {
+        size /= 1024.0;
+        ++unit;
+    }
+    std::stringstream ss;
+    if (unit == 0)
+        ss << bytes << " " << units[unit];
+    else
+        ss << std::fixed << std::setprecision(1) << size << " " << units[unit];
+    return ss.str();
+}
+
+HttpResponse* constructHttpErrorResponse(const HttpRequest& request,
     const ErrorRenderer& error_renderer,
     Location::StatusCodes error_no)
 {
     std::string body_html = error_renderer.render(error_no);
     FieldLines field_lines;
     field_lines.set("Server", "42webserv/0.1.0");
-    field_lines.set("Content-Type", "text/html; charset=utf-8");
+    field_lines.set("Content-Type", "text/html");
     field_lines.set("Connection", "close");
     std::stringstream ss;
     ss << body_html.size();
     field_lines.set("Content-Length", ss.str());
-    return HttpResponse(
-        StatusLine(request.getRequestLine().getHttpVersion(), error_no),
-        field_lines,
-        Body(body_html));
+
+    HttpResponse* response = new HttpResponse;
+    response->setStatusLine(StatusLine(request.getRequestLine().getHttpVersion(), error_no));
+    response->setFieldLines(field_lines);
+    response->setBodySource(new StringBodySource(body_html));
+    return response;
+}
+
+HttpResponse* constructHttpRedirectResponse(const HttpRequest& request,
+    const std::string& location,
+    Location::StatusCodes code)
+{
+    FieldLines field_lines;
+    field_lines.set("Server", "42webserv/0.1.0");
+    field_lines.set("Location", location);
+    field_lines.set("Content-Length", "0");
+    field_lines.set("Connection", "close");
+
+    HttpResponse* response = new HttpResponse;
+    response->setStatusLine(StatusLine(request.getRequestLine().getHttpVersion(), code));
+    response->setFieldLines(field_lines);
+    response->setBodySource(new EmptyBodySource);
+    return response;
 }
 
 bool isMethodAllowed(const HttpRequest& request, const Location& location)
@@ -47,6 +101,21 @@ std::string constructPath(const HttpRequest& request, const Location& location)
     alias.append(request_target);
 
     return alias;
+}
+
+std::string extensionOf(const std::string& target)
+{
+    std::string path = target;
+    size_t q = path.find('?');
+    if (q != std::string::npos)
+        path.erase(q);
+    size_t slash = path.rfind('/');
+    size_t dot = path.rfind('.');
+    if (dot == std::string::npos)
+        return "";
+    if (slash != std::string::npos && dot < slash)
+        return "";
+    return path.substr(dot);
 }
 
 /*
@@ -123,19 +192,14 @@ std::string renderDirListing(const std::string& path, const std::string& request
         if (stat(local_path.c_str(), &f_stat) == -1)
             throw std::runtime_error(std::strerror(errno));
 
-        // std::string date = std::to_string(std::localtime(&f_stat.st_mtim.tv_sec));
-        std::stringstream ss;
-        ss << f_stat.st_mtim.tv_sec;
-        std::string date = ss.str();
+        std::string date = formatDate(f_stat.st_mtim.tv_sec);
         std::string size = "-";
         std::string icon = "📄";
         if (p_dir->d_type == DT_DIR) {
             icon = "📁";
             url += '/';
         } else {
-            std::stringstream ss;
-            ss << f_stat.st_size;
-            size = ss.str();
+            size = formatSize(f_stat.st_size);
         }
         std::string tr_template = table_row.readFile();
         // FILE NAME

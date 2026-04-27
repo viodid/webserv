@@ -2,6 +2,7 @@
 #include "Config.hpp"
 #include "Exceptions.hpp"
 #include "HttpRequest/HttpRequest.hpp"
+#include "HttpResponse/HttpResponse.hpp"
 #include "Interfaces/IReader.hpp"
 #include "Settings.hpp"
 #include "Socket.hpp"
@@ -9,6 +10,8 @@
 #include <iostream>
 #include <stdexcept>
 #include <vector>
+
+class CgiProcess; // forward decl
 
 /**
  * @class Connection
@@ -28,33 +31,57 @@ public:
     ~Connection();
 
     Type getType() const;
-    /*
-     * Gets the FD from the connection socket
-     */
     int getFd() const;
-    /*
-     * Accepts a new connection and returns its FD (only for LISTENER connections)
-     */
+    HttpRequest& getRequest();
     int acceptNewConnection() const;
-    /*
-     * returns the connection Config
-     */
     const VirtualHost& getConfig() const;
+
     /*
-     * Send a message to the socket.
-     *
-     * It returns the number of bytes sent.
+     * Takes ownership of the response. Replaces any prior response.
+     * Serializes headers into the write buffer immediately.
      */
-    ssize_t sendMsg(const std::string& msg) const;
+    void setResponse(HttpResponse* response);
+    bool hasResponse() const;
     /*
-     * Reads from a socket and copies over the given input buffer
-     *
-     * Returns the number of bytes read or raises a ExceptionClientCloseConn
+     * Pulls one body chunk from the response and appends it to the write
+     * buffer. No-op if the body source is exhausted.
      */
+    void pullBodyChunk();
+    /*
+     * Number of bytes currently waiting in the write buffer.
+     */
+    size_t writeBufferSize() const;
+    /*
+     * Returns true once the buffer is empty and the body source is exhausted.
+     */
+    bool isWriteDone() const;
+    /*
+     * Send as many bytes as the kernel accepts; advance the buffer by that
+     * amount. Returns the number of bytes sent.
+     */
+    size_t sendBytes();
+
     virtual int read(char buffer[], int len);
 
+    /*
+     * Optional CGI process attached to this connection. NULL when no CGI is
+     * in flight. Connection owns the pointer and deletes it.
+     */
+    CgiProcess* getCgi() const;
+    void setCgi(CgiProcess* cgi);
+    void clearCgi();
+
 private:
+    const VirtualHost config_;
     Type type_;
     Socket* socket_;
-    const VirtualHost config_;
+    HttpRequest request_;
+    HttpResponse* response_;
+    std::vector<char> out_buf_;
+    CgiProcess* cgi_;
+
+    void appendToBuffer_(const std::string& s);
+
+    Connection(const Connection&);
+    Connection& operator=(const Connection&);
 };

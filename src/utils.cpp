@@ -32,3 +32,27 @@ size_t currTimeMs()
     gettimeofday(&tv, NULL);
     return (static_cast<unsigned long>(tv.tv_sec) * 1000) + (tv.tv_usec / 1000);
 }
+
+const Location* matchLocation(const std::string& target,
+    const std::vector<Location>& locations)
+{
+    const Location* best = NULL;
+    size_t best_len = 0;
+    for (size_t i = 0; i < locations.size(); ++i) {
+        const std::string& path = locations[i].getPath();
+        if (target.compare(0, path.size(), path) != 0)
+            continue;
+        bool on_boundary = target.size() == path.size()
+            || path[path.size() - 1] == '/'
+            || target[path.size()] == '/'
+            || target[path.size()] == '?'
+            || target[path.size()] == '#';
+        if (!on_boundary)
+            continue;
+        if (best == NULL || path.size() > best_len) {
+            best = &locations[i];
+            best_len = path.size();
+        }
+    }
+    return best;
+}

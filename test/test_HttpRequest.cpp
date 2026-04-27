@@ -1,8 +1,11 @@
 #include "../include/HttpRequest/HttpRequest.hpp"
 #include <chrono>
 #include <exception>
+#include <fstream>
 #include <gtest/gtest.h>
 #include <iostream>
+#include <sstream>
+#include <sys/stat.h>
 #include <thread>
 
 class ChunkReader : public IReader {
@@ -286,4 +289,96 @@ TEST(HttpRequestTest, ParseMalformedContentLength)
     HttpRequest request;
     EXPECT_THROW(while (!request.isDone()) request.parseFromReader(reader),
         ExceptionBodyLength);
+}
+
+/*
+ * CHUNKED BODY TESTS
+ */
+static const char kChunkedTestDir[] = "/tmp/webserv_chunked_test";
+
+static std::vector<Location> makeChunkedLocations()
+{
+    mkdir(kChunkedTestDir, 0755);
+    std::vector<Location::AllowedMethods> methods;
+    methods.push_back(Location::POST);
+    std::vector<Location> locs;
+    locs.push_back(Location("/upload", methods, "", "", "/tmp", "", false, kChunkedTestDir));
+    return locs;
+}
+
+static std::string readFile(const std::string& path)
+{
+    std::ifstream in(path.c_str(), std::ios::binary);
+    std::stringstream ss;
+    ss << in.rdbuf();
+    return ss.str();
+}
+
+TEST(HttpRequestTest, ParseChunkedBodyValid)
+{
+    std::vector<Location> locs = makeChunkedLocations();
+    ChunkReader reader(
+        "POST /upload/hello.bin HTTP/1.1\r\n"
+        "Transfer-Encoding: chunked\r\n\r\n"
+        "5\r\nhello\r\n"
+        "6\r\n world\r\n"
+        "0\r\n\r\n",
+        1, 0);
+    HttpRequest request;
+    try {
+        while (!request.isDone())
+            request.parseFromReader(reader, locs);
+        EXPECT_EQ("/tmp/webserv_chunked_test/hello.bin", request.getBody().getStoredPath());
+        EXPECT_EQ("hello world", readFile(request.getBody().getStoredPath()));
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        FAIL();
+    }
+}
+
+TEST(HttpRequestTest, ParseChunkedMalformedHexThrows)
+{
+    std::vector<Location> locs = makeChunkedLocations();
+    ChunkReader reader(
+        "POST /upload/bad.bin HTTP/1.1\r\n"
+        "Transfer-Encoding: chunked\r\n\r\n"
+        "zz\r\nhello\r\n0\r\n\r\n",
+        1, 0);
+    HttpRequest request;
+    EXPECT_THROW(while (!request.isDone()) request.parseFromReader(reader, locs),
+        ExceptionBadFraming);
+}
+
+TEST(HttpRequestTest, ParseChunkedTEAndCLPrecedence)
+{
+    // Both TE: chunked and a misleading Content-Length are present. Per RFC 9112,
+    // chunked must take precedence; otherwise the parser would pick BodyState and
+    // treat the chunked framing as raw body.
+    std::vector<Location> locs = makeChunkedLocations();
+    ChunkReader reader(
+        "POST /upload/precedence.bin HTTP/1.1\r\n"
+        "Content-Length: 999\r\n"
+        "Transfer-Encoding: chunked\r\n\r\n"
+        "3\r\nabc\r\n0\r\n\r\n",
+        1, 0);
+    HttpRequest request;
+    try {
+        while (!request.isDone())
+            request.parseFromReader(reader, locs);
+        EXPECT_EQ("abc", readFile(request.getBody().getStoredPath()));
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        FAIL();
+    }
+}
+
+TEST(HttpRequestTest, ParseChunkedSizeLineTooLong)
+{
+    std::vector<Location> locs = makeChunkedLocations();
+    std::string head = "POST /upload/dos.bin HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n";
+    std::string giant_line(Settings::PARSER_MAX_BUFFER_SIZE + 16, 'a');
+    ChunkReader reader(head + giant_line, 1024, 0);
+    HttpRequest request;
+    EXPECT_THROW(while (!request.isDone()) request.parseFromReader(reader, locs),
+        ExceptionPayloadTooLarge);
 }
