@@ -4,6 +4,73 @@
 #include <iostream>
 #include <cctype>
 #include <cerrno>
+#include <unistd.h>
+#include <sys/stat.h>
+
+// ==================== Validation helpers ====================
+
+static void validateIPv4(const std::string& host)
+{
+    size_t start = 0;
+    int parts = 0;
+    while (start <= host.size()) {
+        size_t dot = host.find('.', start);
+        std::string part = host.substr(start, (dot == std::string::npos ? host.size() : dot) - start);
+        if (part.empty() || part.size() > 3)
+            throw ExceptionParserError("ConfigParser: invalid IPv4 address: " + host);
+        for (size_t i = 0; i < part.size(); ++i) {
+            if (!std::isdigit(static_cast<unsigned char>(part[i])))
+                throw ExceptionParserError("ConfigParser: invalid IPv4 address: " + host);
+        }
+        if (part.size() > 1 && part[0] == '0')
+            throw ExceptionParserError("ConfigParser: invalid IPv4 address: " + host);
+        int val = std::atoi(part.c_str());
+        if (val < 0 || val > 255)
+            throw ExceptionParserError("ConfigParser: invalid IPv4 address: " + host);
+        ++parts;
+        if (dot == std::string::npos)
+            break;
+        start = dot + 1;
+    }
+    if (parts != 4)
+        throw ExceptionParserError("ConfigParser: invalid IPv4 address: " + host);
+}
+
+static void validatePathReadable(const std::string& path, const std::string& directive)
+{
+    struct stat st;
+    if (stat(path.c_str(), &st) != 0 || !S_ISREG(st.st_mode))
+        throw ExceptionParserError("ConfigParser: " + directive + ": file not found: " + path);
+    if (access(path.c_str(), R_OK) != 0)
+        throw ExceptionParserError("ConfigParser: " + directive + ": file not readable: " + path);
+}
+
+static void validateDirReadable(const std::string& path, const std::string& directive)
+{
+    struct stat st;
+    if (stat(path.c_str(), &st) != 0 || !S_ISDIR(st.st_mode))
+        throw ExceptionParserError("ConfigParser: " + directive + ": directory not found: " + path);
+    if (access(path.c_str(), R_OK) != 0)
+        throw ExceptionParserError("ConfigParser: " + directive + ": directory not readable: " + path);
+}
+
+static void validateDirWritable(const std::string& path, const std::string& directive)
+{
+    struct stat st;
+    if (stat(path.c_str(), &st) != 0 || !S_ISDIR(st.st_mode))
+        throw ExceptionParserError("ConfigParser: " + directive + ": directory not found: " + path);
+    if (access(path.c_str(), W_OK) != 0)
+        throw ExceptionParserError("ConfigParser: " + directive + ": directory not writable: " + path);
+}
+
+static void validateExecutable(const std::string& path, const std::string& directive)
+{
+    struct stat st;
+    if (stat(path.c_str(), &st) != 0 || !S_ISREG(st.st_mode))
+        throw ExceptionParserError("ConfigParser: " + directive + ": file not found: " + path);
+    if (access(path.c_str(), X_OK) != 0)
+        throw ExceptionParserError("ConfigParser: " + directive + ": not executable: " + path);
+}
 
 // Constructor
 ConfigParser::ConfigParser(const std::string& filepath)
@@ -142,6 +209,7 @@ void ConfigParser::parseListen(std::string& hostname, std::string& port)
         hostname = addr.substr(0, colon);
         port = addr.substr(colon + 1);
     }
+    validateIPv4(hostname);
     expect(";");
 }
 
@@ -163,6 +231,7 @@ void ConfigParser::parseStatusCode(std::vector<std::pair<Location::StatusCodes, 
     std::string path = nextToken();
     pages.push_back(std::make_pair(Location::statusCodeFromCode(code), path));
     expect(";");
+    validatePathReadable(path, "error_page");
 }
 
 // ==================== Directive helpers (Location) ====================
@@ -244,6 +313,13 @@ Config ConfigParser::parse()
     }
     if (virtual_hosts.empty())
         throw ExceptionParserError("ConfigParser: no server blocks found in " + filepath_);
+    for (size_t i = 0; i < virtual_hosts.size(); ++i) {
+        for (size_t j = i + 1; j < virtual_hosts.size(); ++j) {
+            if (virtual_hosts[i].getPort() == virtual_hosts[j].getPort())
+                throw ExceptionParserError(
+                    "ConfigParser: duplicate port across server blocks: " + virtual_hosts[i].getPort());
+        }
+    }
     return Config(virtual_hosts);
 }
 
@@ -257,13 +333,18 @@ VirtualHost ConfigParser::parseServerBlock()
     size_t      client_max_body_size = 1048576; // 1 MiB default
     std::vector<std::pair<Location::StatusCodes, std::string> > status_codes;
     std::vector<Location> locations;
+    bool        listen_set = false;
 
     for (std::string tok = peekToken(); tok != "}"; tok = peekToken()) {
         if (tok.empty())
             throw ExceptionParserError("ConfigParser: unexpected end of file inside server block");
         tok = nextToken();
-        if (tok == "listen")
+        if (tok == "listen") {
+            if (listen_set)
+                throw ExceptionParserError("ConfigParser: duplicate 'listen' directive in server block");
             parseListen(hostname, port);
+            listen_set = true;
+        }
         else if (tok == "client_max_body_size")
             parseClientMaxBodySize(client_max_body_size);
         else if (tok == "error_page")
@@ -384,5 +465,19 @@ Location ConfigParser::parseLocationBlock()
             break;
         }
     }
+
+    if (root_set)
+        validateDirReadable(root, "root");
+    if (upload_store_set)
+        validateDirWritable(upload_store, "upload_store");
+    if (cgi_map_set) {
+        for (std::map<std::string, std::string>::const_iterator it = cgi_map.begin();
+             it != cgi_map.end(); ++it) {
+            validateExecutable(it->second, "cgi_pass");
+        }
+    }
+    if (index_set && root_set)
+        validatePathReadable(root + "/" + default_file, "index");
+
     return Location(path, methods, redirection_code, redirection_path, root, default_file, dir_listing, upload_store, cgi_map);
 }
