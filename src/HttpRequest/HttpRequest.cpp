@@ -43,6 +43,9 @@ void HttpRequest::setBody(const std::string& body)
 
 void HttpRequest::parseFromReader(IReader& reader, const std::vector<Location>& locations, size_t max_body_size)
 {
+    if (curr_state_ == Done)
+        return;
+
     if (currTimeMs() - start_time_ > Settings::TIMEOUT_REQUEST_MS)
         throw ExceptionRequestTimeout("request timeout");
 

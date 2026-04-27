@@ -55,7 +55,7 @@ int Body::parse(const char* buffer, size_t buf_len, const std::string& content_l
 
 bool Body::isContentLengthDone() const
 {
-    return content_length_ > 0 && bytes_received_ >= content_length_;
+    return bytes_received_ >= content_length_;
 }
 
 const std::string& Body::getStoredPath() const

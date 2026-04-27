@@ -50,7 +50,7 @@ static void validateDirReadable(const std::string& path, const std::string& dire
     struct stat st;
     if (stat(path.c_str(), &st) != 0 || !S_ISDIR(st.st_mode))
         throw ExceptionParserError("ConfigParser: " + directive + ": directory not found: " + path);
-    if (access(path.c_str(), R_OK) != 0)
+    if (access(path.c_str(), R_OK | X_OK) != 0)
         throw ExceptionParserError("ConfigParser: " + directive + ": directory not readable: " + path);
 }
 
@@ -59,7 +59,7 @@ static void validateDirWritable(const std::string& path, const std::string& dire
     struct stat st;
     if (stat(path.c_str(), &st) != 0 || !S_ISDIR(st.st_mode))
         throw ExceptionParserError("ConfigParser: " + directive + ": directory not found: " + path);
-    if (access(path.c_str(), W_OK) != 0)
+    if (access(path.c_str(), W_OK | X_OK) != 0)
         throw ExceptionParserError("ConfigParser: " + directive + ": directory not writable: " + path);
 }
 
@@ -321,8 +321,10 @@ Config ConfigParser::parse()
     if (virtual_hosts.empty())
         throw ExceptionParserError("ConfigParser: no server blocks found in " + filepath_);
     for (size_t i = 0; i < virtual_hosts.size(); ++i) {
+        long pi = std::strtol(virtual_hosts[i].getPort().c_str(), NULL, 10);
         for (size_t j = i + 1; j < virtual_hosts.size(); ++j) {
-            if (virtual_hosts[i].getPort() == virtual_hosts[j].getPort())
+            long pj = std::strtol(virtual_hosts[j].getPort().c_str(), NULL, 10);
+            if (pi == pj)
                 throw ExceptionParserError(
                     "ConfigParser: duplicate port across server blocks: " + virtual_hosts[i].getPort());
         }
