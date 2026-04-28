@@ -34,14 +34,12 @@ The goal of the project is to implement the network plumbing of a real web serve
 
 ### Run
 
-`./webserv` takes **no arguments**. It loads the configuration file pointed at by `Settings::DEFAULT_CONFIG_PATH` in `include/Settings.hpp`, which is currently an absolute path into this repository's `resources/default.conf`.
+`./webserv` takes **no arguments** and loads `resources/default.conf` relative to the current working directory. From the repo root:
 
-Before the first run on a fresh checkout:
-
-1. Edit `include/Settings.hpp` so `DEFAULT_CONFIG_PATH` matches your checkout.
-2. Edit `resources/default.conf` so the `root` and `upload_store` directives point at directories that exist on your machine.
-3. `make re`.
-4. `./webserv`
+```sh
+make
+./webserv
+```
 
 The default config exposes two virtual servers:
 
