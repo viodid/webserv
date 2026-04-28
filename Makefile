@@ -1,7 +1,7 @@
 BINARY 		= webserv
 CXX 		= g++
-DEBUG		= -g3 -DDEBUG=1
 CXXFLAGS	= -std=c++98 -Wall -Wextra -Werror -Wpedantic -O0
+DEBUG_FLAGS	= -g3 -DDEBUG=1
 
 SRCS		= $(shell find src -type f -name '*.cpp')
 OBJS 		= $(SRCS:.cpp=.o)
@@ -11,7 +11,7 @@ OBJS 		= $(SRCS:.cpp=.o)
 TEST_BINARY		= tests
 TEST_SRCS		= $(shell find . -type f -name '*.cpp' ! -name 'main.cpp' ! -name 'test_Socket.cpp')
 TEST_OBJS		= $(TEST_SRCS:.cpp=.o)
-TEST_CXXFLAGS	= -std=c++17 -Wall -Wextra -Werror -O0 $(DEBUG)
+TEST_CXXFLAGS	= -std=c++17 -Wall -Wextra -Werror -O0 $(DEBUG_FLAGS)
 TEST_LDFLAGS	= -lgtest -lgtest_main -lpthread
 
 
@@ -22,6 +22,10 @@ $(BINARY): $(OBJS)
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Clean rebuild with -g3 -DDEBUG=1 for the main binary.
+debug: CXXFLAGS += $(DEBUG_FLAGS)
+debug: re
 
 # Build and run unit tests
 test_build: $(TEST_OBJS)
@@ -46,5 +50,5 @@ fclean: clean
 
 re: clean all
 
-.PHONY: all test_build run_tests clean fclean re
+.PHONY: all debug test_build run_tests test clean fclean re
 

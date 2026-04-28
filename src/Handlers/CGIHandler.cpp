@@ -5,6 +5,7 @@
 #include "../../include/Settings.hpp"
 #include <cctype>
 #include <cerrno>
+#include <climits>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -194,6 +195,12 @@ HttpResponse* CGIHandler::handle(const HttpRequest& request)
     std::string query_string = stripQueryURI(script_fs_path);
     if (!query_string.empty() && query_string[0] == '?')
         query_string.erase(0, 1);
+
+    // Resolve to an absolute path so the post-chdir execve in the child does
+    // not re-resolve a relative argv[1] against the script's own directory.
+    char resolved[PATH_MAX];
+    if (realpath(script_fs_path.c_str(), resolved) != NULL)
+        script_fs_path = resolved;
 
     struct stat st;
     if (stat(script_fs_path.c_str(), &st) == -1)
