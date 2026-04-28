@@ -48,6 +48,7 @@ latex/
 
 # miscellaneous
 en.subject.pdf
-resources/www/
+resources/www/*
+!resources/www/index.html
 !resources/html/
 err.txt
