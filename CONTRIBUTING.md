@@ -8,7 +8,7 @@ Thanks for your interest. This document describes how to set up the project, the
 git clone <repo>
 cd webserv
 make            # builds the webserv binary
-./webserv       # serves resources/default.conf on 127.0.0.1:8080 and 0.0.0.0:9090
+./webserv       # serves resources/default.conf on 127.0.0.1:8080 and 127.0.0.1:9090
 ```
 
 Unit tests require `libgtest-dev`:
